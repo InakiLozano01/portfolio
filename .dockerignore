@@ -1,0 +1,15 @@
+# Ignore node_modules
+node_modules
+
+# Ignore build output
+.next
+
+# Ignore logs
+*.log
+
+# Ignore local environment files
+.env
+
+# Removed package.json and package-lock.json from ignore list
+# Dockerfile
+docker-compose.yml 
