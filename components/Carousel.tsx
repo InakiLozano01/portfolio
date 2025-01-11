@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Carousel({ 
   children,
@@ -13,6 +13,7 @@ export default function Carousel({
   const [internalIndex, setInternalIndex] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const [windowWidth, setWindowWidth] = useState(0)
+  const childrenArray = React.Children.toArray(children)
 
   // Sync internal state with external index
   useEffect(() => {
@@ -23,60 +24,79 @@ export default function Carousel({
     setWindowWidth(window.innerWidth)
     
     const handleResize = () => {
-      setWindowWidth(window.innerWidth)
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  // Handle manual swipe detection
-  const handleScroll = () => {
-    if (containerRef.current) {
-      const scrollLeft = containerRef.current.scrollLeft
-      const newIndex = Math.round(scrollLeft / windowWidth)
-      if (newIndex !== internalIndex) {
-        setInternalIndex(newIndex)
-        // Update hash on swipe
-        const sections = ['home', 'about', 'education', 'experience', 'skills', 'blog', 'contact']
-        if (sections[newIndex]) {
-          window.location.hash = `#${sections[newIndex]}`
-          // Dispatch hashchange event to update header
-          window.dispatchEvent(new HashChangeEvent('hashchange'))
-        }
+      const width = window.innerWidth
+      setWindowWidth(width)
+      if (containerRef.current) {
+        containerRef.current.scrollTo({
+          left: internalIndex * width,
+          behavior: 'auto'
+        })
       }
     }
-  }
+
+    const debouncedResize = debounce(handleResize, 100)
+    window.addEventListener('resize', debouncedResize)
+    return () => window.removeEventListener('resize', debouncedResize)
+  }, [internalIndex])
 
   useEffect(() => {
     if (containerRef.current && windowWidth) {
       containerRef.current.scrollTo({
         left: internalIndex * windowWidth,
-        behavior: 'smooth',
+        behavior: 'smooth'
       })
     }
   }, [internalIndex, windowWidth])
 
+  const variants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? windowWidth : -windowWidth,
+      opacity: 0
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? windowWidth : -windowWidth,
+      opacity: 0
+    })
+  }
+
   return (
-    <div
-      ref={containerRef}
-      className="flex overflow-x-scroll snap-x snap-mandatory scrollbar-hide h-full touch-pan-x"
-      style={{ scrollSnapType: 'x mandatory' }}
-      onScroll={handleScroll}
-    >
-      {React.Children.map(children, (child, index) => (
+    <div className="relative w-full h-full overflow-hidden">
+      <AnimatePresence initial={false} mode="wait" custom={internalIndex}>
         <motion.div
-          key={index}
-          className="flex-shrink-0 w-full h-full snap-start overflow-hidden"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
+          key={internalIndex}
+          custom={internalIndex}
+          variants={variants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{
+            x: { type: "spring", stiffness: 300, damping: 30 },
+            opacity: { duration: 0.2 }
+          }}
+          className="absolute w-full h-full"
         >
-          {child}
+          {childrenArray[internalIndex]}
         </motion.div>
-      ))}
+      </AnimatePresence>
     </div>
   )
+}
+
+function debounce(func: Function, wait: number) {
+  let timeout: NodeJS.Timeout
+  return function executedFunction(...args: any[]) {
+    const later = () => {
+      clearTimeout(timeout)
+      func(...args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
 }
 

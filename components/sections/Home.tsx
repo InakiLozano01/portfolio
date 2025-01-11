@@ -1,7 +1,43 @@
-import Link from 'next/link'
-import { motion } from 'framer-motion'
+'use client'
 
-export default function Home() {
+import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import type { HomeContent } from '@/models/Section'
+
+export default function HomePage() {
+  const [content, setContent] = useState<HomeContent | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const response = await fetch('/api/sections/home')
+        if (!response.ok) {
+          throw new Error('Failed to fetch home content')
+        }
+        
+        const data = await response.json()
+        if (!data || !data.content) {
+          throw new Error('Invalid section data')
+        }
+        
+        setContent(data.content)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch content')
+        console.error('Error fetching home content:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchContent()
+  }, [])
+
+  if (loading) return <div className="text-center">Loading...</div>
+  if (error) return <div className="text-center text-red-500">{error}</div>
+  if (!content) return null
+
   return (
     <section id="home" className="flex items-start justify-center min-h-screen bg-white relative overflow-hidden">
       <div className="absolute inset-0 z-0">
@@ -21,7 +57,7 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Technology Accelerationist and Innovation Pursuer
+          {content.headline}
         </motion.h1>
         <motion.p
           className="text-xl mb-8 text-gray-600"
@@ -29,14 +65,8 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          Hi, I&apos;m Iñaki Lozano, a Computer Engineering student at the National University of Tucuman. I&apos;m passionate about building innovative and creative solutions with code.
+          {content.description}
         </motion.p>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-        </motion.div>
       </div>
     </section>
   )

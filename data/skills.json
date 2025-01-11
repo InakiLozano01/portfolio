@@ -1,0 +1,246 @@
+[{
+  "_id": {
+    "$oid": "67805ea315869c88fed19df0"
+  },
+  "name": "Java",
+  "category": "language",
+  "proficiency": 80,
+  "yearsOfExperience": 3,
+  "icon": "FaJava"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19df1"
+  },
+  "name": "JavaScript",
+  "category": "language",
+  "proficiency": 75,
+  "yearsOfExperience": 3,
+  "icon": "FaJs"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19df2"
+  },
+  "name": "TypeScript",
+  "category": "language",
+  "proficiency": 65,
+  "yearsOfExperience": 2,
+  "icon": "SiTypescript"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19df3"
+  },
+  "name": "PHP",
+  "category": "language",
+  "proficiency": 80,
+  "yearsOfExperience": 4,
+  "icon": "FaPhp"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19df4"
+  },
+  "name": "Python",
+  "category": "language",
+  "proficiency": 85,
+  "yearsOfExperience": 4,
+  "icon": "FaPython"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19df5"
+  },
+  "name": "HTML5",
+  "category": "language",
+  "proficiency": 90,
+  "yearsOfExperience": 5,
+  "icon": "FaHtml5"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19df6"
+  },
+  "name": "Spring",
+  "category": "framework",
+  "proficiency": 75,
+  "yearsOfExperience": 2,
+  "icon": "SiSpring"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19df7"
+  },
+  "name": "React",
+  "category": "framework",
+  "proficiency": 65,
+  "yearsOfExperience": 2,
+  "icon": "FaReact"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19df8"
+  },
+  "name": "CSS3",
+  "category": "framework",
+  "proficiency": 85,
+  "yearsOfExperience": 5,
+  "icon": "FaCss3"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19df9"
+  },
+  "name": "Bootstrap",
+  "category": "framework",
+  "proficiency": 80,
+  "yearsOfExperience": 4,
+  "icon": "FaBootstrap"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19dfa"
+  },
+  "name": "CodeIgniter",
+  "category": "framework",
+  "proficiency": 70,
+  "yearsOfExperience": 3,
+  "icon": "SiCodeigniter"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19dfb"
+  },
+  "name": "Flask",
+  "category": "framework",
+  "proficiency": 80,
+  "yearsOfExperience": 3,
+  "icon": "SiFlask"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19dfc"
+  },
+  "name": "MySQL",
+  "category": "database",
+  "proficiency": 85,
+  "yearsOfExperience": 4,
+  "icon": "SiMysql"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19dfd"
+  },
+  "name": "PostgreSQL",
+  "category": "database",
+  "proficiency": 90,
+  "yearsOfExperience": 3,
+  "icon": "SiPostgresql"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19dfe"
+  },
+  "name": "VS Code",
+  "category": "tool",
+  "proficiency": 90,
+  "yearsOfExperience": 4,
+  "icon": "VscCode"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19dff"
+  },
+  "name": "IntelliJ",
+  "category": "tool",
+  "proficiency": 80,
+  "yearsOfExperience": 3,
+  "icon": "SiIntellijidea"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19e00"
+  },
+  "name": "Node.js",
+  "category": "tool",
+  "proficiency": 80,
+  "yearsOfExperience": 3,
+  "icon": "FaNodeJs"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19e01"
+  },
+  "name": "GitHub",
+  "category": "tool",
+  "proficiency": 90,
+  "yearsOfExperience": 4,
+  "icon": "FaGithub"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19e02"
+  },
+  "name": "GitLab",
+  "category": "tool",
+  "proficiency": 75,
+  "yearsOfExperience": 2,
+  "icon": "FaGitlab"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19e03"
+  },
+  "name": "Git",
+  "category": "tool",
+  "proficiency": 85,
+  "yearsOfExperience": 4,
+  "icon": "FaGit"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19e04"
+  },
+  "name": "Ubuntu",
+  "category": "devops",
+  "proficiency": 85,
+  "yearsOfExperience": 3,
+  "icon": "FaUbuntu"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19e05"
+  },
+  "name": "Docker",
+  "category": "devops",
+  "proficiency": 90,
+  "yearsOfExperience": 2,
+  "icon": "FaDocker"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19e06"
+  },
+  "name": "Google Cloud",
+  "category": "devops",
+  "proficiency": 60,
+  "yearsOfExperience": 1,
+  "icon": "SiGooglecloud"
+},
+{
+  "_id": {
+    "$oid": "67805ea315869c88fed19e07"
+  },
+  "name": "ChatGPT",
+  "category": "ai",
+  "proficiency": 95,
+  "yearsOfExperience": 1,
+  "icon": "SiOpenai",
+  "createdAt": {
+    "$date": "2025-01-10T00:07:22.870Z"
+  },
+  "updatedAt": {
+    "$date": "2025-01-10T00:07:22.870Z"
+  }
+}]

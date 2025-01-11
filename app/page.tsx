@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Experience from '@/components/sections/Experience'
 import Home from '@/components/sections/Home'
+import Experience from '@/components/sections/Experience'
 import Contact from '@/components/sections/Contact'
 import Blog from '@/components/sections/Blog'
 import Skills from '@/components/sections/Skills'
@@ -12,61 +12,81 @@ import Carousel from '@/components/Carousel'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
+interface Section {
+  id: string;
+  label: string;
+  component: () => React.ReactElement | null;
+}
+
+const sections: Section[] = [
+  { id: 'home', label: 'Home', component: Home },
+  { id: 'about', label: 'About', component: About },
+  { id: 'education', label: 'Education', component: Education },
+  { id: 'experience', label: 'Experience', component: Experience },
+  { id: 'skills', label: 'Skills', component: Skills },
+  { id: 'blog', label: 'Blog', component: Blog },
+  { id: 'contact', label: 'Contact', component: Contact },
+]
+
 export default function Page() {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [mounted, setMounted] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    // Set initial desktop state
+    // Set initial desktop state and handle hash
     setIsDesktop(window.innerWidth >= 1024)
+    const hash = window.location.hash.slice(1)
+    if (hash) {
+      const sectionIndex = sections.findIndex(section => section.id === hash)
+      if (sectionIndex !== -1) {
+        setCurrentIndex(sectionIndex)
+      }
+    }
     
-    // Add resize listener
     const handleResize = () => {
       setIsDesktop(window.innerWidth >= 1024)
     }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1)
+      const sectionIndex = sections.findIndex(section => section.id === hash)
+      if (sectionIndex !== -1) {
+        setCurrentIndex(sectionIndex)
+      }
+    }
+
+    const debouncedResize = debounce(handleResize, 100)
+    window.addEventListener('resize', debouncedResize)
+    window.addEventListener('hashchange', handleHashChange)
+    return () => {
+      window.removeEventListener('resize', debouncedResize)
+      window.removeEventListener('hashchange', handleHashChange)
+    }
   }, [])
 
-  const sections = [
-    { id: 'home', label: 'Home', component: Home },
-    { id: 'about', label: 'About', component: About },
-    { id: 'education', label: 'Education', component: Education },
-    { id: 'experience', label: 'Experience', component: Experience },
-    { id: 'skills', label: 'Skills', component: Skills },
-    { id: 'blog', label: 'Blog', component: Blog },
-    { id: 'contact', label: 'Contact', component: Contact },
-  ]
+  const updateSection = (newIndex: number) => {
+    setCurrentIndex(newIndex)
+    const newHash = sections[newIndex].id === 'home' ? '' : `#${sections[newIndex].id}`
+    window.history.pushState(null, '', newHash || '/')
+  }
 
   const handlePrev = () => {
     const newIndex = currentIndex > 0 ? currentIndex - 1 : sections.length - 1
-    setCurrentIndex(newIndex)
-    window.location.hash = `#${sections[newIndex].id}`
+    updateSection(newIndex)
   }
 
   const handleNext = () => {
     const newIndex = currentIndex < sections.length - 1 ? currentIndex + 1 : 0
-    setCurrentIndex(newIndex)
-    window.location.hash = `#${sections[newIndex].id}`
+    updateSection(newIndex)
   }
 
-  // Update the URL hash when currentIndex changes
-  useEffect(() => {
-    if (mounted) {
-      const sectionId = sections[currentIndex].id
-      window.location.hash = `#${sectionId}`
-    }
-  }, [currentIndex, sections, mounted])
-
-  if (!mounted) {
-    return null
-  }
+  if (!mounted) return null
 
   return (
     <div className="flex flex-col min-h-screen bg-[#263547]">
-      <Header />
+      <Header staticSections={sections} currentIndex={currentIndex} onSectionChange={updateSection} />
       
       <main className="flex-grow relative">
         <div className="fixed inset-x-0 top-[64px] bottom-[40px] bg-white">
@@ -107,5 +127,17 @@ export default function Page() {
       <Footer />
     </div>
   )
+}
+
+function debounce(func: Function, wait: number) {
+  let timeout: NodeJS.Timeout
+  return function executedFunction(...args: any[]) {
+    const later = () => {
+      clearTimeout(timeout)
+      func(...args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
 }
 

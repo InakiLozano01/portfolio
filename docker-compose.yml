@@ -1,10 +1,86 @@
 services:
-  app:
-    build: .
+  mongodb:
+    image: mongo:latest
+    restart: always
     ports:
-      - "5000:3000"
+      - "27017:27017"
     volumes:
-      - .:/app
+      - mongodb_data:/data/db
+    networks:
+      - portfolio_network
+    healthcheck:
+      test: mongosh --eval "db.runCommand('ping').ok" --quiet mongodb://localhost:27017/portfolio
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - portfolio_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: redis-server --save 60 1 --loglevel verbose
+
+  portfolio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - portfolio_network
     environment:
-      NODE_ENV: production
-    command: npm start 
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - MONGODB_URI=mongodb://mongodb:27017/portfolio
+      - REDIS_URI=redis://redis:6379
+      - SKIP_REDIS_DURING_BUILD=false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: >
+      sh -c "
+        echo 'Waiting for MongoDB and Redis to be ready...' &&
+        sleep 15 &&
+        echo 'Initializing the application...' &&
+        cd /app && NODE_PATH=/app ts-node --project tsconfig.scripts.json scripts/seed-sections.ts &&
+        cd /app && NODE_PATH=/app ts-node --project tsconfig.scripts.json scripts/seed-skills.ts &&
+        cd /app && NODE_PATH=/app ts-node --project tsconfig.scripts.json scripts/seed-admin.ts &&
+        echo 'Starting the application...' &&
+        node server.js 2>&1 | tee /dev/stdout"
+
+networks:
+  portfolio_network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data: 

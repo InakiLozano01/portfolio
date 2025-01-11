@@ -1,9 +1,13 @@
 'use client'
 
 import React from 'react'
-import { FallbackProps } from 'react-error-boundary'
 
-export default function SectionError({ error, resetErrorBoundary }: FallbackProps) {
+interface ErrorProps {
+  error: Error;
+  resetErrorBoundary: () => void;
+}
+
+export default function SectionError({ error, resetErrorBoundary }: ErrorProps) {
   React.useEffect(() => {
     console.error(error)
   }, [error])
