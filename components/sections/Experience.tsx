@@ -3,33 +3,36 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FaBriefcase } from 'react-icons/fa'
-import type { ExperienceContent } from '@/models/Section'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
-export default function ExperienceSection() {
+interface Experience {
+  title: string
+  company: string
+  period: string
+  description?: string
+  responsibilities: string[]
+}
+
+interface ExperienceContent {
+  experiences: Experience[]
+}
+
+export default function Experience() {
   const [content, setContent] = useState<ExperienceContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isClient, setIsClient] = React.useState(false)
-
-  React.useEffect(() => {
-    setIsClient(true)
-  }, [])
 
   useEffect(() => {
     const fetchContent = async () => {
       try {
         const response = await fetch('/api/sections/experience')
         if (!response.ok) {
-          throw new Error('Failed to fetch experience content')
+          throw new Error('Failed to fetch experience information')
         }
         const data = await response.json()
-        if (!data || !data.content) {
-          throw new Error('Invalid section data')
-        }
         setContent(data.content)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch content')
-        console.error('Error fetching experience content:', err)
+        setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
         setLoading(false)
       }
@@ -38,47 +41,71 @@ export default function ExperienceSection() {
     fetchContent()
   }, [])
 
-  if (loading) return <div className="text-center">Loading...</div>
-  if (error) return <div className="text-center text-red-500">{error}</div>
-  if (!content || !content.experiences.length) return null
+  if (loading) return <LoadingSpinner />
+  if (error) return <div role="alert" className="text-center text-red-500">{error}</div>
+  if (!content?.experiences) return null
 
   return (
-    <section className="flex items-center justify-center bg-white">
-      <div className="container mx-auto px-4 pt-36 md:pt-16">
-        <h2 className="text-3xl font-bold mb-8 text-primary">Experience</h2>
-        <div className="relative pl-6">
-          <div className="absolute left-0 top-0 h-full w-0.5 bg-[#FD4345]/20"></div>
-          {content.experiences.map((job, index) => (
+    <div className="w-full">
+      <div className="pt-72 pb-24 md:py-0">
+        <h2 className="text-3xl font-bold mb-6 text-primary">Experience</h2>
+        <div className="space-y-8">
+          {content.experiences.map((exp, index) => (
             <motion.div
               key={index}
-              className="mb-8 relative"
-              initial={isClient ? { opacity: 0, x: -50 } : false}
-              animate={isClient ? { opacity: 1, x: 0 } : false}
-              transition={{ duration: 0.5, delay: index * 0.2 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
             >
-              <div className="absolute left-0 top-4 -translate-x-[13px] z-20 flex items-center justify-center bg-[#FD4345] shadow-xl w-5 h-5 rounded-full">
-                <FaBriefcase className="text-white text-xs" />
-              </div>
-              <div className="ml-6 bg-gray-50 rounded-lg p-6 shadow-sm">
-                <h3 className="mb-2 font-bold text-[#FD4345] text-xl">{job.title}</h3>
-                <p className="text-gray-800 mb-1">{job.company}</p>
-                <p className="text-gray-600 mb-2">{job.period}</p>
-                {job.description && (
-                  <p className="text-gray-600 mb-2">{job.description}</p>
-                )}
-                <ul className="space-y-2">
-                  {job.responsibilities.map((responsibility, idx) => (
-                    <li key={idx} className="text-gray-600 pl-4 relative before:content-[''] before:absolute before:left-0 before:top-[0.6em] before:w-1.5 before:h-1.5 before:bg-[#FD4345]/50 before:rounded-full">
-                      {responsibility}
-                    </li>
-                  ))}
-                </ul>
+              <div className="flex items-start gap-4">
+                <div 
+                  className="mt-1 p-2 bg-primary/10 rounded-lg flex-shrink-0"
+                  aria-hidden="true"
+                >
+                  <FaBriefcase className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col md:flex-row md:items-center gap-2 md:justify-between mb-3">
+                    <h3 className="text-xl font-semibold text-gray-900 break-words md:truncate pr-4">
+                      {exp.title}
+                    </h3>
+                    <span className="text-sm text-gray-500 whitespace-nowrap">
+                      {exp.period}
+                    </span>
+                  </div>
+                  <p className="text-lg text-gray-700 mb-3">{exp.company}</p>
+                  {exp.description && (
+                    <div className="mt-4">
+                      <p className="text-gray-600">{exp.description}</p>
+                    </div>
+                  )}
+                  {exp.responsibilities && exp.responsibilities.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Key Responsibilities:</h4>
+                      <ul className="space-y-2 text-gray-600" role="list">
+                        {exp.responsibilities.map((responsibility: string, i: number) => (
+                          <li 
+                            key={i}
+                            className="flex items-start gap-2"
+                          >
+                            <span 
+                              className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0"
+                              aria-hidden="true"
+                            />
+                            <span>{responsibility}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
       </div>
-    </section>
+    </div>
   )
 }
 

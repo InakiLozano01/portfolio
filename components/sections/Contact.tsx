@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FaEnvelope, FaGithub, FaLinkedin, FaMapMarkerAlt } from 'react-icons/fa'
 import type { ContactContent } from '@/models/Section'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 export default function ContactSection() {
   const [content, setContent] = useState<ContactContent | null>(null)
@@ -13,27 +14,22 @@ export default function ContactSection() {
     name: '',
     email: '',
     message: ''
-  });
-  const [status, setStatus] = useState<{
-    type: 'success' | 'error' | null;
-    message: string;
-  }>({ type: null, message: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  })
+  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
 
   useEffect(() => {
     const fetchContent = async () => {
       try {
         const response = await fetch('/api/sections/contact')
         if (!response.ok) {
-          throw new Error('Failed to fetch contact content')
+          throw new Error('Failed to fetch contact information')
         }
         const data = await response.json()
-        if (!data || !data.content) {
-          throw new Error('Invalid section data')
-        }
         setContent(data.content)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch content')
+        setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
         setLoading(false)
       }
@@ -42,50 +38,66 @@ export default function ContactSection() {
     fetchContent()
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setStatus({ type: null, message: '' });
-
-    try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send message');
-      }
-
-      setStatus({
-        type: 'success',
-        message: 'Message sent successfully! I will get back to you soon.',
-      });
-      setFormData({ name: '', email: '', message: '' });
-    } catch (error) {
-      setStatus({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Failed to send message',
-      });
-    } finally {
-      setIsSubmitting(false);
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {}
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required'
     }
-  };
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required'
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address'
+    }
+    if (!formData.message.trim()) {
+      errors.message = 'Message is required'
+    }
+    return errors
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const errors = validateForm()
+    setFormErrors(errors)
+
+    if (Object.keys(errors).length === 0) {
+      setIsSubmitting(true)
+      setSubmitStatus('idle')
+      try {
+        const response = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        })
+        if (response.ok) {
+          setSubmitStatus('success')
+          setFormData({ name: '', email: '', message: '' })
+        } else {
+          setSubmitStatus('error')
+        }
+      } catch (err) {
+        setSubmitStatus('error')
+      }
+      setIsSubmitting(false)
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
+      [name]: value
+    }))
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }))
+    }
+  }
 
-  if (loading) return <div className="text-center">Loading...</div>
-  if (error) return <div className="text-center text-red-500">{error}</div>
+  if (loading) return <LoadingSpinner />
+  if (error) return <div role="alert" className="text-center text-red-500">{error}</div>
   if (!content) return null
 
   return (
@@ -101,33 +113,39 @@ export default function ContactSection() {
           <h3 className="text-xl font-bold text-gray-800 mb-4">Contact Information</h3>
           <div className="space-y-4">
             <div className="flex items-center">
-              <FaEnvelope className="text-[#FD4345] w-5 h-5 mr-3" />
-              <a href={`mailto:${content.email}`} className="text-gray-600 hover:text-[#FD4345]">
+              <FaEnvelope className="text-[#FD4345] w-5 h-5 mr-3" aria-hidden="true" />
+              <a 
+                href={`mailto:${content.email}`} 
+                className="text-gray-600 hover:text-[#FD4345]"
+                aria-label="Send email"
+              >
                 {content.email}
               </a>
             </div>
             <div className="flex items-center">
-              <FaMapMarkerAlt className="text-[#FD4345] w-5 h-5 mr-3" />
+              <FaMapMarkerAlt className="text-[#FD4345] w-5 h-5 mr-3" aria-hidden="true" />
               <span className="text-gray-600">{content.city}</span>
             </div>
             <div className="flex items-center">
-              <FaGithub className="text-[#FD4345] w-5 h-5 mr-3" />
+              <FaGithub className="text-[#FD4345] w-5 h-5 mr-3" aria-hidden="true" />
               <a
                 href={content.social.github}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-[#FD4345]"
+                aria-label="Visit GitHub profile"
               >
                 GitHub
               </a>
             </div>
             <div className="flex items-center">
-              <FaLinkedin className="text-[#FD4345] w-5 h-5 mr-3" />
+              <FaLinkedin className="text-[#FD4345] w-5 h-5 mr-3" aria-hidden="true" />
               <a
                 href={content.social.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-[#FD4345]"
+                aria-label="Visit LinkedIn profile"
               >
                 LinkedIn
               </a>
@@ -142,10 +160,10 @@ export default function ContactSection() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <h3 className="text-xl font-bold text-gray-800 mb-4">Send a Message</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Name
+                Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -154,12 +172,22 @@ export default function ContactSection() {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900"
+                aria-required="true"
+                aria-invalid={!!formErrors.name}
+                aria-describedby={formErrors.name ? 'name-error' : undefined}
+                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${
+                  formErrors.name ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
+              {formErrors.name && (
+                <p id="name-error" className="mt-1 text-sm text-red-500" role="alert">
+                  {formErrors.name}
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -168,12 +196,22 @@ export default function ContactSection() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900"
+                aria-required="true"
+                aria-invalid={!!formErrors.email}
+                aria-describedby={formErrors.email ? 'email-error' : undefined}
+                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${
+                  formErrors.email ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
+              {formErrors.email && (
+                <p id="email-error" className="mt-1 text-sm text-red-500" role="alert">
+                  {formErrors.email}
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                Message
+                Message <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="message"
@@ -181,27 +219,37 @@ export default function ContactSection() {
                 value={formData.message}
                 onChange={handleChange}
                 required
+                aria-required="true"
+                aria-invalid={!!formErrors.message}
+                aria-describedby={formErrors.message ? 'message-error' : undefined}
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900"
+                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${
+                  formErrors.message ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
+              {formErrors.message && (
+                <p id="message-error" className="mt-1 text-sm text-red-500" role="alert">
+                  {formErrors.message}
+                </p>
+              )}
             </div>
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full bg-[#FD4345] text-white py-2 px-4 rounded-md font-medium hover:bg-[#ff5456] transition-colors ${
-                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              aria-disabled={isSubmitting}
+              className="w-full bg-[#FD4345] text-white px-6 py-3 rounded-md font-semibold hover:bg-[#E13D3F] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Sending...' : 'Send Message'}
             </button>
-            {status.type && (
-              <div
-                className={`mt-4 p-4 rounded-md ${
-                  status.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-                }`}
-              >
-                {status.message}
-              </div>
+            {submitStatus === 'success' && (
+              <p className="text-green-500 text-center" role="status">
+                Message sent successfully!
+              </p>
+            )}
+            {submitStatus === 'error' && (
+              <p className="text-red-500 text-center" role="alert">
+                Failed to send message. Please try again.
+              </p>
             )}
           </form>
         </motion.div>

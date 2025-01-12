@@ -3,11 +3,33 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { SectionModel, SectionSchema } from '@/models/Section';
 import { getCachedSections, clearSectionsCache } from '@/lib/cache';
 
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 export async function GET() {
+  // During build time, return empty array
+  if (process.env.SKIP_DB_DURING_BUILD === 'true') {
+    console.log('[MongoDB] Skipping connection during build');
+    return NextResponse.json([]);
+  }
+
   try {
-    await connectToDatabase();
+    // In development, skip cache and fetch directly from DB
+    if (isDevelopment) {
+      await connectToDatabase();
+      const sections = await SectionModel.find().sort({ order: 1 });
+      return NextResponse.json(sections);
+    }
+
+    // Try to get from cache first
     const sections = await getCachedSections();
-    return NextResponse.json(sections);
+    if (sections && sections.length > 0) {
+      return NextResponse.json(sections);
+    }
+
+    // If not in cache, get from database
+    await connectToDatabase();
+    const dbSections = await SectionModel.find().sort({ order: 1 });
+    return NextResponse.json(dbSections);
   } catch (error) {
     console.error('Failed to fetch sections:', error);
     return NextResponse.json(

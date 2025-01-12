@@ -3,6 +3,11 @@ import { connectToDatabase } from '@/lib/mongodb';
 import Project from '@/models/Project';
 
 export async function GET() {
+  // During build time, return empty array
+  if (process.env.SKIP_DB_DURING_BUILD === 'true') {
+    return NextResponse.json([]);
+  }
+
   try {
     await connectToDatabase();
     const projects = await Project.find({}).sort({ featured: -1, title: 1 });

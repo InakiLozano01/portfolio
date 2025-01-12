@@ -1,37 +1,35 @@
-import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export default withAuth(
-  function middleware(req) {
-    // If trying to access admin pages without authentication
-    if (req.nextUrl.pathname.startsWith('/admin') && !req.nextauth.token) {
-      // Exclude login page from redirection
-      if (req.nextUrl.pathname === '/admin/login') {
-        return NextResponse.next();
-      }
-      return NextResponse.redirect(new URL('/admin/login', req.url));
-    }
+const isDevelopment = process.env.NODE_ENV !== 'production'
 
-    // If authenticated and trying to access login page, redirect to admin dashboard
-    if (req.nextUrl.pathname === '/admin/login' && req.nextauth.token) {
-      return NextResponse.redirect(new URL('/admin', req.url));
-    }
+// Rate limit configuration
+const RATE_LIMIT_DURATION = 10 // seconds
+const RATE_LIMIT_REQUESTS = 10 // max requests per duration
 
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => {
-        // Session is valid if token exists
-        return !!token;
-      },
-    },
-    pages: {
-      signIn: '/admin/login',
-    },
-  }
-);
+export async function middleware(request: NextRequest) {
+  const response = NextResponse.next()
+
+  // Add security headers
+  response.headers.set('X-DNS-Prefetch-Control', 'on')
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('Referrer-Policy', 'same-origin')
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+
+  return response
+}
 
 export const config = {
-  matcher: ['/admin/:path*'],
-}; 
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
+} 

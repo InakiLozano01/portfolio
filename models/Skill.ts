@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const SkillSchema = new mongoose.Schema({
+  _id: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    auto: true
+  },
   name: {
     type: String,
     required: true,
@@ -21,6 +26,7 @@ const SkillSchema = new mongoose.Schema({
   },
   icon: {
     type: String,
+    required: true,
   },
   createdAt: {
     type: Date,
@@ -30,6 +36,16 @@ const SkillSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+}, {
+  // This ensures the model knows about the collection name
+  collection: 'skills',
+  // This ensures virtuals are included in lean() queries
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+  // This ensures _id is not modified after creation
+  strict: true
 });
 
-export default mongoose.models.Skill || mongoose.model('Skill', SkillSchema); 
+// Export as 'Skill' model if it doesn't exist, otherwise use existing model
+const Skill = mongoose.models.Skill || mongoose.model('Skill', SkillSchema);
+export default Skill; 

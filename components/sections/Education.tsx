@@ -1,11 +1,22 @@
 'use client'
 
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FaGraduationCap } from 'react-icons/fa'
-import { useEffect, useState } from 'react'
-import type { EducationContent } from '@/models/Section'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
-export default function EducationSection() {
+interface Education {
+  institution: string
+  degree: string
+  period: string
+  description: string
+}
+
+interface EducationContent {
+  education: Education[]
+}
+
+export default function Education() {
   const [content, setContent] = useState<EducationContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -15,16 +26,12 @@ export default function EducationSection() {
       try {
         const response = await fetch('/api/sections/education')
         if (!response.ok) {
-          throw new Error('Failed to fetch education content')
+          throw new Error('Failed to fetch education information')
         }
         const data = await response.json()
-        if (!data || !data.content) {
-          throw new Error('Invalid section data')
-        }
         setContent(data.content)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch content')
-        console.error('Error fetching education content:', err)
+        setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
         setLoading(false)
       }
@@ -33,38 +40,50 @@ export default function EducationSection() {
     fetchContent()
   }, [])
 
-  if (loading) return <div className="text-center">Loading...</div>
-  if (error) return <div className="text-center text-red-500">{error}</div>
-  if (!content || !content.education.length) return null
+  if (loading) return <LoadingSpinner />
+  if (error) return <div role="alert" className="text-center text-red-500">{error}</div>
+  if (!content?.education) return null
 
   return (
-    <section className="flex items-center justify-center bg-white">
-      <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold mb-8 text-primary">Education</h2>
-        <div className="relative pl-6">
-          <div className="absolute left-0 top-0 h-full w-0.5 bg-[#FD4345]/20"></div>
-          {content.education.map((item, index) => (
-            <motion.div
-              key={index}
-              className="mb-8 relative"
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.2 }}
-            >
-              <div className="absolute left-0 top-4 -translate-x-[13px] z-20 flex items-center justify-center bg-[#FD4345] shadow-xl w-5 h-5 rounded-full">
-                <FaGraduationCap className="text-white text-xs" />
+    <div className="w-full py-32 md:py-0">
+      <h2 className="text-3xl font-bold mb-8 text-primary">Education</h2>
+      <div className="space-y-8">
+        {content.education.map((edu, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+            className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-start gap-4">
+              <div 
+                className="mt-1 p-2 bg-primary/10 rounded-lg"
+                aria-hidden="true"
+              >
+                <FaGraduationCap className="w-5 h-5 text-primary" />
               </div>
-              <div className="ml-6 bg-gray-50 rounded-lg p-6 shadow-sm">
-                <h3 className="mb-2 font-bold text-[#FD4345] text-xl">{item.degree}</h3>
-                <p className="text-gray-800 mb-1">{item.institution}</p>
-                <p className="text-gray-600 mb-1">{item.period}</p>
-                <p className="text-gray-600">{item.description}</p>
+              <div className="flex-1">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {edu.degree}
+                  </h3>
+                  <span className="text-sm text-gray-500">
+                    {edu.period}
+                  </span>
+                </div>
+                <p className="text-lg text-gray-700 mb-2">{edu.institution}</p>
+                {edu.description && (
+                  <div className="mt-4">
+                    <p className="text-gray-600">{edu.description}</p>
+                  </div>
+                )}
               </div>
-            </motion.div>
-          ))}
-        </div>
+            </div>
+          </motion.div>
+        ))}
       </div>
-    </section>
+    </div>
   )
 }
 

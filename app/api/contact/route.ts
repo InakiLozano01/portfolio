@@ -53,6 +53,12 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  // During build time, return empty array
+  if (process.env.SKIP_DB_DURING_BUILD === 'true') {
+    console.log('[MongoDB] Skipping connection during build');
+    return NextResponse.json([]);
+  }
+
   try {
     await connectToDatabase();
     const messages = await Contact.find({})

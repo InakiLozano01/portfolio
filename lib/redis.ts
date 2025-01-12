@@ -16,47 +16,44 @@ class DummyRedis {
   async type() { return 'none'; }
 }
 
-const redisConfig = {
-  retryStrategy(times: number) {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
-  },
-  maxRetriesPerRequest: 3,
-  enableReadyCheck: true,
-  maxReconnectionAttempts: 10,
-  reconnectOnError(err: Error) {
-    const targetError = 'READONLY';
-    if (err.message.includes(targetError)) {
-      return true;
-    }
-    return false;
-  }
-};
-
-// Use dummy Redis during build or if explicitly skipped
+// Use dummy Redis during development or when skipping Redis during build
 const isDevelopment = process.env.NODE_ENV !== 'production';
-const skipRedis = process.env.SKIP_REDIS_DURING_BUILD === 'true' || process.env.NEXT_PHASE === 'phase-production-build';
+const skipRedisDuringBuild = process.env.SKIP_REDIS_DURING_BUILD === 'true';
 
-const redis = skipRedis && isDevelopment
-  ? (new DummyRedis() as unknown as Redis)
-  : new Redis(process.env.REDIS_URI || 'redis://localhost:6379', redisConfig);
+let redis: Redis;
 
-if (!skipRedis || !isDevelopment) {
-  redis.on('error', (error: Error) => {
-    console.error('Redis connection error:', error);
-  });
+// Use dummy Redis during development or build
+if (isDevelopment || skipRedisDuringBuild) {
+  console.log('[Redis] Using dummy client because:', { isDevelopment, skipRedisDuringBuild });
+  redis = new DummyRedis() as unknown as Redis;
+} else {
+  try {
+    console.log('[Redis] Attempting to connect to:', process.env.REDIS_URL);
+    redis = new Redis(process.env.REDIS_URL || '', {
+      maxRetriesPerRequest: 3,
+      retryStrategy(times: number) {
+        const delay = Math.min(times * 50, 2000);
+        return delay;
+      }
+    });
 
-  redis.on('connect', () => {
-    console.log('Connected to Redis');
-  });
+    redis.on('error', (error: Error) => {
+      console.error('[Redis Error] Connection error:', error);
+      // Switch to dummy Redis on connection error
+      redis = new DummyRedis() as unknown as Redis;
+    });
 
-  redis.on('ready', () => {
-    console.log('Redis is ready');
-  });
+    redis.on('connect', () => {
+      console.log('[Redis Success] Connected to Redis server');
+    });
 
-  redis.on('reconnecting', () => {
-    console.log('Reconnecting to Redis...');
-  });
+    redis.on('ready', () => {
+      console.log('[Redis Success] Redis client is ready');
+    });
+  } catch (error) {
+    console.error('[Redis Error] Failed to initialize Redis client:', error);
+    redis = new DummyRedis() as unknown as Redis;
+  }
 }
 
 export default redis; 

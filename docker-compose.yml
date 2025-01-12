@@ -47,7 +47,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - "3000:3000"
+      - "3003:3000"
     depends_on:
       mongodb:
         condition: service_healthy
@@ -59,8 +59,9 @@ services:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
       - MONGODB_URI=mongodb://mongodb:27017/portfolio
-      - REDIS_URI=redis://redis:6379
+      - REDIS_URL=redis://redis:6379
       - SKIP_REDIS_DURING_BUILD=false
+      - SKIP_DB_DURING_BUILD=false
     logging:
       driver: "json-file"
       options:
@@ -75,7 +76,7 @@ services:
         cd /app && NODE_PATH=/app ts-node --project tsconfig.scripts.json scripts/seed-skills.ts &&
         cd /app && NODE_PATH=/app ts-node --project tsconfig.scripts.json scripts/seed-admin.ts &&
         echo 'Starting the application...' &&
-        node server.js 2>&1 | tee /dev/stdout"
+        node server.js"
 
 networks:
   portfolio_network:

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import type { HomeContent } from '@/models/Section'
+import TextWithEmoji from '@/components/ui/TextWithEmoji'
 
 export default function HomePage() {
   const [content, setContent] = useState<HomeContent | null>(null)
@@ -40,22 +41,22 @@ export default function HomePage() {
 
   return (
     <div className="w-full h-full flex items-center justify-center">
-      <div className="container mx-auto px-4 text-center">
+      <div className="container mx-auto px-4 text-center max-w-3xl">
         <motion.h1
-          className="text-4xl md:text-6xl font-bold mb-4 text-primary"
+          className="text-4xl md:text-6xl font-bold mb-6 text-primary"
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {content.headline}
+          <TextWithEmoji text={content.headline} />
         </motion.h1>
         <motion.p
-          className="text-xl mb-8 text-gray-600"
+          className="text-xl mb-8 text-gray-600 leading-relaxed"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          {content.description}
+          <TextWithEmoji text={content.description} />
         </motion.p>
       </div>
     </div>

@@ -7,18 +7,23 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  // During build time, return empty data
+  if (process.env.SKIP_DB_DURING_BUILD === 'true') {
+    console.log('[MongoDB] Skipping connection during build');
+    return NextResponse.json({});
+  }
+
   try {
-    await connectToDatabase();
-    
-    // Try to find section by title first
+    // Try to find section by title first from cache
     const title = params.id.charAt(0).toUpperCase() + params.id.slice(1).toLowerCase();
-    const section = await getCachedSections(params.id);
+    const sections = await getCachedSections(params.id);
     
-    if (section) {
-      return NextResponse.json(section);
+    if (sections && sections.length > 0) {
+      return NextResponse.json(sections[0]);
     }
     
-    // If not found by title, try to find by ID
+    // If not in cache, connect to MongoDB and try to find by ID
+    await connectToDatabase();
     const sectionById = await SectionModel.findById(params.id);
     
     if (!sectionById) {

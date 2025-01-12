@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { ObjectId } from 'mongodb';
+import Skill from '../models/Skill';
 
 config();
 
@@ -31,26 +32,43 @@ function transformData(data: any[]) {
 
 async function seedSkills() {
   try {
-    const mongoose = await connectToDatabase();
+    await connectToDatabase();
+    console.log('[Seed Skills] Connected to database');
+    
+    const skillsPath = path.join(process.cwd(), 'data', 'skills.json');
+    console.log('[Seed Skills] Reading skills from:', skillsPath);
+    
+    if (!fs.existsSync(skillsPath)) {
+      console.error('[Seed Skills] skills.json not found at:', skillsPath);
+      console.log('[Seed Skills] Current directory contents:', fs.readdirSync(process.cwd()));
+      process.exit(1);
+    }
     
     // Read skills data from JSON file
     const skillsData = JSON.parse(
-      fs.readFileSync(path.join(process.cwd(), 'data', 'skills.json'), 'utf-8')
+      fs.readFileSync(skillsPath, 'utf-8')
     );
+    console.log(`[Seed Skills] Read ${skillsData.length} skills from file`);
 
     // Transform the data
     const transformedData = transformData(skillsData);
+    console.log('[Seed Skills] Transformed data');
 
-    // Clear existing skills
-    await mongoose.connection.collection('skills').deleteMany({});
+    // Clear existing skills using Mongoose model
+    const deleteResult = await Skill.deleteMany({});
+    console.log('[Seed Skills] Cleared existing skills:', deleteResult);
 
-    // Insert new skills
-    const result = await mongoose.connection.collection('skills').insertMany(transformedData);
+    // Insert new skills using Mongoose model
+    const result = await Skill.insertMany(transformedData, { ordered: true });
+    console.log(`[Seed Skills] Successfully seeded ${result.length} skills`);
     
-    console.log(`Successfully seeded ${result.insertedCount} skills`);
+    // Verify the seeded data
+    const count = await Skill.countDocuments();
+    console.log(`[Seed Skills] Verified count in database: ${count}`);
+    
     process.exit(0);
   } catch (error) {
-    console.error('Error seeding skills:', error);
+    console.error('[Seed Skills] Error seeding skills:', error);
     process.exit(1);
   }
 }

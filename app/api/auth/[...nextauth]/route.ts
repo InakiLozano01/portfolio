@@ -12,6 +12,12 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
+        // During build time, skip auth
+        if (process.env.SKIP_DB_DURING_BUILD === 'true') {
+          console.log('[MongoDB] Skipping auth during build');
+          return null;
+        }
+
         try {
           await connectToDatabase();
           

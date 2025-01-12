@@ -1,73 +1,50 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Skill from '@/models/Skill';
-import { getFromCache, setInCache, invalidateCache } from '@/lib/cache';
+import { headers } from 'next/headers';
 
-const SKILLS_CACHE_KEY = 'all_skills';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
+  const headersList = headers();
+  console.log('[Skills API] Received GET request from:', headersList.get('user-agent'));
+  console.log('[Skills API] Environment:', {
+    SKIP_DB_DURING_BUILD: process.env.SKIP_DB_DURING_BUILD,
+    NODE_ENV: process.env.NODE_ENV,
+    MONGODB_URI: process.env.MONGODB_URI?.split('?')[0] // Log URI without credentials
+  });
+  
+  // During build time, return empty array
+  if (process.env.SKIP_DB_DURING_BUILD === 'true') {
+    console.log('[Skills API] Skipping DB during build');
+    return NextResponse.json([]);
+  }
+  
   try {
-    // Try to get from cache first
-    const cachedSkills = await getFromCache(SKILLS_CACHE_KEY);
-    if (cachedSkills) {
-      return NextResponse.json(cachedSkills);
-    }
-
-    // If not in cache, get from database
     await connectToDatabase();
-    const skills = await Skill.find({}).sort({ category: 1, name: 1 });
+    console.log('[Skills API] Connected to database');
     
-    // Store in cache
-    await setInCache(SKILLS_CACHE_KEY, skills);
+    const skills = await Skill.find({})
+      .sort({ category: 1, proficiency: -1 })
+      .lean()
+      .exec();
     
-    return NextResponse.json(skills);
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch skills' }, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    await connectToDatabase();
-    const skill = await Skill.create(body);
-    // Invalidate cache when creating new skill
-    await invalidateCache(SKILLS_CACHE_KEY);
-    return NextResponse.json(skill);
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to create skill' }, { status: 500 });
-  }
-}
-
-export async function PUT(request: Request) {
-  try {
-    const body = await request.json();
-    await connectToDatabase();
-    const skill = await Skill.findByIdAndUpdate(body._id, body, { new: true });
-    if (!skill) {
-      return NextResponse.json({ error: 'Skill not found' }, { status: 404 });
+    console.log(`[Skills API] Found ${skills.length} skills`);
+    
+    if (!skills || skills.length === 0) {
+      console.log('[Skills API] No skills found in database');
+      return NextResponse.json([]);
     }
-    // Invalidate cache when updating skill
-    await invalidateCache(SKILLS_CACHE_KEY);
-    return NextResponse.json(skill);
+    
+    const response = NextResponse.json(skills);
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update skill' }, { status: 500 });
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    await connectToDatabase();
-    const skill = await Skill.findByIdAndDelete(id);
-    if (!skill) {
-      return NextResponse.json({ error: 'Skill not found' }, { status: 404 });
-    }
-    // Invalidate cache when deleting skill
-    await invalidateCache(SKILLS_CACHE_KEY);
-    return NextResponse.json({ message: 'Skill deleted successfully' });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete skill' }, { status: 500 });
+    console.error('[Skills API] Failed to fetch skills:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch skills' },
+      { status: 500 }
+    );
   }
 } 

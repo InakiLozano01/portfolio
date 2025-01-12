@@ -1,63 +1,80 @@
-import { SectionModel } from '@/models/Section';
+import { Redis } from 'ioredis';
 import redis from './redis';
+import { connectToDatabase } from './mongodb';
+import { SectionModel } from '@/models/Section';
 
-const CACHE_DURATION = 30 * 24 * 60 * 60; // 30 days in seconds
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const CACHE_DURATION = 3600; // 1 hour in seconds
 
 export async function getCachedSections(type?: string) {
-  const cacheKey = type ? `section_${type}` : 'all_sections';
+  // During build time, return empty array
+  if (process.env.SKIP_DB_DURING_BUILD === 'true') {
+    console.log('[MongoDB] Skipping connection during build');
+    return [];
+  }
 
   try {
-    // Try to get data from cache
-    const cachedData = await redis.get(cacheKey);
-    if (cachedData) {
-      console.log(`[Cache Hit] Retrieved ${cacheKey} from Redis cache`);
-      return JSON.parse(cachedData);
+    // In development, bypass cache completely
+    if (isDevelopment) {
+      await connectToDatabase();
+      const query = type ? { title: type.charAt(0).toUpperCase() + type.slice(1).toLowerCase() } : {};
+      const data = await SectionModel.find(query).sort({ order: 1 });
+      return data;
     }
 
-    console.log(`[Cache Miss] Fetching ${cacheKey} from database`);
-    // If not in cache, fetch from database
-    let data;
-    if (type) {
-      const title = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-      data = await SectionModel.findOne({ title });
-    } else {
-      data = await SectionModel.find().sort({ order: 1 });
-    }
-
-    // Store in cache only if we have data
-    if (data) {
-      console.log(`[Cache Update] Storing ${cacheKey} in Redis cache`);
-      try {
-        await redis.setex(cacheKey, CACHE_DURATION, JSON.stringify(data));
-      } catch (cacheError) {
-        console.error(`[Cache Error] Failed to store ${cacheKey} in Redis:`, cacheError);
+    const cacheKey = type ? `section_${type.toLowerCase()}` : 'sections';
+    
+    try {
+      const cachedData = await redis.get(cacheKey);
+      if (cachedData) {
+        console.log(`[Cache Hit] Found ${cacheKey} in cache`);
+        return JSON.parse(cachedData);
       }
+    } catch (redisError) {
+      console.error('[Cache Error] Redis error:', redisError);
+      // Continue to MongoDB if Redis fails
+    }
+
+    // Only connect to MongoDB if we need to fetch data
+    console.log(`[Cache Miss] Fetching ${cacheKey} from database`);
+    await connectToDatabase();
+    const query = type ? { title: type.charAt(0).toUpperCase() + type.slice(1).toLowerCase() } : {};
+    const data = await SectionModel.find(query).sort({ order: 1 });
+
+    // Try to store in cache, but don't fail if Redis is down
+    try {
+      console.log(`[Cache Update] Storing ${cacheKey} in Redis cache`);
+      await redis.setex(cacheKey, CACHE_DURATION, JSON.stringify(data));
+    } catch (redisError) {
+      console.error('[Cache Error] Failed to store in Redis:', redisError);
     }
 
     return data;
   } catch (error) {
-    console.error('Cache error:', error);
+    console.error('[Cache Error] Failed to get cached sections:', error);
     // Fallback to database if cache fails
-    console.log(`[Cache Fallback] Fetching ${cacheKey} directly from database`);
-    if (type) {
-      const title = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-      return await SectionModel.findOne({ title });
+    try {
+      await connectToDatabase();
+      const query = type ? { title: type } : {};
+      return await SectionModel.find(query).sort({ order: 1 });
+    } catch (dbError) {
+      console.error('[Cache Error] Database fallback failed:', dbError);
+      return [];
     }
-    return await SectionModel.find().sort({ order: 1 });
   }
 }
 
 export async function clearSectionsCache() {
+  if (isDevelopment) return; // Skip in development
+  
   try {
     const keys = await redis.keys('section_*');
-    keys.push('all_sections');
-    
     if (keys.length > 0) {
-      console.log(`[Cache Clear] Clearing keys: ${keys.join(', ')}`);
-      await redis.del(...keys);
+      await redis.del(keys);
+      console.log('[Cache] Cache cleared successfully');
     }
   } catch (error) {
-    console.error('Failed to clear cache:', error);
+    console.error('[Cache Error] Failed to clear cache:', error);
   }
 }
 
@@ -76,7 +93,7 @@ export async function getFromCache<T>(cacheKey: string): Promise<T | null> {
   }
 }
 
-export async function setInCache(cacheKey: string, data: any, ttl: number = CACHE_DURATION): Promise<void> {
+export async function setInCache(cacheKey: string, data: unknown, ttl: number = CACHE_DURATION): Promise<void> {
   try {
     const serializedData = JSON.stringify(data);
     await redis.setex(cacheKey, ttl, serializedData);
