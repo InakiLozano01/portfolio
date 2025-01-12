@@ -10,8 +10,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select } from '@/components/ui/select'
 import { PlusCircle, Trash2 } from 'lucide-react'
-import { FaReact, FaNodeJs, FaDocker, FaGithub, FaAws } from 'react-icons/fa'
-import { SiTypescript, SiMongodb, SiPostgresql, SiPython, SiTensorflow } from 'react-icons/si'
+import { FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap, FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker, FaAws } from 'react-icons/fa'
+import { SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, SiIntellijidea, SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta, SiMongodb, SiPython, SiTensorflow } from 'react-icons/si'
+import { VscCode } from 'react-icons/vsc'
 
 interface Skill {
   _id: string;
@@ -27,16 +28,11 @@ interface IconProps {
 }
 
 const iconMap: { [key: string]: React.ComponentType<IconProps> } = {
-  FaReact,
-  FaNodeJs,
-  FaDocker,
-  FaGithub,
-  FaAws,
-  SiTypescript,
-  SiMongodb,
-  SiPostgresql,
-  SiPython,
-  SiTensorflow
+  FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap, 
+  FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker, FaAws,
+  SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, 
+  SiIntellijidea, SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta,
+  SiMongodb, SiPython, SiTensorflow, VscCode
 }
 
 interface Props {

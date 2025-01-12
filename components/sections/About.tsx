@@ -38,19 +38,19 @@ export default function About() {
   if (!content) return null
 
   return (
-    <div className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+    <div className="w-full py-24 md:py-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center pt-24 md:pt-0">
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative w-[300px] h-[300px] mx-auto"
+          className="relative w-[200px] md:w-[300px] h-[200px] md:h-[300px] mx-auto"
         >
           <Image
             src="/pfp.jpg"
             alt="Iñaki Lozano"
             fill
-            sizes="(max-width: 768px) 100vw, 300px"
+            sizes="(max-width: 768px) 200px, 300px"
             priority
             className="rounded-full object-cover"
           />
@@ -59,6 +59,7 @@ export default function About() {
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
+          className="text-center md:text-left"
         >
           <h2 className="text-3xl font-bold mb-4 text-primary">About Me</h2>
           <p className="text-gray-600 mb-4 whitespace-pre-line">

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 
 export default function Blog() {
   return (
-    <div className="min-h-[80vh] flex items-center justify-center">
+    <div className="w-full h-full flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

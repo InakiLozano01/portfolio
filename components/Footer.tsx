@@ -27,8 +27,8 @@ export default function Footer() {
   if (!contactData) return null
 
   return (
-    <footer className="bg-[#1a2433] text-white py-2">
-      <div className="container mx-auto px-4 flex justify-between items-center">
+    <footer className="h-[40px] flex-shrink-0 bg-[#1a2433] text-white">
+      <div className="container h-full mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <Link href={contactData.social.linkedin} target="_blank" className="hover:text-[#FD4345] transition-colors">
             <FaLinkedin size={20} />

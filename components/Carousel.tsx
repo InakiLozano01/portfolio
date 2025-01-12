@@ -1,16 +1,21 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, PanInfo } from 'framer-motion'
+
+interface CarouselProps {
+  children: React.ReactNode;
+  currentIndex: number;
+  onSwipe?: (newIndex: number) => void;
+}
 
 export default function Carousel({ 
   children,
-  currentIndex: externalIndex
-}: { 
-  children: React.ReactNode;
-  currentIndex: number;
-}) {
+  currentIndex: externalIndex,
+  onSwipe
+}: CarouselProps) {
   const [internalIndex, setInternalIndex] = useState(0)
+  const [dragStart, setDragStart] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const [windowWidth, setWindowWidth] = useState(0)
   const childrenArray = React.Children.toArray(children)
@@ -26,27 +31,32 @@ export default function Carousel({
     const handleResize = () => {
       const width = window.innerWidth
       setWindowWidth(width)
-      if (containerRef.current) {
-        containerRef.current.scrollTo({
-          left: internalIndex * width,
-          behavior: 'auto'
-        })
-      }
     }
 
     const debouncedResize = debounce(handleResize, 100)
     window.addEventListener('resize', debouncedResize)
     return () => window.removeEventListener('resize', debouncedResize)
-  }, [internalIndex])
+  }, [])
 
-  useEffect(() => {
-    if (containerRef.current && windowWidth) {
-      containerRef.current.scrollTo({
-        left: internalIndex * windowWidth,
-        behavior: 'smooth'
-      })
+  const handleDragStart = () => {
+    setDragStart(internalIndex)
+  }
+
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const swipeThreshold = windowWidth * 0.2 // 20% of screen width
+    const dragDistance = info.offset.x
+    const dragDirection = info.offset.x < 0 ? 1 : -1
+
+    if (Math.abs(dragDistance) > swipeThreshold) {
+      const newIndex = dragDirection > 0 
+        ? Math.min(dragStart + 1, childrenArray.length - 1)
+        : Math.max(dragStart - 1, 0)
+      
+      if (onSwipe) {
+        onSwipe(newIndex)
+      }
     }
-  }, [internalIndex, windowWidth])
+  }
 
   const variants = {
     enter: (direction: number) => ({
@@ -66,7 +76,7 @@ export default function Carousel({
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden touch-pan-y">
       <AnimatePresence initial={false} mode="wait" custom={internalIndex}>
         <motion.div
           key={internalIndex}
@@ -80,6 +90,11 @@ export default function Carousel({
             opacity: { duration: 0.2 }
           }}
           className="absolute w-full h-full"
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={1}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
         >
           {childrenArray[internalIndex]}
         </motion.div>

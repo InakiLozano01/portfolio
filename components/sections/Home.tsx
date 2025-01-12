@@ -39,18 +39,8 @@ export default function HomePage() {
   if (!content) return null
 
   return (
-    <section id="home" className="flex items-start justify-center min-h-screen bg-white relative overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#F5F5F5" strokeWidth="1"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-      </div>
-      <div className="container mx-auto px-4 text-center relative z-10 mt-36">
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="container mx-auto px-4 text-center">
         <motion.h1
           className="text-4xl md:text-6xl font-bold mb-4 text-primary"
           initial={{ opacity: 0, y: -50 }}
@@ -68,7 +58,7 @@ export default function HomePage() {
           {content.description}
         </motion.p>
       </div>
-    </section>
+    </div>
   )
 }
 

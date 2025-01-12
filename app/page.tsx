@@ -36,7 +36,7 @@ export default function Page() {
   useEffect(() => {
     setMounted(true)
     // Set initial desktop state and handle hash
-    setIsDesktop(window.innerWidth >= 1024)
+    setIsDesktop(window.innerWidth >= 768)
     const hash = window.location.hash.slice(1)
     if (hash) {
       const sectionIndex = sections.findIndex(section => section.id === hash)
@@ -46,7 +46,7 @@ export default function Page() {
     }
     
     const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024)
+      setIsDesktop(window.innerWidth >= 768)
     }
 
     const handleHashChange = () => {
@@ -85,14 +85,25 @@ export default function Page() {
   if (!mounted) return null
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#263547]">
+    <div className="flex flex-col h-screen overflow-hidden bg-[#263547]">
       <Header staticSections={sections} currentIndex={currentIndex} onSectionChange={updateSection} />
       
       <main className="flex-grow relative">
-        <div className="fixed inset-x-0 top-[64px] bottom-[40px] bg-white">
+        <div className="absolute inset-0 bg-white">
+          <div className="absolute inset-0 z-0">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E5E5E5" strokeWidth="1.5"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
+          </div>
+
           {isDesktop && (
             <button
-              className="fixed left-4 top-1/2 -translate-y-1/2 z-10 bg-[#FD4345] hover:bg-[#ff5456] text-white p-4 rounded-full shadow-lg transition-colors"
+              className="fixed left-4 top-1/2 -translate-y-1/2 z-20 bg-[#FD4345] hover:bg-[#ff5456] text-white p-4 rounded-full shadow-lg transition-colors"
               onClick={handlePrev}
               aria-label="Previous section"
             >
@@ -100,12 +111,19 @@ export default function Page() {
             </button>
           )}
           
-          <div className="h-full overflow-hidden">
-            <Carousel currentIndex={currentIndex}>
+          <div className="h-full">
+            <Carousel 
+              currentIndex={currentIndex}
+              onSwipe={updateSection}
+            >
               {sections.map(({ id, component: Component }) => (
-                <section key={id} id={id} className="h-full flex items-start justify-center overflow-y-auto">
-                  <div className="w-full max-w-6xl mx-auto px-4 md:px-8 py-8">
-                    <Component />
+                <section key={id} id={id} className="h-full relative z-10 overflow-y-auto">
+                  <div className={`w-full px-4 md:px-8 py-8 md:py-12 ${
+                    id === 'skills' ? 'min-h-full' : 'h-full flex items-center justify-center'
+                  }`}>
+                    <div className={`w-full max-w-6xl mx-auto ${id === 'about' ? 'md:px-12' : ''}`}>
+                      <Component />
+                    </div>
                   </div>
                 </section>
               ))}
@@ -114,7 +132,7 @@ export default function Page() {
 
           {isDesktop && (
             <button
-              className="fixed right-4 top-1/2 -translate-y-1/2 z-10 bg-[#FD4345] hover:bg-[#ff5456] text-white p-4 rounded-full shadow-lg transition-colors"
+              className="fixed right-4 top-1/2 -translate-y-1/2 z-20 bg-[#FD4345] hover:bg-[#ff5456] text-white p-4 rounded-full shadow-lg transition-colors"
               onClick={handleNext}
               aria-label="Next section"
             >

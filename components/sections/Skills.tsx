@@ -50,60 +50,62 @@ export default function Skills() {
   if (error) return <div className="text-center text-red-500">{error}</div>;
 
   return (
-    <div className="w-full px-4 md:px-8 pb-8">
-      <h2 className="text-3xl font-bold mb-8 text-primary">Skills</h2>
-      <div className="space-y-12">
-        {['language', 'framework', 'database', 'tool', 'devops', 'ai'].map((category) => (
-          <div key={category}>
-            <h3 className="text-2xl font-semibold mb-4 text-primary capitalize">{category}</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {skills
-                .filter(skill => skill.category === category)
-                .map((skill, index) => {
-                  const Icon = iconMap[skill.icon as keyof typeof iconMap];
-                  return (
-                    <motion.div
-                      key={index}
-                      className="flex flex-col items-center"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                    >
-                      <div className="relative w-20 h-20 mb-4">
-                        <svg className="w-full h-full" viewBox="0 0 100 100">
-                          <circle
-                            className="text-gray-200 stroke-current"
-                            strokeWidth="8"
-                            cx="50"
-                            cy="50"
-                            r="40"
-                            fill="transparent"
-                          ></circle>
-                          <circle
-                            className="text-[#FD4345] progress-ring__circle stroke-current"
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            cx="50"
-                            cy="50"
-                            r="40"
-                            fill="transparent"
-                            strokeDasharray={`${2 * Math.PI * 40}`}
-                            strokeDashoffset={`${2 * Math.PI * 40 * (1 - skill.proficiency / 100)}`}
-                            style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
-                          ></circle>
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          {Icon && <Icon className="w-8 h-8 text-[#FD4345]" />}
+    <div className="w-full">
+      <div className="max-w-6xl mx-auto">
+        <h2 className="text-3xl font-bold mb-8 text-primary">Skills</h2>
+        <div className="space-y-12 pb-8">
+          {['language', 'framework', 'database', 'tool', 'devops', 'ai'].map((category) => (
+            <div key={category}>
+              <h3 className="text-2xl font-semibold mb-4 text-primary capitalize">{category}</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {skills
+                  .filter(skill => skill.category === category)
+                  .map((skill, index) => {
+                    const Icon = iconMap[skill.icon as keyof typeof iconMap];
+                    return (
+                      <motion.div
+                        key={index}
+                        className="flex flex-col items-center"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                      >
+                        <div className="relative w-20 h-20 mb-4">
+                          <svg className="w-full h-full" viewBox="0 0 100 100">
+                            <circle
+                              className="text-gray-200 stroke-current"
+                              strokeWidth="8"
+                              cx="50"
+                              cy="50"
+                              r="40"
+                              fill="transparent"
+                            ></circle>
+                            <circle
+                              className="text-[#FD4345] progress-ring__circle stroke-current"
+                              strokeWidth="8"
+                              strokeLinecap="round"
+                              cx="50"
+                              cy="50"
+                              r="40"
+                              fill="transparent"
+                              strokeDasharray={`${2 * Math.PI * 40}`}
+                              strokeDashoffset={`${2 * Math.PI * 40 * (1 - skill.proficiency / 100)}`}
+                              style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
+                            ></circle>
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            {Icon && <Icon className="w-8 h-8 text-[#FD4345]" />}
+                          </div>
                         </div>
-                      </div>
-                      <p className="text-center font-semibold text-gray-800">{skill.name}</p>
-                      <p className="text-sm text-gray-600">{skill.proficiency}%</p>
-                    </motion.div>
-                  );
-                })}
+                        <p className="text-center font-semibold text-gray-800">{skill.name}</p>
+                        <p className="text-sm text-gray-600">{skill.proficiency}%</p>
+                      </motion.div>
+                    );
+                  })}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
