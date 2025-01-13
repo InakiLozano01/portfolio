@@ -47,7 +47,7 @@ export default function Experience() {
 
   return (
     <div className="w-full">
-      <div className="pt-72 pb-24 md:py-0">
+      <div className="pt-16 pb-24 md:py-0">
         <h2 className="text-3xl font-bold mb-6 text-primary">Experience</h2>
         <div className="space-y-8">
           {content.experiences.map((exp, index) => (

@@ -4,6 +4,7 @@ if (!process.env.MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env');
 }
 
+// Directly use the connection string without URL parsing
 const MONGODB_URI = process.env.MONGODB_URI;
 
 interface GlobalMongoose {
@@ -37,10 +38,16 @@ export async function connectToDatabase() {
   if (!global.mongoose.promise) {
     const opts = {
       bufferCommands: false,
+      serverApi: {
+        version: '1' as const,
+        strict: true,
+        deprecationErrors: true
+      }
     };
 
-    console.log('[MongoDB] Creating new connection to:', MONGODB_URI);
-    global.mongoose.promise = mongoose.connect(MONGODB_URI, opts)
+    console.log('[MongoDB] Creating new connection');
+    global.mongoose.promise = mongoose
+      .connect(MONGODB_URI, opts)
       .then((mongoose) => {
         global.mongoose.conn = mongoose;
         console.log('[MongoDB] New connection established');

@@ -7,7 +7,8 @@ const routes = [
   '/contact',
   '/experience',
   '/skills',
-  '/education'
+  '/education',
+  '/api/sections/[id]'
 ];
 
 function checkServerReady() {

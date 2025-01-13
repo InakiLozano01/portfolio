@@ -14,7 +14,8 @@ if (!process.env.MONGODB_URI) {
 
 function transformData(data: any[]) {
   return data.map(item => {
-    const transformed = { ...item };
+    const transformed = Object.assign({}, item);
+    
     // Convert $oid to ObjectId
     if (transformed._id && transformed._id.$oid) {
       transformed._id = new ObjectId(transformed._id.$oid);

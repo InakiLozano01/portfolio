@@ -1,117 +1,121 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence, PanInfo } from 'framer-motion'
+import React, { useState, useEffect, useCallback, TouchEvent } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface CarouselProps {
-  children: React.ReactNode;
-  currentIndex: number;
-  onSwipe?: (newIndex: number) => void;
+  children: React.ReactNode
+  currentIndex: number
+  onSwipe?: (newIndex: number) => void
 }
 
-export default function Carousel({ 
+export default function Carousel({
   children,
   currentIndex: externalIndex,
-  onSwipe
+  onSwipe,
 }: CarouselProps) {
-  const [internalIndex, setInternalIndex] = useState(0)
-  const [dragStart, setDragStart] = useState(0)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [internalIndex, setInternalIndex] = useState(externalIndex)
+  const [direction, setDirection] = useState(0)
+  const [touchStart, setTouchStart] = useState(0)
+  const [touchEnd, setTouchEnd] = useState(0)
   const [windowWidth, setWindowWidth] = useState(0)
-  const childrenArray = React.Children.toArray(children)
 
-  // Sync internal state with external index
-  useEffect(() => {
-    setInternalIndex(externalIndex)
-  }, [externalIndex])
+  const childrenArray = React.Children.toArray(children)
 
   useEffect(() => {
     setWindowWidth(window.innerWidth)
-    
-    const handleResize = () => {
-      const width = window.innerWidth
-      setWindowWidth(width)
-    }
-
-    const debouncedResize = debounce(handleResize, 100)
-    window.addEventListener('resize', debouncedResize)
-    return () => window.removeEventListener('resize', debouncedResize)
   }, [])
 
-  const handleDragStart = () => {
-    setDragStart(internalIndex)
+  useEffect(() => {
+    if (externalIndex !== internalIndex) {
+      setDirection(externalIndex > internalIndex ? -1 : 1)
+      setInternalIndex(externalIndex)
+    }
+  }, [externalIndex, internalIndex])
+
+  const handleTouchStart = (e: TouchEvent) => {
+    setTouchEnd(0) // Reset
+    setTouchStart(e.targetTouches[0].clientX)
   }
 
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const swipeThreshold = windowWidth * 0.2 // 20% of screen width
-    const dragDistance = info.offset.x
-    const dragDirection = info.offset.x < 0 ? 1 : -1
+  const handleTouchMove = (e: TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
 
-    if (Math.abs(dragDistance) > swipeThreshold) {
-      const newIndex = dragDirection > 0 
-        ? Math.min(dragStart + 1, childrenArray.length - 1)
-        : Math.max(dragStart - 1, 0)
-      
-      if (onSwipe) {
-        onSwipe(newIndex)
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return
+
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > 50
+    const isRightSwipe = distance < -50
+
+    if (isLeftSwipe || isRightSwipe) {
+      const direction = isLeftSwipe ? 1 : -1
+      const newIndex = internalIndex + direction
+
+      if (newIndex >= 0 && newIndex < childrenArray.length) {
+        setDirection(-direction)
+        setInternalIndex(newIndex)
+        onSwipe?.(newIndex)
       }
     }
-  }
+
+    // Reset values
+    setTouchStart(0)
+    setTouchEnd(0)
+  }, [touchStart, touchEnd, internalIndex, childrenArray.length, onSwipe])
 
   const variants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? windowWidth : -windowWidth,
-      opacity: 0
+    enter: (dir: number) => ({
+      x: dir < 0 ? windowWidth : -windowWidth,
+      opacity: 0,
     }),
     center: {
       zIndex: 1,
       x: 0,
-      opacity: 1
+      opacity: 1,
     },
-    exit: (direction: number) => ({
+    exit: (dir: number) => ({
       zIndex: 0,
-      x: direction < 0 ? windowWidth : -windowWidth,
-      opacity: 0
-    })
+      x: dir < 0 ? -windowWidth : windowWidth,
+      opacity: 0,
+    }),
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden touch-pan-y">
-      <AnimatePresence initial={false} mode="wait" custom={internalIndex}>
+    <div className="relative w-full h-full overflow-hidden">
+      <AnimatePresence initial={false} custom={direction}>
         <motion.div
           key={internalIndex}
-          custom={internalIndex}
+          custom={direction}
           variants={variants}
           initial="enter"
           animate="center"
           exit="exit"
           transition={{
-            x: { type: "spring", stiffness: 300, damping: 30 },
-            opacity: { duration: 0.2 }
+            x: { type: 'spring', stiffness: 300, damping: 30 },
+            opacity: { duration: 0.2 },
           }}
           className="absolute w-full h-full"
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={1}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           {childrenArray[internalIndex]}
         </motion.div>
       </AnimatePresence>
+      <div className="absolute bottom-4 md:bottom-4 left-0 right-0 flex justify-center gap-2 mb-8 md:mb-0">
+        {childrenArray.map((_, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+              index === internalIndex
+                ? 'bg-primary scale-125'
+                : 'bg-gray-400/50'
+            }`}
+          />
+        ))}
+      </div>
     </div>
   )
 }
-
-function debounce(func: Function, wait: number) {
-  let timeout: NodeJS.Timeout
-  return function executedFunction(...args: any[]) {
-    const later = () => {
-      clearTimeout(timeout)
-      func(...args)
-    }
-    clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
-  }
-}
-
