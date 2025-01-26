@@ -3,6 +3,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    output: 'standalone',
     webpack: (config, { isServer }) => {
         if (!isServer) {
             // Copy TinyMCE files to public directory
