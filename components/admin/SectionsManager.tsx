@@ -7,9 +7,19 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { PlusCircle, Trash2 } from 'lucide-react'
+import { PlusCircle, Trash2, AlertCircle } from 'lucide-react'
 import SectionEditor from './SectionEditor'
 import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Section {
   _id: string;
@@ -24,6 +34,7 @@ export default function SectionsManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddingSection, setIsAddingSection] = useState(false);
+  const [sectionToDelete, setSectionToDelete] = useState<Section | null>(null);
   const [newSection, setNewSection] = useState({
     title: '',
     order: 0,
@@ -73,16 +84,21 @@ export default function SectionsManager() {
         visible: true,
         content: {}
       });
+      toast.success('Section created successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create section');
+      toast.error(err instanceof Error ? err.message : 'Failed to create section');
     }
   };
 
-  const handleDeleteSection = async (sectionId: string) => {
-    if (!confirm('Are you sure you want to delete this section?')) return;
+  const handleDeleteSection = async (section: Section) => {
+    setSectionToDelete(section);
+  };
+
+  const confirmDelete = async () => {
+    if (!sectionToDelete) return;
 
     try {
-      const response = await fetch(`/api/sections/${sectionId}`, {
+      const response = await fetch(`/api/sections/${sectionToDelete._id}`, {
         method: 'DELETE',
       });
 
@@ -91,14 +107,17 @@ export default function SectionsManager() {
       }
 
       await fetchSections();
+      toast.success('Section deleted successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete section');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete section');
+    } finally {
+      setSectionToDelete(null);
     }
   };
 
   const handleSaveSection = async (updatedSection: Section) => {
     try {
-      const response = await fetch('/api/sections', {
+      const response = await fetch(`/api/sections/${updatedSection._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -111,33 +130,18 @@ export default function SectionsManager() {
       }
 
       await fetchSections();
+      toast.success('Section updated successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update section');
+      toast.error(err instanceof Error ? err.message : 'Failed to update section');
     }
   };
 
   const handleVisibilityChange = async (section: Section) => {
-    try {
-      const response = await fetch(`/api/sections/${section._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...section,
-          visible: !section.visible,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update section');
-      }
-
-      await fetchSections();
-    } catch (error) {
-      console.error('Error updating section:', error);
-      toast.error('Failed to update section visibility');
-    }
+    const updatedSection = {
+      ...section,
+      visible: !section.visible
+    };
+    await handleSaveSection(updatedSection);
   };
 
   const handleRefreshCache = async () => {
@@ -152,7 +156,6 @@ export default function SectionsManager() {
       }
 
       toast.success('Content cache has been refreshed');
-
       await fetchSections();
     } catch (error) {
       console.error('Error refreshing cache:', error);
@@ -171,7 +174,7 @@ export default function SectionsManager() {
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold">Sections</h2>
           <div className="flex gap-2">
-            <Button 
+            <Button
               onClick={handleRefreshCache}
               disabled={refreshing}
               variant="outline"
@@ -197,6 +200,7 @@ export default function SectionsManager() {
                 <Input
                   value={newSection.title}
                   onChange={e => setNewSection({ ...newSection, title: e.target.value })}
+                  className="bg-white text-black placeholder:text-gray-500"
                 />
               </div>
               <div className="space-y-2">
@@ -205,6 +209,7 @@ export default function SectionsManager() {
                   type="number"
                   value={newSection.order}
                   onChange={e => setNewSection({ ...newSection, order: parseInt(e.target.value) })}
+                  className="bg-white text-black placeholder:text-gray-500"
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -228,23 +233,57 @@ export default function SectionsManager() {
 
         <div className="space-y-6">
           {sections.map(section => (
-            <Card key={section._id} className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-2 text-red-500 hover:text-red-700 hover:bg-red-100"
-                onClick={() => handleDeleteSection(section._id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-              <SectionEditor
-                section={section}
-                onSave={handleSaveSection}
-              />
+            <Card key={section._id} className="relative group">
+              <div className="absolute right-4 top-4 flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm text-gray-500">Visible</Label>
+                  <Switch
+                    checked={section.visible}
+                    onCheckedChange={() => handleVisibilityChange(section)}
+                  />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 hover:bg-red-100"
+                  onClick={() => handleDeleteSection(section)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="pt-14">
+                <SectionEditor
+                  section={section}
+                  onSave={handleSaveSection}
+                />
+              </div>
             </Card>
           ))}
         </div>
       </div>
+
+      <AlertDialog open={!!sectionToDelete} onOpenChange={() => setSectionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              Delete Section
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the "{sectionToDelete?.title}" section? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ScrollArea>
   );
 } 

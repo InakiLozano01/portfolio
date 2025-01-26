@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
-import { PlusCircle, Trash2 } from 'lucide-react'
+import { PlusCircle, Trash2, Code } from 'lucide-react'
+import JsonEditor from './JsonEditor'
 
 interface Section {
   _id: string;
@@ -38,21 +39,83 @@ interface SectionEditorProps {
 }
 
 export default function SectionEditor({ section, onSave }: SectionEditorProps) {
-  const [editedSection, setEditedSection] = useState(section);
+  const [editedSection, setEditedSection] = useState(() => {
+    // Initialize content based on section type
+    let initialContent = section.content || {};
+    switch (section.title.toLowerCase()) {
+      case 'home':
+        initialContent = {
+          headline: initialContent.headline || '',
+          description: initialContent.description || ''
+        };
+        break;
+      case 'about':
+        initialContent = {
+          description: initialContent.description || '',
+          highlights: initialContent.highlights || []
+        };
+        break;
+      case 'education':
+        initialContent = {
+          education: initialContent.education || []
+        };
+        break;
+      case 'experience':
+        initialContent = {
+          experiences: initialContent.experiences || []
+        };
+        break;
+      case 'blog':
+        initialContent = {
+          description: initialContent.description || '',
+          featured: initialContent.featured || false
+        };
+        break;
+      case 'contact':
+        initialContent = {
+          email: initialContent.email || '',
+          city: initialContent.city || '',
+          social: {
+            github: initialContent.social?.github || '',
+            linkedin: initialContent.social?.linkedin || ''
+          }
+        };
+        break;
+    }
+    return {
+      ...section,
+      content: initialContent
+    };
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [contentError, setContentError] = useState<string | null>(null);
+  const [jsonEditorOpen, setJsonEditorOpen] = useState(false);
 
-  const handleContentChange = (key: string, value: any) => {
-    setEditedSection(prev => ({
-      ...prev,
-      content: {
-        ...prev.content,
-        [key]: value
-      }
-    }));
+  // Handle order changes outside of render
+  const handleOrderChange = (value: string) => {
+    const order = parseInt(value);
+    if (!isNaN(order)) {
+      setEditedSection(prev => ({ ...prev, order }));
+    }
+  };
+
+  const handleContentChange = (value: string) => {
+    try {
+      const parsedContent = value.trim() ? JSON.parse(value) : {};
+      setEditedSection(prev => ({
+        ...prev,
+        content: parsedContent
+      }));
+      setContentError(null);
+    } catch (error) {
+      setContentError('Invalid JSON format');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (contentError) return;
+
     setIsSubmitting(true);
     try {
       await onSave(editedSection);
@@ -68,13 +131,19 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
       period: '',
       description: ''
     }];
-    handleContentChange('education', newEducation);
+    handleContentChange(JSON.stringify({
+      ...editedSection.content,
+      education: newEducation
+    }));
   };
 
   const removeEducationEntry = (index: number) => {
     const newEducation = [...editedSection.content.education];
     newEducation.splice(index, 1);
-    handleContentChange('education', newEducation);
+    handleContentChange(JSON.stringify({
+      ...editedSection.content,
+      education: newEducation
+    }));
   };
 
   const addExperienceEntry = () => {
@@ -85,13 +154,58 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
       description: '',
       responsibilities: []
     }];
-    handleContentChange('experiences', newExperiences);
+    handleContentChange(JSON.stringify({
+      ...editedSection.content,
+      experiences: newExperiences
+    }));
   };
 
   const removeExperienceEntry = (index: number) => {
     const newExperiences = [...editedSection.content.experiences];
     newExperiences.splice(index, 1);
-    handleContentChange('experiences', newExperiences);
+    handleContentChange(JSON.stringify({
+      ...editedSection.content,
+      experiences: newExperiences
+    }));
+  };
+
+  const handleEducationChange = (index: number, field: keyof Education, value: string) => {
+    handleContentChange(JSON.stringify({
+      ...editedSection.content,
+      education: editedSection.content.education?.map((item: Education, i: number) =>
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const handleExperienceChange = (index: number, field: keyof Experience, value: string) => {
+    handleContentChange(JSON.stringify({
+      ...editedSection.content,
+      experiences: editedSection.content.experiences?.map((item: Experience, i: number) =>
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const handleResponsibilityChange = (expIndex: number, respIndex: number, value: string) => {
+    handleContentChange(JSON.stringify({
+      ...editedSection.content,
+      experiences: editedSection.content.experiences?.map((item: Experience, i: number) =>
+        i === expIndex ? {
+          ...item,
+          responsibilities: item.responsibilities?.map((r: string, rIndex: number) =>
+            rIndex === respIndex ? value : r
+          )
+        } : item
+      )
+    }));
+  };
+
+  const handleJsonSave = (newContent: Record<string, any>) => {
+    setEditedSection(prev => ({
+      ...prev,
+      content: newContent
+    }));
   };
 
   const renderContentEditor = () => {
@@ -100,19 +214,27 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
         return (
           <>
             <div className="space-y-2">
-              <Label>Headline</Label>
+              <Label className="text-gray-900">Headline</Label>
               <Input
                 value={editedSection.content.headline || ''}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange('headline', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
+                  ...editedSection.content,
+                  headline: e.target.value
+                }))}
                 placeholder="Enter a catchy headline"
+                className="bg-white text-black placeholder:text-gray-500"
               />
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label className="text-gray-900">Description</Label>
               <Textarea
                 value={editedSection.content.description || ''}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange('description', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
+                  ...editedSection.content,
+                  description: e.target.value
+                }))}
                 placeholder="Describe yourself and your work"
+                className="bg-white text-black placeholder:text-gray-500"
               />
             </div>
           </>
@@ -122,19 +244,27 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
         return (
           <>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label className="text-gray-900">Description</Label>
               <Textarea
                 value={editedSection.content.description || ''}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange('description', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
+                  ...editedSection.content,
+                  description: e.target.value
+                }))}
                 placeholder="Tell your story"
+                className="bg-white text-black placeholder:text-gray-500"
               />
             </div>
             <div className="space-y-2">
-              <Label>Highlights (one per line)</Label>
+              <Label className="text-gray-900">Highlights (one per line)</Label>
               <Textarea
                 value={(editedSection.content.highlights || []).join('\n')}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange('highlights', e.target.value.split('\n').filter(Boolean))}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
+                  ...editedSection.content,
+                  highlights: e.target.value.split('\n').filter(Boolean)
+                }))}
                 placeholder="List your key achievements or highlights"
+                className="bg-white text-black placeholder:text-gray-500"
               />
             </div>
           </>
@@ -167,51 +297,39 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     </Button>
                   </div>
                   <div>
-                    <Label>Institution</Label>
+                    <Label className="text-gray-900">Institution</Label>
                     <Input
                       value={edu.institution}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const newEducation = [...editedSection.content.education];
-                        newEducation[index] = { ...edu, institution: e.target.value };
-                        handleContentChange('education', newEducation);
-                      }}
+                      onChange={(e) => handleEducationChange(index, 'institution', e.target.value)}
                       placeholder="Enter institution name"
+                      className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
                   <div>
-                    <Label>Degree</Label>
+                    <Label className="text-gray-900">Degree</Label>
                     <Input
                       value={edu.degree}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const newEducation = [...editedSection.content.education];
-                        newEducation[index] = { ...edu, degree: e.target.value };
-                        handleContentChange('education', newEducation);
-                      }}
+                      onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
                       placeholder="Enter degree name"
+                      className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
                   <div>
-                    <Label>Period</Label>
+                    <Label className="text-gray-900">Period</Label>
                     <Input
                       value={edu.period}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const newEducation = [...editedSection.content.education];
-                        newEducation[index] = { ...edu, period: e.target.value };
-                        handleContentChange('education', newEducation);
-                      }}
+                      onChange={(e) => handleEducationChange(index, 'period', e.target.value)}
                       placeholder="e.g., 2018 - 2022"
+                      className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
                   <div>
-                    <Label>Description</Label>
+                    <Label className="text-gray-900">Description</Label>
                     <Textarea
                       value={edu.description}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                        const newEducation = [...editedSection.content.education];
-                        newEducation[index] = { ...edu, description: e.target.value };
-                        handleContentChange('education', newEducation);
-                      }}
+                      onChange={(e) => handleEducationChange(index, 'description', e.target.value)}
                       placeholder="Describe your studies and achievements"
+                      className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
                 </CardContent>
@@ -247,69 +365,50 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     </Button>
                   </div>
                   <div>
-                    <Label>Title</Label>
+                    <Label className="text-gray-900">Title</Label>
                     <Input
                       value={exp.title}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const newExperiences = [...editedSection.content.experiences];
-                        newExperiences[index] = { ...exp, title: e.target.value };
-                        handleContentChange('experiences', newExperiences);
-                      }}
+                      onChange={(e) => handleExperienceChange(index, 'title', e.target.value)}
                       placeholder="Enter job title"
+                      className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
                   <div>
-                    <Label>Company</Label>
+                    <Label className="text-gray-900">Company</Label>
                     <Input
                       value={exp.company}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const newExperiences = [...editedSection.content.experiences];
-                        newExperiences[index] = { ...exp, company: e.target.value };
-                        handleContentChange('experiences', newExperiences);
-                      }}
+                      onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
                       placeholder="Enter company name"
+                      className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
                   <div>
-                    <Label>Period</Label>
+                    <Label className="text-gray-900">Period</Label>
                     <Input
                       value={exp.period}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const newExperiences = [...editedSection.content.experiences];
-                        newExperiences[index] = { ...exp, period: e.target.value };
-                        handleContentChange('experiences', newExperiences);
-                      }}
+                      onChange={(e) => handleExperienceChange(index, 'period', e.target.value)}
                       placeholder="e.g., Jan 2020 - Present"
+                      className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
                   <div>
-                    <Label>Description</Label>
+                    <Label className="text-gray-900">Description</Label>
                     <Textarea
                       value={exp.description}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                        const newExperiences = [...editedSection.content.experiences];
-                        newExperiences[index] = { ...exp, description: e.target.value };
-                        handleContentChange('experiences', newExperiences);
-                      }}
+                      onChange={(e) => handleExperienceChange(index, 'description', e.target.value)}
                       placeholder="Brief overview of your role"
+                      className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label>Responsibilities (one per line)</Label>
+                      <Label className="text-gray-900">Responsibilities (one per line)</Label>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="text-blue-500 hover:text-blue-700"
-                        onClick={() => {
-                          const newExperiences = [...editedSection.content.experiences];
-                          newExperiences[index] = {
-                            ...exp,
-                            responsibilities: [...(exp.responsibilities || []), '']
-                          };
-                          handleContentChange('experiences', newExperiences);
-                        }}
+                        onClick={() => handleResponsibilityChange(index, 0, '')}
                       >
                         <PlusCircle className="w-4 h-4 mr-1" />
                         Add Responsibility
@@ -319,27 +418,16 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       <div key={respIndex} className="flex gap-2 mb-2">
                         <Input
                           value={responsibility}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            const newExperiences = [...editedSection.content.experiences];
-                            const newResponsibilities = [...exp.responsibilities];
-                            newResponsibilities[respIndex] = e.target.value;
-                            newExperiences[index] = { ...exp, responsibilities: newResponsibilities };
-                            handleContentChange('experiences', newExperiences);
-                          }}
+                          onChange={(e) => handleResponsibilityChange(index, respIndex, e.target.value)}
                           placeholder={`Responsibility ${respIndex + 1}`}
+                          className="bg-white text-black placeholder:text-gray-500"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
                           className="text-blue-500 hover:text-blue-700 hover:bg-blue-100 shrink-0"
-                          onClick={() => {
-                            const newExperiences = [...editedSection.content.experiences];
-                            const newResponsibilities = [...exp.responsibilities];
-                            newResponsibilities.splice(respIndex, 1);
-                            newExperiences[index] = { ...exp, responsibilities: newResponsibilities };
-                            handleContentChange('experiences', newExperiences);
-                          }}
+                          onClick={() => handleResponsibilityChange(index, respIndex, '')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -356,41 +444,57 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
         return (
           <>
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label className="text-gray-900">Email</Label>
               <Input
                 value={editedSection.content.email || ''}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange('email', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
+                  ...editedSection.content,
+                  email: e.target.value
+                }))}
                 placeholder="Enter your email address"
+                className="bg-white text-black placeholder:text-gray-500"
               />
             </div>
             <div className="space-y-2">
-              <Label>City</Label>
+              <Label className="text-gray-900">City</Label>
               <Input
                 value={editedSection.content.city || ''}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange('city', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
+                  ...editedSection.content,
+                  city: e.target.value
+                }))}
                 placeholder="Enter your city"
+                className="bg-white text-black placeholder:text-gray-500"
               />
             </div>
             <div className="space-y-2">
-              <Label>GitHub URL</Label>
+              <Label className="text-gray-900">GitHub URL</Label>
               <Input
                 value={editedSection.content.social?.github || ''}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange('social', {
-                  ...editedSection.content.social,
-                  github: e.target.value
-                })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
+                  ...editedSection.content,
+                  social: {
+                    ...editedSection.content.social,
+                    github: e.target.value
+                  }
+                }))}
                 placeholder="Enter your GitHub profile URL"
+                className="bg-white text-black placeholder:text-gray-500"
               />
             </div>
             <div className="space-y-2">
-              <Label>LinkedIn URL</Label>
+              <Label className="text-gray-900">LinkedIn URL</Label>
               <Input
                 value={editedSection.content.social?.linkedin || ''}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange('social', {
-                  ...editedSection.content.social,
-                  linkedin: e.target.value
-                })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
+                  ...editedSection.content,
+                  social: {
+                    ...editedSection.content.social,
+                    linkedin: e.target.value
+                  }
+                }))}
                 placeholder="Enter your LinkedIn profile URL"
+                className="bg-white text-black placeholder:text-gray-500"
               />
             </div>
           </>
@@ -398,39 +502,20 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
 
       case 'blog':
         return (
-          <>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                value={editedSection.content.description || ''}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange('description', e.target.value)}
-                placeholder="Enter a description for your blog section"
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Label>Featured</Label>
-              <Switch
-                checked={editedSection.content.featured || false}
-                onCheckedChange={checked => handleContentChange('featured', checked)}
-              />
-            </div>
-          </>
+          <div className="p-4 text-center">
+            <p className="text-muted-foreground">Blog management is available in the Blog tab.</p>
+          </div>
         );
 
       default:
         return (
           <div className="space-y-2">
-            <Label>Content (JSON)</Label>
+            <Label className="text-gray-900">Content (JSON)</Label>
             <Textarea
               value={JSON.stringify(editedSection.content, null, 2)}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                try {
-                  handleContentChange('content', JSON.parse(e.target.value));
-                } catch (error) {
-                  // Invalid JSON, ignore
-                }
-              }}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(e.target.value)}
               placeholder="Enter content in JSON format"
+              className="bg-white text-black placeholder:text-gray-500"
             />
           </div>
         );
@@ -438,40 +523,54 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>{section.title}</span>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
-                <Label>Visible</Label>
-                <Switch
-                  checked={editedSection.visible}
-                  onCheckedChange={checked => setEditedSection(prev => ({ ...prev, visible: checked }))}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label>Order</Label>
+                <Label className="text-gray-900">Order</Label>
                 <Input
                   type="number"
-                  value={editedSection.order}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditedSection(prev => ({ ...prev, order: parseInt(e.target.value) }))}
-                  className="w-20"
+                  value={editedSection.order || 0}
+                  onChange={(e) => handleOrderChange(e.target.value)}
+                  className="w-20 bg-white text-black placeholder:text-gray-500"
                 />
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setJsonEditorOpen(true)}
+                title="Edit JSON"
+              >
+                <Code className="h-4 w-4" />
+              </Button>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {renderContentEditor()}
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting} variant="outline">
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
+          {contentError && (
+            <p className="text-sm text-red-500">{contentError}</p>
+          )}
         </CardContent>
       </Card>
+      <Button
+        type="submit"
+        disabled={isSubmitting || !!contentError}
+      >
+        {isSubmitting ? 'Saving...' : 'Save Changes'}
+      </Button>
+
+      <JsonEditor
+        open={jsonEditorOpen}
+        onOpenChange={setJsonEditorOpen}
+        initialJson={editedSection.content}
+        onSave={handleJsonSave}
+        title={`Edit ${section.title} Content`}
+      />
     </form>
   );
 } 

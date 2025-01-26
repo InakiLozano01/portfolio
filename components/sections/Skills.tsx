@@ -4,13 +4,13 @@ import { motion } from 'framer-motion'
 import { FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap, FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker } from 'react-icons/fa'
 import { SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, SiIntellijidea, SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta } from 'react-icons/si'
 import { VscCode } from 'react-icons/vsc'
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 
 const iconMap = {
-  FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap, 
+  FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap,
   FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker,
-  SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, 
+  SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql,
   SiIntellijidea, SiGooglecloud, SiOpenai,
   VscCode
 }
@@ -30,7 +30,8 @@ export default function Skills() {
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 8
+  const [itemsPerPage, setItemsPerPage] = useState(8)
+  const gridRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const fetchSkills = async () => {
@@ -42,10 +43,10 @@ export default function Skills() {
         }
         const sectionData = await sectionResponse.json()
         console.log('[Skills Component] Section data:', sectionData)
-        
+
         if (sectionData && sectionData.content) {
           setDescription(sectionData.content.description)
-          
+
           // Then fetch skills data
           const skillsResponse = await fetch('/api/skills')
           if (!skillsResponse.ok) {
@@ -53,7 +54,7 @@ export default function Skills() {
           }
           const skillsData = await skillsResponse.json()
           console.log('[Skills Component] Skills data:', skillsData)
-          
+
           if (Array.isArray(skillsData)) {
             setContent(skillsData)
           } else {
@@ -70,6 +71,34 @@ export default function Skills() {
     }
 
     fetchSkills()
+  }, [])
+
+  // Calculate items per page based on available height
+  useEffect(() => {
+    function calculateItemsPerPage() {
+      if (!gridRef.current || window.innerWidth < 768) {
+        setItemsPerPage(999) // Show all items on mobile
+        return
+      }
+
+      const gridElement = gridRef.current
+      const headerHeight = 200 // Header + navigation height
+      const footerHeight = 100 // Footer height + padding
+      const paginationHeight = 60 // Pagination controls height + margin
+      const availableHeight = window.innerHeight - headerHeight - footerHeight - paginationHeight
+      const itemHeight = 160 // Height of each skill card including margin
+      const gap = 16 // Gap between items
+      const columns = window.innerWidth >= 1280 ? 4 : window.innerWidth >= 1024 ? 3 : 2
+
+      const rowsCanFit = Math.floor(availableHeight / itemHeight)
+      const newItemsPerPage = Math.max(rowsCanFit * columns, columns)
+
+      setItemsPerPage(newItemsPerPage)
+    }
+
+    calculateItemsPerPage()
+    window.addEventListener('resize', calculateItemsPerPage)
+    return () => window.removeEventListener('resize', calculateItemsPerPage)
   }, [])
 
   const categories = useMemo(() => {
@@ -90,29 +119,25 @@ export default function Skills() {
   }, [content, selectedCategory])
 
   const paginatedSkills = useMemo(() => {
-    // Only paginate on desktop
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      return filteredSkills;
-    }
     const startIndex = (currentPage - 1) * itemsPerPage
     return filteredSkills.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredSkills, currentPage])
+  }, [filteredSkills, currentPage, itemsPerPage])
 
   const totalPages = Math.ceil(filteredSkills.length / itemsPerPage)
 
   useEffect(() => {
     setCurrentPage(1) // Reset to first page when category changes
-  }, [selectedCategory])
+  }, [selectedCategory, itemsPerPage])
 
   if (loading) return <LoadingSpinner />
   if (error) return <div role="alert" className="text-center text-red-500">{error}</div>
   if (!content.length) return null
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto flex flex-col">
       <div className="sticky top-0 bg-white backdrop-blur-sm py-6 md:static md:bg-transparent z-20 -mx-4 px-4 md:mx-0 md:px-0 md:py-0 shadow-sm md:shadow-none">
         <h2 className="text-3xl font-bold mb-2 text-primary">Skills & Technologies</h2>
-        
+
         {description && (
           <p className="text-lg text-gray-600 mb-2">{description}</p>
         )}
@@ -123,11 +148,10 @@ export default function Skills() {
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === category
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedCategory === category
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 role="tab"
                 aria-selected={selectedCategory === category}
                 aria-controls={`${category}-panel`}
@@ -139,7 +163,8 @@ export default function Skills() {
         </div>
       </div>
 
-      <div 
+      <div
+        ref={gridRef}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4 px-4 md:px-0"
         role="tabpanel"
         id={`${selectedCategory}-panel`}
@@ -153,12 +178,12 @@ export default function Skills() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
-              className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1"
+              className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1 h-40"
             >
               <div className="flex items-center gap-2 mb-2">
                 {Icon && (
-                  <Icon 
-                    className="w-6 h-6 text-primary" 
+                  <Icon
+                    className="w-6 h-6 text-primary"
                     aria-hidden="true"
                   />
                 )}
@@ -170,7 +195,7 @@ export default function Skills() {
                     <span>Proficiency</span>
                     <span>{skill.proficiency}%</span>
                   </div>
-                  <div 
+                  <div
                     className="h-2 bg-gray-200 rounded-full overflow-hidden"
                     role="progressbar"
                     aria-valuenow={skill.proficiency}
@@ -194,7 +219,7 @@ export default function Skills() {
       </div>
 
       {totalPages > 1 && window.innerWidth >= 768 && (
-        <div className="hidden md:flex justify-center items-center gap-2 mt-4 mb-2">
+        <div className="flex justify-center items-center gap-2 py-4">
           <button
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}

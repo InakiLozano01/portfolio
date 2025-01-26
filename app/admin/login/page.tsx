@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -10,6 +10,16 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/admin';
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      window.location.href = callbackUrl;
+    }
+  }, [session, status, callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,13 +31,14 @@ export default function AdminLogin() {
         redirect: false,
         email,
         password,
+        callbackUrl,
       });
 
       if (result?.error) {
         setError(result.error);
       } else if (result?.ok) {
-        router.push('/admin');
-        router.refresh();
+        // Force a hard redirect
+        window.location.href = callbackUrl;
       }
     } catch (err) {
       setError('An error occurred during login');
@@ -36,6 +47,15 @@ export default function AdminLogin() {
       setLoading(false);
     }
   };
+
+  // Show loading state while checking session
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-[#263547] flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#263547] flex items-center justify-center">

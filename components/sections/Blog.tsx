@@ -1,25 +1,18 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import BlogSection from './BlogSection'
 
 export default function Blog() {
   return (
-    <div className="w-full h-full flex items-center justify-center">
+    <div className="w-full h-full p-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-center"
       >
-        <h2 className="text-3xl font-bold mb-4 text-primary">Blog</h2>
-        <p className="text-gray-600 mb-4 text-lg">
-          Coming Soon! 🚀
-        </p>
-        <p className="text-gray-500">
-          I&apos;m working on some exciting content to share with you.
-          <br />
-          Stay tuned for tech articles, tutorials, and more!
-        </p>
+        <h2 className="text-3xl font-bold mb-8 text-primary">Blog</h2>
+        <BlogSection />
       </motion.div>
     </div>
   )

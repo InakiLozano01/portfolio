@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { z } from 'zod';
 
-// Content schemas for each section type
+// Content schemas for each section type (for reference/documentation)
 export const HomeContent = z.object({
   headline: z.string(),
   description: z.string()
@@ -39,6 +39,11 @@ export const SkillsContent = z.object({
   description: z.string()
 });
 
+export const BlogContent = z.object({
+  description: z.string(),
+  featured: z.boolean().optional()
+});
+
 export const ContactContent = z.object({
   email: z.string(),
   city: z.string(),
@@ -48,19 +53,12 @@ export const ContactContent = z.object({
   })
 });
 
-// Main section schema
+// Main section schema (flexible for both creation and updates)
 export const SectionSchema = z.object({
   title: z.string(),
   order: z.number(),
   visible: z.boolean(),
-  content: z.union([
-    HomeContent,
-    AboutContent,
-    ExperienceContent,
-    EducationContent,
-    SkillsContent,
-    ContactContent
-  ])
+  content: z.record(z.any()).default({})
 });
 
 // Types
@@ -70,6 +68,7 @@ export type AboutContent = z.infer<typeof AboutContent>;
 export type ExperienceContent = z.infer<typeof ExperienceContent>;
 export type EducationContent = z.infer<typeof EducationContent>;
 export type SkillsContent = z.infer<typeof SkillsContent>;
+export type BlogContent = z.infer<typeof BlogContent>;
 export type ContactContent = z.infer<typeof ContactContent>;
 
 // Mongoose schema
