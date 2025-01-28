@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     siteName: 'Iñaki F. Lozano Portfolio',
     images: [
       {
-        url: '/pfp.png',
+        url: '/pfp.jpg',
         width: 1200,
         height: 630,
         alt: 'Iñaki F. Lozano - Full Stack Developer'
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Iñaki F. Lozano | Full Stack Developer',
     description: 'Full Stack Developer specializing in modern web technologies.',
-    images: ['/pfp.png']
+    images: ['/pfp.jpg']
   },
   icons: {
     icon: [
