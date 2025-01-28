@@ -6,13 +6,31 @@ import { SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, 
 import { VscCode } from 'react-icons/vsc'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import LoadingSpinner from '@/components/ui/loading-spinner'
+import Image from 'next/image'
+
+interface IconProps {
+  className?: string;
+}
+
+const CursorIcon: React.FC<IconProps> = ({ className }) => (
+  <div className={className}>
+    <Image
+      src="/images/skills/cursor.webp"
+      alt="Cursor"
+      width={20}
+      height={20}
+      className="w-full h-full"
+    />
+  </div>
+);
 
 const iconMap = {
   FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap,
   FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker,
   SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql,
   SiIntellijidea, SiGooglecloud, SiOpenai,
-  VscCode
+  VscCode,
+  CursorIcon
 }
 
 interface Skill {

@@ -57,8 +57,9 @@ export default function AdminPage() {
 
   const handleSaveSkill = async (skill: Skill) => {
     try {
+      const method = '_id' in skill ? 'PUT' : 'POST';
       const response = await fetch('/api/skills', {
-        method: 'PUT',
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -66,12 +67,12 @@ export default function AdminPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update skill');
+        throw new Error(`Failed to ${method === 'PUT' ? 'update' : 'create'} skill`);
       }
 
       await fetchSkills();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update skill');
+      setError(err instanceof Error ? err.message : 'Failed to save skill');
     }
   };
 

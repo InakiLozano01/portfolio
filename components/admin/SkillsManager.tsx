@@ -10,9 +10,11 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select } from '@/components/ui/select'
 import { PlusCircle, Trash2 } from 'lucide-react'
-import { FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap, FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker, FaAws } from 'react-icons/fa'
-import { SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, SiIntellijidea, SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta, SiMongodb, SiPython, SiTensorflow } from 'react-icons/si'
+import { FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap, FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker, FaAws, FaFigma, FaAngular, FaVuejs, FaRust, FaLinux, FaWindows, FaApple } from 'react-icons/fa'
+import { SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, SiIntellijidea, SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta, SiMongodb, SiPython, SiTensorflow, SiNextdotjs, SiTailwindcss, SiPrisma, SiSupabase, SiVercel, SiFirebase, SiRedis, SiVite, SiAstro, SiDjango, SiLaravel, SiExpress, SiNestjs, SiGraphql, SiPostman, SiJest, SiCypress, SiSelenium, SiWebpack, SiRollupdotjs, SiSwagger, SiKubernetes, SiNginx, SiApache, SiWebstorm, SiPycharm, SiPhpstorm } from 'react-icons/si'
 import { VscCode } from 'react-icons/vsc'
+import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 interface Skill {
   _id: string;
@@ -27,12 +29,31 @@ interface IconProps {
   className?: string;
 }
 
+const CursorIcon: React.FC<IconProps> = ({ className }) => (
+  <div className={className}>
+    <Image
+      src="/images/skills/cursor.webp"
+      alt="Cursor"
+      width={20}
+      height={20}
+      className="w-full h-full"
+    />
+  </div>
+);
+
 const iconMap: { [key: string]: React.ComponentType<IconProps> } = {
-  FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap, 
-  FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker, FaAws,
-  SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, 
+  FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap,
+  FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker, FaAws, FaFigma,
+  FaAngular, FaVuejs, FaRust, FaLinux, FaWindows, FaApple,
+  SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql,
   SiIntellijidea, SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta,
-  SiMongodb, SiPython, SiTensorflow, VscCode
+  SiMongodb, SiPython, SiTensorflow, SiNextdotjs, SiTailwindcss, SiPrisma,
+  SiSupabase, SiVercel, SiFirebase, SiRedis, SiVite, SiAstro, SiDjango,
+  SiLaravel, SiExpress, SiNestjs, SiGraphql, SiPostman, SiJest, SiCypress,
+  SiSelenium, SiWebpack, SiRollupdotjs, SiSwagger, SiKubernetes, SiNginx,
+  SiApache, SiWebstorm, SiPycharm, SiPhpstorm,
+  VscCode,
+  CursorIcon
 }
 
 interface Props {
@@ -44,6 +65,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
   const [isAddingSkill, setIsAddingSkill] = useState(false);
   const [newCategory, setNewCategory] = useState('');
+  const [pendingCategory, setPendingCategory] = useState<string | null>(null);
   const [newSkill, setNewSkill] = useState<Omit<Skill, '_id'>>({
     name: '',
     category: '',
@@ -52,7 +74,10 @@ export default function SkillsManager({ skills, onSave }: Props) {
     icon: ''
   });
 
-  const categories = Array.from(new Set(skills.map(skill => skill.category))).sort();
+  const categories = Array.from(new Set([
+    ...skills.map(skill => skill.category),
+    ...(pendingCategory ? [pendingCategory] : [])
+  ])).sort();
 
   const handleSave = async (skill: Skill) => {
     await onSave(skill);
@@ -60,11 +85,13 @@ export default function SkillsManager({ skills, onSave }: Props) {
   };
 
   const handleAddSkill = async () => {
-    if (!newSkill.category) {
-      newSkill.category = categories[0];
+    if (!newSkill.name || !newSkill.category || !newSkill.icon) {
+      alert('Please fill in all required fields (Name, Category, and Icon)');
+      return;
     }
     await onSave(newSkill as Skill);
     setIsAddingSkill(false);
+    setPendingCategory(null);
     setNewSkill({
       name: '',
       category: '',
@@ -74,12 +101,34 @@ export default function SkillsManager({ skills, onSave }: Props) {
     });
   };
 
-  const handleAddCategory = () => {
-    if (newCategory && !categories.includes(newCategory)) {
-      setNewSkill(prev => ({ ...prev, category: newCategory }));
-      setNewCategory('');
-      setIsAddingSkill(true);
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'proficiency' | 'yearsOfExperience', setter: Function) => {
+    const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+    if (!isNaN(value)) {
+      setter((prev: any) => ({ ...prev, [field]: value }));
     }
+  };
+
+  const handleAddCategory = () => {
+    if (!newCategory) {
+      alert('Please enter a category name');
+      return;
+    }
+
+    const normalizedCategory = newCategory.toLowerCase();
+    if (categories.includes(normalizedCategory)) {
+      alert('This category already exists');
+      return;
+    }
+
+    setPendingCategory(normalizedCategory);
+    setNewSkill(prev => ({
+      ...prev,
+      category: normalizedCategory,
+      name: '',
+      icon: ''
+    }));
+    setNewCategory('');
+    setIsAddingSkill(true);
   };
 
   return (
@@ -100,7 +149,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                 value={newCategory}
                 onChange={e => setNewCategory(e.target.value)}
                 placeholder="New category name"
-                className="w-48"
+                className="w-48 bg-white dark:bg-background"
               />
               <Button
                 onClick={handleAddCategory}
@@ -124,6 +173,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                     value={newSkill.name}
                     onChange={e => setNewSkill(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Skill name"
+                    className="bg-white dark:bg-background"
                   />
                 </div>
                 <div>
@@ -131,6 +181,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                   <Select
                     value={newSkill.category}
                     onChange={e => setNewSkill(prev => ({ ...prev, category: e.target.value }))}
+                    className="bg-white dark:bg-background"
                   >
                     <option value="">Select category</option>
                     {categories.map(category => (
@@ -146,9 +197,10 @@ export default function SkillsManager({ skills, onSave }: Props) {
                     type="number"
                     min="0"
                     max="100"
-                    value={newSkill.proficiency}
-                    onChange={e => setNewSkill(prev => ({ ...prev, proficiency: parseInt(e.target.value) }))}
+                    value={newSkill.proficiency || ''}
+                    onChange={(e) => handleNumberChange(e, 'proficiency', setNewSkill)}
                     placeholder="Proficiency percentage"
+                    className="bg-white dark:bg-background"
                   />
                 </div>
                 <div>
@@ -156,9 +208,10 @@ export default function SkillsManager({ skills, onSave }: Props) {
                   <Input
                     type="number"
                     min="0"
-                    value={newSkill.yearsOfExperience}
-                    onChange={e => setNewSkill(prev => ({ ...prev, yearsOfExperience: parseInt(e.target.value) }))}
+                    value={newSkill.yearsOfExperience || ''}
+                    onChange={(e) => handleNumberChange(e, 'yearsOfExperience', setNewSkill)}
                     placeholder="Years of experience"
+                    className="bg-white dark:bg-background"
                   />
                 </div>
                 <div>
@@ -166,6 +219,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                   <Select
                     value={newSkill.icon}
                     onChange={e => setNewSkill(prev => ({ ...prev, icon: e.target.value }))}
+                    className="bg-white dark:bg-background"
                   >
                     <option value="">Select icon</option>
                     {Object.keys(iconMap).map(icon => (
@@ -215,7 +269,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                   .map(skill => (
                     <TableRow key={skill._id}>
                       <TableCell className="w-10">
-                        {skill.icon && iconMap[skill.icon] && 
+                        {skill.icon && iconMap[skill.icon] &&
                           React.createElement(iconMap[skill.icon], {
                             className: "w-5 h-5 text-foreground"
                           })
@@ -223,12 +277,31 @@ export default function SkillsManager({ skills, onSave }: Props) {
                       </TableCell>
                       <TableCell>
                         {editingSkill?._id === skill._id ? (
-                          <Input
-                            value={editingSkill.name}
-                            onChange={e => setEditingSkill({ ...editingSkill, name: e.target.value })}
-                          />
+                          <div className="space-y-2">
+                            <Input
+                              value={editingSkill.name}
+                              onChange={e => setEditingSkill({ ...editingSkill, name: e.target.value })}
+                              className="bg-white dark:bg-background"
+                            />
+                            <Select
+                              value={editingSkill.category}
+                              onChange={e => setEditingSkill({ ...editingSkill, category: e.target.value })}
+                              className="bg-white dark:bg-background"
+                            >
+                              {categories.map(category => (
+                                <option key={category} value={category}>
+                                  {category}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
                         ) : (
-                          skill.name
+                          <div>
+                            <div>{skill.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              Category: {skill.category}
+                            </div>
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>
@@ -237,8 +310,9 @@ export default function SkillsManager({ skills, onSave }: Props) {
                             type="number"
                             min="0"
                             max="100"
-                            value={editingSkill.proficiency}
-                            onChange={e => setEditingSkill({ ...editingSkill, proficiency: parseInt(e.target.value) })}
+                            value={editingSkill.proficiency || ''}
+                            onChange={(e) => handleNumberChange(e, 'proficiency', setEditingSkill)}
+                            className="bg-white dark:bg-background"
                           />
                         ) : (
                           `${skill.proficiency}%`
@@ -249,8 +323,9 @@ export default function SkillsManager({ skills, onSave }: Props) {
                           <Input
                             type="number"
                             min="0"
-                            value={editingSkill.yearsOfExperience}
-                            onChange={e => setEditingSkill({ ...editingSkill, yearsOfExperience: parseInt(e.target.value) })}
+                            value={editingSkill.yearsOfExperience || ''}
+                            onChange={(e) => handleNumberChange(e, 'yearsOfExperience', setEditingSkill)}
+                            className="bg-white dark:bg-background"
                           />
                         ) : (
                           `${skill.yearsOfExperience} years`
