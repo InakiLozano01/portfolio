@@ -24,6 +24,9 @@ ENV NODE_ENV=development
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Install required type definitions
+RUN npm install --save-dev @types/node @types/react @types/tinymce
+
 # Set environment variables for better logging
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_SHARP_PATH=/app/node_modules/sharp
