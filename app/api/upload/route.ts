@@ -1,54 +1,17 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
-import { getToken } from 'next-auth/jwt';
-
-const ALLOWED_FILE_TYPES = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'image/svg+xml',
-    'image/bmp',
-    'image/tiff'
-];
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+import sharp from 'sharp';
+import path from 'path';
+import fs from 'fs/promises';
+import { randomUUID } from 'crypto';
 
 export async function POST(request: Request) {
     try {
-        // Check authentication
-        const token = await getToken({ req: request as any });
-        if (!token) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
-
         const formData = await request.formData();
         const file = formData.get('file') as File;
 
         if (!file) {
             return NextResponse.json(
-                { error: 'No file uploaded' },
-                { status: 400 }
-            );
-        }
-
-        // Validate file size
-        if (file.size > MAX_FILE_SIZE) {
-            return NextResponse.json(
-                { error: 'File size exceeds 5MB limit' },
-                { status: 400 }
-            );
-        }
-
-        // Validate file type
-        if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-            return NextResponse.json(
-                { error: 'Invalid file type. Only JPEG, PNG, GIF, WebP, SVG, BMP, and TIFF are allowed.' },
+                { error: 'No file provided' },
                 { status: 400 }
             );
         }
@@ -56,29 +19,44 @@ export async function POST(request: Request) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Create unique filename with proper extension
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const extension = file.type.split('/')[1].replace('jpeg', 'jpg');
-        const filename = `image-${uniqueSuffix}.${extension}`;
+        // Process image with sharp
+        const image = sharp(buffer);
+        const metadata = await image.metadata();
 
-        // Ensure uploads directory exists
-        const uploadDir = join(process.cwd(), 'public', 'uploads');
-        if (!existsSync(uploadDir)) {
-            await mkdir(uploadDir, { recursive: true });
-        }
+        // Only resize if the image is larger than 1920px wide
+        // This maintains aspect ratio and doesn't crop
+        const resizedImage = await image
+            .resize({
+                width: 1920,
+                height: undefined,
+                withoutEnlargement: true,
+                fit: 'inside'
+            })
+            .toBuffer();
 
-        const filepath = join(uploadDir, filename);
-        await writeFile(filepath, buffer);
+        // Generate unique filename
+        const filename = `${randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '-')}`;
+        const relativePath = `/images/projects/${filename}`;
+        const absolutePath = path.join(process.cwd(), 'public', relativePath);
 
-        // Return the URL that can be used to access the file
+        // Ensure directory exists
+        await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+
+        // Save the file
+        await fs.writeFile(absolutePath, resizedImage);
+
+        // Get dimensions of the processed image
+        const processedMetadata = await sharp(resizedImage).metadata();
+
         return NextResponse.json({
-            url: `/uploads/${filename}`,
-            message: 'File uploaded successfully'
+            path: relativePath,
+            width: processedMetadata.width,
+            height: processedMetadata.height
         });
     } catch (error) {
-        console.error('Error uploading file:', error);
+        console.error('Error processing upload:', error);
         return NextResponse.json(
-            { error: 'Error uploading file' },
+            { error: 'Failed to process upload' },
             { status: 500 }
         );
     }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Project from '@/models/Project'
+import '@/models/Skill'
 
 interface Params {
     params: {

@@ -1,13 +1,22 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
-import { Github } from 'lucide-react'
-import { IProject } from '@/models/Project'
-import { Skill } from '@/models/Skill'
+import { Github, ArrowLeft } from 'lucide-react'
+import { IProject } from '../../../models/Project'
+import mongoose from 'mongoose'
+import DOMPurify from 'isomorphic-dompurify'
+import { getProjectBySlug } from '../../../lib/projects'
+import { notFound } from 'next/navigation'
+import BackNavigationHandler from '@/components/BackNavigationHandler'
+
+interface ISkill {
+    _id: mongoose.Types.ObjectId;
+    name: string;
+    category: string;
+    proficiency: number;
+    yearsOfExperience: number;
+    icon: string;
+}
 
 interface ProjectPageProps {
     params: {
@@ -15,100 +24,97 @@ interface ProjectPageProps {
     }
 }
 
-export default function ProjectPage({ params }: ProjectPageProps) {
-    const [project, setProject] = useState<(IProject & { technologies: Skill[] }) | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+export default async function ProjectPage({ params }: ProjectPageProps) {
+    const project = await getProjectBySlug(params.slug)
 
-    useEffect(() => {
-        const fetchProject = async () => {
-            try {
-                const response = await fetch(`/api/projects/slug/${params.slug}`)
-                if (!response.ok) throw new Error('Failed to fetch project')
-                const data = await response.json()
-                setProject(data)
-            } catch (err) {
-                setError('Failed to load project')
-                console.error('Error loading project:', err)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-
-        fetchProject()
-    }, [params.slug])
-
-    if (isLoading) {
-        return (
-            <div className="container mx-auto px-4 py-8">
-                <div className="animate-pulse space-y-8">
-                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
-                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
-                    <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded" />
-                    <div className="space-y-4">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5" />
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    if (error || !project) {
-        return (
-            <div className="container mx-auto px-4 py-8">
-                <div className="text-center text-red-500">
-                    {error || 'Project not found'}
-                </div>
-            </div>
-        )
+    if (!project) {
+        notFound()
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="max-w-4xl mx-auto">
-                <h1 className="text-4xl font-bold mb-4">{project.title}</h1>
+        <div className="min-h-screen flex">
+            <BackNavigationHandler />
+            <div className="hidden lg:block w-32 bg-[#263547]" />
+            <article className="container max-w-4xl mx-auto py-8 px-4 flex-1">
+                <Link
+                    href="/"
+                    className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-6"
+                >
+                    <ArrowLeft size={20} />
+                    Back to Home
+                </Link>
+
+                <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">
+                    {project.title}
+                </h1>
                 <p className="text-xl text-muted-foreground mb-6">{project.subtitle}</p>
 
                 {project.thumbnail && (
-                    <div className="relative h-[400px] w-full mb-8">
+                    <div className="relative w-full mb-8">
                         <Image
                             src={project.thumbnail}
                             alt={project.title}
-                            fill
-                            className="object-cover rounded-lg"
+                            width={1920}
+                            height={1080}
+                            className="w-full rounded-lg shadow-lg"
+                            priority
                         />
                     </div>
                 )}
 
-                <div className="flex flex-wrap gap-2 mb-6">
+                <div className="flex flex-wrap gap-2 mb-8 justify-center border-b border-[#263547]/20 pb-8">
                     {project.technologies.map((tech) => (
-                        <Badge key={tech._id} variant="secondary">
+                        <Badge
+                            key={tech._id.toString()}
+                            variant="outline"
+                            className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20"
+                        >
                             {tech.name}
                         </Badge>
                     ))}
                 </div>
 
                 {project.githubUrl && (
-                    <Link
-                        href={project.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 mb-8 text-primary hover:text-primary/80"
-                    >
-                        <Github size={20} />
-                        View on GitHub
-                    </Link>
+                    <div className="mb-8 pb-8 border-b border-[#263547]/20">
+                        <Link
+                            href={project.githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-primary hover:text-primary/80"
+                        >
+                            <Github size={20} />
+                            View on GitHub
+                        </Link>
+                    </div>
                 )}
 
-                <Card className="p-6">
-                    <div
-                        className="prose dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: project.description }}
-                    />
-                </Card>
-            </div>
+                <div
+                    className="space-y-6 text-muted-foreground"
+                    dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(project.description, {
+                            ADD_ATTR: ['class'],
+                            ALLOWED_TAGS: ['h2', 'h3', 'p', 'ul', 'li', 'img', 'a'],
+                            ADD_TAGS: ['style']
+                        }).replace(
+                            /<h2>/g,
+                            '<h2 class="text-2xl font-semibold text-primary mt-8 mb-4">'
+                        ).replace(
+                            /<h3>/g,
+                            '<h3 class="text-xl font-medium text-primary mt-6 mb-3">'
+                        ).replace(
+                            /<p>/g,
+                            '<p class="leading-relaxed">'
+                        ).replace(
+                            /<ul>/g,
+                            '<ul class="list-disc list-inside space-y-2 ml-4">'
+                        ).replace(
+                            /<img/g,
+                            '<img class="rounded-lg shadow-lg my-4 max-w-full h-auto"'
+                        )
+                    }}
+                />
+            </article>
+            <div className="hidden lg:block w-32 bg-[#263547]" />
         </div>
     )
 } 

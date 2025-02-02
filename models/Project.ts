@@ -26,6 +26,19 @@ const ProjectSchema = new mongoose.Schema({
   }],
   thumbnail: {
     type: String,
+    default: '/images/projects/default-project.jpg',
+  },
+  thumbnailAlt: {
+    type: String,
+    default: 'Project thumbnail',
+  },
+  imageHeight: {
+    type: Number,
+    default: 200,
+  },
+  imageWidth: {
+    type: Number,
+    default: 400,
   },
   githubUrl: {
     type: String,
@@ -62,6 +75,9 @@ export interface IProject extends mongoose.Document {
   description: string;
   technologies: mongoose.Types.ObjectId[];
   thumbnail?: string;
+  thumbnailAlt?: string;
+  imageHeight?: number;
+  imageWidth?: number;
   githubUrl?: string;
   featured: boolean;
   createdAt: Date;

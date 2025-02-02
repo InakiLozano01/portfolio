@@ -84,32 +84,34 @@ export default function Projects() {
     return (
         <section id="projects" className="container mx-auto px-4 py-16">
             <h2 className="text-3xl font-bold mb-8 text-primary">Projects</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr gap-6">
                 {projects.map((project) => (
                     <Link
                         key={project._id.toString()}
                         href={`/projects/${project.slug}`}
                         className="transition-transform hover:scale-105"
                     >
-                        <Card>
-                            {project.thumbnail && (
-                                <div className="relative h-48 w-full">
-                                    <Image
-                                        src={project.thumbnail}
-                                        alt={project.title}
-                                        fill
-                                        className="object-cover rounded-t-lg"
-                                    />
-                                </div>
-                            )}
-                            <CardHeader>
-                                <CardTitle>{project.title}</CardTitle>
-                                <p className="text-sm text-muted-foreground">{project.subtitle}</p>
+                        <Card className="h-full flex flex-col">
+                            <div className="relative aspect-video w-full">
+                                <Image
+                                    src={project.thumbnail || '/images/projects/default-project.jpg'}
+                                    alt={project.title}
+                                    fill
+                                    className="object-cover rounded-t-lg"
+                                />
+                            </div>
+                            <CardHeader className="flex-grow">
+                                <CardTitle className="line-clamp-1">{project.title}</CardTitle>
+                                <p className="text-sm text-muted-foreground line-clamp-2">{project.subtitle}</p>
                             </CardHeader>
                             <CardContent>
                                 <div className="flex flex-wrap gap-2">
                                     {project.technologies.map((tech) => (
-                                        <Badge key={tech._id.toString()} variant="secondary">
+                                        <Badge
+                                            key={tech._id.toString()}
+                                            variant="outline"
+                                            className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20"
+                                        >
                                             {tech.name}
                                         </Badge>
                                     ))}

@@ -12,6 +12,7 @@ import { IProject } from '@/models/Project';
 import Skill from '@/models/Skill';
 import { Plus, Trash2, Save, Edit } from 'lucide-react';
 import { Types } from 'mongoose';
+import Image from 'next/image';
 
 interface ISkill {
   _id: Types.ObjectId;
@@ -45,6 +46,8 @@ export default function ProjectsManager() {
     githubUrl: '',
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -80,6 +83,61 @@ export default function ProjectsManager() {
     fetchData();
   }, [toast]);
 
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file type before uploading
+      const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!supportedTypes.includes(file.type)) {
+        toast({
+          title: 'Unsupported File Format',
+          description: 'Please upload a JPEG, PNG, WebP, or GIF image.',
+          variant: 'destructive',
+        });
+        e.target.value = '';
+        return;
+      }
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+
+      // Try uploading the file
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const error = await uploadResponse.json();
+          throw new Error(error.message || 'Failed to upload image');
+        }
+
+        // If upload successful, set the image file and preview
+        setImageFile(file);
+        setImagePreview(previewUrl);
+        const imageData = await uploadResponse.json();
+        setSelectedProject(prev => ({ ...prev, thumbnail: imageData.path }));
+      } catch (error) {
+        // Clean up the preview URL
+        URL.revokeObjectURL(previewUrl);
+
+        // Show error message
+        toast({
+          title: 'Upload Failed',
+          description: error instanceof Error ? error.message : 'Failed to upload image. Please try again.',
+          variant: 'destructive',
+        });
+
+        // Reset the input
+        e.target.value = '';
+      }
+    }
+  };
+
   const handleSave = async () => {
     try {
       const method = selectedProject._id ? 'PUT' : 'POST';
@@ -109,6 +167,7 @@ export default function ProjectsManager() {
         );
       }
 
+      // Reset form
       setSelectedProject({
         title: '',
         subtitle: '',
@@ -117,6 +176,8 @@ export default function ProjectsManager() {
         thumbnail: '',
         githubUrl: '',
       });
+      setImageFile(null);
+      setImagePreview(null);
 
       toast({
         title: 'Success',
@@ -128,7 +189,7 @@ export default function ProjectsManager() {
       console.error('Error saving project:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save project',
+        description: error instanceof Error ? error.message : 'Failed to save project',
         variant: 'destructive',
       });
     }
@@ -223,14 +284,27 @@ export default function ProjectsManager() {
               }
               className="bg-white text-gray-900 placeholder:text-gray-500"
             />
-            <Input
-              placeholder="Thumbnail URL"
-              value={selectedProject.thumbnail || ''}
-              onChange={(e) =>
-                setSelectedProject({ ...selectedProject, thumbnail: e.target.value })
-              }
-              className="bg-white text-gray-900 placeholder:text-gray-500"
-            />
+            <div>
+              <h4 className="mb-2 font-medium">Thumbnail Image</h4>
+              <div className="flex flex-col gap-4">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="bg-white text-gray-900"
+                />
+                {(imagePreview || selectedProject.thumbnail) && (
+                  <div className="relative aspect-video w-full max-w-md">
+                    <Image
+                      src={imagePreview || selectedProject.thumbnail || ''}
+                      alt="Project thumbnail preview"
+                      fill
+                      className="object-cover rounded-lg"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
             <Input
               placeholder="GitHub URL"
               value={selectedProject.githubUrl || ''}
