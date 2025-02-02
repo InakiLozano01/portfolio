@@ -1,248 +1,369 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { TinyMCE } from '@/components/ui/tinymce';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
+import { IProject } from '@/models/Project';
+import Skill from '@/models/Skill';
+import { Plus, Trash2, Save, Edit } from 'lucide-react';
+import { Types } from 'mongoose';
 
-interface Project {
-  _id: string;
-  title: string;
-  description: string;
-  technologies: string[];
-  images: string[];
-  liveUrl?: string;
-  githubUrl?: string;
-  featured: boolean;
+interface ISkill {
+  _id: Types.ObjectId;
+  name: string;
+  category: string;
+  proficiency: number;
+  yearsOfExperience: number;
+  icon: string;
 }
 
+// Extend IProject to explicitly include _id
+type ProjectWithId = IProject & {
+  _id: Types.ObjectId;
+};
+
+type ProjectWithTechnologies = ProjectWithId & {
+  technologies: ISkill[];
+};
+
 export default function ProjectsManager() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [newProject, setNewProject] = useState<Partial<Project>>({
+  const router = useRouter();
+  const { toast } = useToast();
+  const [projects, setProjects] = useState<ProjectWithTechnologies[]>([]);
+  const [skills, setSkills] = useState<ISkill[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Partial<ProjectWithId> & { technologies: Types.ObjectId[] }>({
     title: '',
+    subtitle: '',
     description: '',
     technologies: [],
-    images: [],
-    featured: false,
+    thumbnail: '',
+    githubUrl: '',
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    const fetchData = async () => {
+      try {
+        const [projectsRes, skillsRes] = await Promise.all([
+          fetch('/api/projects'),
+          fetch('/api/skills'),
+        ]);
 
-  const fetchProjects = async () => {
-    try {
-      const response = await fetch('/api/projects');
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
-      setProjects(data);
-    } catch (err) {
-      setError('Failed to fetch projects');
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (!projectsRes.ok || !skillsRes.ok) {
+          throw new Error('Failed to fetch data');
+        }
 
-  const handleAddProject = async () => {
+        const [projectsData, skillsData] = await Promise.all([
+          projectsRes.json(),
+          skillsRes.json(),
+        ]);
+
+        setProjects(projectsData);
+        setSkills(skillsData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load data',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
+
+  const handleSave = async () => {
     try {
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProject),
+      const method = selectedProject._id ? 'PUT' : 'POST';
+      const url = selectedProject._id
+        ? `/api/projects/${selectedProject._id}`
+        : '/api/projects';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(selectedProject),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
-      fetchProjects();
-      setNewProject({
+
+      if (!response.ok) throw new Error('Failed to save project');
+
+      const savedProject = await response.json();
+
+      if (method === 'POST') {
+        setProjects([...projects, savedProject]);
+      } else {
+        setProjects(
+          projects.map((p) =>
+            p._id === savedProject._id ? savedProject : p
+          )
+        );
+      }
+
+      setSelectedProject({
         title: '',
+        subtitle: '',
         description: '',
         technologies: [],
-        images: [],
-        featured: false,
+        thumbnail: '',
+        githubUrl: '',
       });
-    } catch (err) {
-      setError('Failed to add project');
+
+      toast({
+        title: 'Success',
+        description: `Project ${method === 'POST' ? 'created' : 'updated'} successfully`,
+      });
+
+      router.refresh();
+    } catch (error) {
+      console.error('Error saving project:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save project',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleDeleteProject = async (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/projects?id=${id}`, {
+      const response = await fetch(`/api/projects/${id}`, {
         method: 'DELETE',
       });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error);
+
+      if (!response.ok) throw new Error('Failed to delete project');
+
+      setProjects(projects.filter((p) => p._id.toString() !== id));
+
+      if (selectedProject._id?.toString() === id) {
+        setSelectedProject({
+          title: '',
+          subtitle: '',
+          description: '',
+          technologies: [],
+          thumbnail: '',
+          githubUrl: '',
+        });
       }
-      fetchProjects();
-    } catch (err) {
-      setError('Failed to delete project');
-    }
-  };
 
-  const toggleFeatured = async (project: Project) => {
-    try {
-      const response = await fetch('/api/projects', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...project, featured: !project.featured }),
+      toast({
+        title: 'Success',
+        description: 'Project deleted successfully',
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
-      fetchProjects();
-    } catch (err) {
-      setError('Failed to update project');
+
+      router.refresh();
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete project',
+        variant: 'destructive',
+      });
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  const handleTechnologyToggle = (techId: string) => {
+    const objectId = new Types.ObjectId(techId);
+    const newTechnologies = selectedProject.technologies.some(
+      (id) => id.toString() === techId
+    )
+      ? selectedProject.technologies.filter((id) => id.toString() !== techId)
+      : [...selectedProject.technologies, objectId];
+
+    setSelectedProject({
+      ...selectedProject,
+      technologies: newTechnologies,
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-4">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
+          <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Add New Project</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={newProject.title}
-                onChange={(e) =>
-                  setNewProject({ ...newProject, title: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={newProject.description}
-                onChange={(e) =>
-                  setNewProject({ ...newProject, description: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="technologies">Technologies (comma-separated)</Label>
-              <Input
-                id="technologies"
-                value={newProject.technologies?.join(', ')}
-                onChange={(e) =>
-                  setNewProject({
-                    ...newProject,
-                    technologies: e.target.value.split(',').map((t) => t.trim()),
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="liveUrl">Live URL</Label>
-              <Input
-                id="liveUrl"
-                value={newProject.liveUrl}
-                onChange={(e) =>
-                  setNewProject({ ...newProject, liveUrl: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="githubUrl">GitHub URL</Label>
-              <Input
-                id="githubUrl"
-                value={newProject.githubUrl}
-                onChange={(e) =>
-                  setNewProject({ ...newProject, githubUrl: e.target.value })
-                }
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="featured"
-                checked={newProject.featured}
-                onCheckedChange={(checked) =>
-                  setNewProject({ ...newProject, featured: checked })
-                }
-              />
-              <Label htmlFor="featured">Featured Project</Label>
-            </div>
-            <Button onClick={handleAddProject}>Add Project</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4">
-        {projects.map((project) => (
-          <Card key={project._id}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{project.title}</span>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={project.featured}
-                    onCheckedChange={() => toggleFeatured(project)}
-                  />
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteProject(project._id)}
+    <div className="grid grid-cols-12 gap-6">
+      {/* New/Edit Project Form */}
+      <div className="col-span-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {selectedProject._id ? 'Edit Project' : 'New Project'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input
+              placeholder="Title"
+              value={selectedProject.title || ''}
+              onChange={(e) =>
+                setSelectedProject({ ...selectedProject, title: e.target.value })
+              }
+              className="bg-white text-gray-900 placeholder:text-gray-500"
+            />
+            <Input
+              placeholder="Subtitle"
+              value={selectedProject.subtitle || ''}
+              onChange={(e) =>
+                setSelectedProject({ ...selectedProject, subtitle: e.target.value })
+              }
+              className="bg-white text-gray-900 placeholder:text-gray-500"
+            />
+            <Input
+              placeholder="Thumbnail URL"
+              value={selectedProject.thumbnail || ''}
+              onChange={(e) =>
+                setSelectedProject({ ...selectedProject, thumbnail: e.target.value })
+              }
+              className="bg-white text-gray-900 placeholder:text-gray-500"
+            />
+            <Input
+              placeholder="GitHub URL"
+              value={selectedProject.githubUrl || ''}
+              onChange={(e) =>
+                setSelectedProject({ ...selectedProject, githubUrl: e.target.value })
+              }
+              className="bg-white text-gray-900 placeholder:text-gray-500"
+            />
+            <div>
+              <h4 className="mb-2 font-medium">Technologies</h4>
+              <div className="flex flex-wrap gap-2">
+                {skills.map((skill) => (
+                  <Badge
+                    key={skill._id.toString()}
+                    variant={
+                      selectedProject.technologies.some(
+                        (id) => id.toString() === skill._id.toString()
+                      )
+                        ? 'default'
+                        : 'secondary'
+                    }
+                    className="cursor-pointer"
+                    onClick={() => handleTechnologyToggle(skill._id.toString())}
                   >
-                    Delete
-                  </Button>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label>Description</Label>
-                  <div>{project.description}</div>
-                </div>
-                <div>
-                  <Label>Technologies</Label>
-                  <div>{project.technologies.join(', ')}</div>
-                </div>
-                {project.liveUrl && (
-                  <div>
-                    <Label>Live URL</Label>
-                    <div>
-                      <a
-                        href={project.liveUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline"
-                      >
-                        {project.liveUrl}
-                      </a>
-                    </div>
-                  </div>
-                )}
-                {project.githubUrl && (
-                  <div>
-                    <Label>GitHub URL</Label>
-                    <div>
-                      <a
-                        href={project.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline"
-                      >
-                        {project.githubUrl}
-                      </a>
-                    </div>
-                  </div>
-                )}
+                    {skill.name}
+                  </Badge>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+            <div>
+              <h4 className="mb-2 font-medium">Description</h4>
+              <TinyMCE
+                value={selectedProject.description || ''}
+                onChange={(content) =>
+                  setSelectedProject({ ...selectedProject, description: content })
+                }
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                onClick={() => {
+                  setSelectedProject({
+                    title: '',
+                    subtitle: '',
+                    description: '',
+                    technologies: [],
+                    thumbnail: '',
+                    githubUrl: '',
+                  });
+                }}
+                variant="outline"
+              >
+                Clear
+              </Button>
+              <Button
+                onClick={handleSave}
+                className="bg-green-500 hover:bg-green-600 text-white"
+              >
+                {selectedProject._id ? 'Update Project' : 'Create Project'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Projects List */}
+      <div className="col-span-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Projects List</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {projects.map((project) => (
+              <Card
+                key={project._id.toString()}
+                className="cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => {
+                  setSelectedProject({
+                    ...project,
+                    technologies: project.technologies.map((tech) => tech._id),
+                  });
+                }}
+              >
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-medium">{project.title}</h3>
+                      <p className="text-sm text-gray-500">{project.subtitle}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProject({
+                            ...project,
+                            technologies: project.technologies.map((tech) => tech._id),
+                          });
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(project._id.toString());
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {project.technologies.map((tech: ISkill) => (
+                      <Badge
+                        key={tech._id.toString()}
+                        variant="secondary"
+                        className="text-xs"
+                      >
+                        {tech.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

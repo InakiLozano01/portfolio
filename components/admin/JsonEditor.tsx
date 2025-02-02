@@ -40,9 +40,9 @@ export default function JsonEditor({ open, onOpenChange, initialJson, onSave, ti
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl max-h-[90vh]">
+            <DialogContent className="max-w-3xl max-h-[90vh] bg-white">
                 <DialogHeader>
-                    <DialogTitle>{title}</DialogTitle>
+                    <DialogTitle className="text-gray-900">{title}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                     <Textarea
@@ -51,8 +51,8 @@ export default function JsonEditor({ open, onOpenChange, initialJson, onSave, ti
                             setJsonString(e.target.value);
                             setError(null);
                         }}
-                        className="font-mono min-h-[400px]"
                         placeholder="Enter JSON content..."
+                        className="min-h-[400px] font-mono bg-white text-gray-900 placeholder:text-gray-500"
                     />
                     {error && (
                         <p className="text-sm text-red-500">{error}</p>
@@ -74,6 +74,7 @@ export default function JsonEditor({ open, onOpenChange, initialJson, onSave, ti
                         </Button>
                         <Button
                             onClick={handleSave}
+                            className="bg-green-500 hover:bg-green-600 text-white"
                             disabled={!!error}
                         >
                             Save Changes

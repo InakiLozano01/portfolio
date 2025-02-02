@@ -1,13 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Home from '@/components/sections/Home'
-import Experience from '@/components/sections/Experience'
-import Contact from '@/components/sections/Contact'
-import Blog from '@/components/sections/Blog'
-import Skills from '@/components/sections/Skills'
-import Education from '@/components/sections/Education'
-import About from '@/components/sections/About'
+import dynamic from 'next/dynamic'
 import Carousel from '@/components/Carousel'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -26,14 +20,16 @@ interface DBSection {
   content: Record<string, any>;
 }
 
-const sectionComponents: Record<string, () => React.ReactElement | null> = {
-  'home': Home,
-  'about': About,
-  'education': Education,
-  'experience': Experience,
-  'skills': Skills,
-  'blog': Blog,
-  'contact': Contact,
+// Dynamically import section components
+const sectionComponents: Record<string, () => Promise<any>> = {
+  'home': () => import('@/components/sections/Home'),
+  'about': () => import('@/components/sections/About'),
+  'education': () => import('@/components/sections/Education'),
+  'experience': () => import('@/components/sections/Experience'),
+  'skills': () => import('@/components/sections/Skills'),
+  'projects': () => import('@/components/sections/Projects'),
+  'blog': () => import('@/components/sections/Blog'),
+  'contact': () => import('@/components/sections/Contact'),
 }
 
 export default function Page() {
@@ -53,17 +49,32 @@ export default function Page() {
         const data: DBSection[] = await response.json();
 
         // Convert DB sections to UI sections and filter out sections without components
-        const uiSections = data
-          .filter(section => section.visible)
-          .sort((a, b) => a.order - b.order)
-          .map(section => ({
-            id: section.title.toLowerCase(),
-            label: section.title,
-            component: sectionComponents[section.title.toLowerCase()]
-          }))
-          .filter(section => section.component); // Only keep sections that have a component
+        const uiSections = await Promise.all(
+          data
+            .filter(section => section.visible)
+            .sort((a, b) => a.order - b.order)
+            .map(async section => {
+              const id = section.title.toLowerCase();
+              const importComponent = sectionComponents[id];
 
-        setSections(uiSections);
+              if (!importComponent) return null;
+
+              try {
+                const module = await importComponent();
+                return {
+                  id,
+                  label: section.title,
+                  component: module.default
+                };
+              } catch (error) {
+                console.error(`Failed to load component for section ${id}:`, error);
+                return null;
+              }
+            })
+        );
+
+        // Filter out null values from failed imports
+        setSections(uiSections.filter((section): section is Section => section !== null));
         setLoading(false);
       } catch (error) {
         console.error('Error fetching sections:', error);

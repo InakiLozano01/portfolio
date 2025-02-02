@@ -182,7 +182,10 @@ export default function SectionsManager() {
             >
               {refreshing ? 'Refreshing...' : 'Refresh Content Cache'}
             </Button>
-            <Button onClick={() => setIsAddingSection(true)} className="flex items-center gap-2">
+            <Button
+              onClick={() => setIsAddingSection(true)}
+              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white"
+            >
               <PlusCircle className="w-4 h-4" />
               Add Section
             </Button>
@@ -223,7 +226,10 @@ export default function SectionsManager() {
                 <Button variant="outline" onClick={() => setIsAddingSection(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddSection}>
+                <Button
+                  onClick={handleAddSection}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                >
                   Create Section
                 </Button>
               </div>

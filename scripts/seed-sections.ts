@@ -93,8 +93,17 @@ const sections = [
     }
   },
   {
-    title: "Blog",
+    title: "Projects",
     order: 5,
+    visible: true,
+    content: {
+      description: "Showcasing my latest work and contributions",
+      featured: true
+    }
+  },
+  {
+    title: "Blog",
+    order: 6,
     visible: true,
     content: {
       description: "Sharing insights and experiences in software development",
@@ -103,7 +112,7 @@ const sections = [
   },
   {
     title: "Contact",
-    order: 6,
+    order: 7,
     visible: true,
     content: {
       email: "kakitolozano@gmail.com",
@@ -119,13 +128,13 @@ const sections = [
 async function seedSections() {
   try {
     await connectToDatabase()
-    
+
     // Clear existing sections
     await SectionModel.deleteMany({})
-    
+
     // Insert new sections
     await SectionModel.insertMany(sections)
-    
+
     console.log('Successfully seeded sections data')
     process.exit(0)
   } catch (error) {

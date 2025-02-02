@@ -14,16 +14,9 @@ export async function getCachedSections(type?: string) {
   }
 
   try {
-    // In development, bypass cache completely
-    if (isDevelopment) {
-      await connectToDatabase();
-      const query = type ? { title: type.charAt(0).toUpperCase() + type.slice(1).toLowerCase() } : {};
-      const data = await SectionModel.find(query).sort({ order: 1 });
-      return data;
-    }
-
     const cacheKey = type ? `section_${type.toLowerCase()}` : 'sections';
-    
+
+    // Try to get from cache first
     try {
       const cachedData = await redis.get(cacheKey);
       if (cachedData) {
@@ -65,8 +58,6 @@ export async function getCachedSections(type?: string) {
 }
 
 export async function clearSectionsCache() {
-  if (isDevelopment) return; // Skip in development
-  
   try {
     const keys = await redis.keys('section_*');
     if (keys.length > 0) {

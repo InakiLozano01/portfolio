@@ -10,6 +10,7 @@ import SectionsManager from '@/components/admin/SectionsManager'
 import SkillsManager from '@/components/admin/SkillsManager'
 import MessagesManager from '@/components/admin/MessagesManager'
 import BlogManager from '@/components/admin/BlogManager'
+import ProjectsManager from '@/components/admin/ProjectsManager'
 import { signOut } from 'next-auth/react'
 
 interface Skill {
@@ -119,6 +120,9 @@ export default function AdminPage() {
             <TabsTrigger value="skills" className="text-gray-600 hover:text-gray-900 data-[state=active]:text-gray-900 data-[state=active]:bg-gray-100">
               Skills
             </TabsTrigger>
+            <TabsTrigger value="projects" className="text-gray-600 hover:text-gray-900 data-[state=active]:text-gray-900 data-[state=active]:bg-gray-100">
+              Projects
+            </TabsTrigger>
             <TabsTrigger value="blogs" className="text-gray-600 hover:text-gray-900 data-[state=active]:text-gray-900 data-[state=active]:bg-gray-100">
               Blogs
             </TabsTrigger>
@@ -137,6 +141,9 @@ export default function AdminPage() {
             ) : (
               <SkillsManager skills={skills} onSave={handleSaveSkill} />
             )}
+          </TabsContent>
+          <TabsContent value="projects" className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <ProjectsManager />
           </TabsContent>
           <TabsContent value="blogs" className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <BlogManager />

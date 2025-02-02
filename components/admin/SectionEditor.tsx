@@ -9,6 +9,8 @@ import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { PlusCircle, Trash2, Code } from 'lucide-react'
 import JsonEditor from './JsonEditor'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { TinyMCE } from '@/components/ui/tinymce'
 
 interface Section {
   _id: string;
@@ -65,6 +67,12 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
           experiences: initialContent.experiences || []
         };
         break;
+      case 'projects':
+        initialContent = {
+          description: initialContent.description || '',
+          featured: initialContent.featured || false
+        };
+        break;
       case 'blog':
         initialContent = {
           description: initialContent.description || '',
@@ -90,6 +98,10 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contentError, setContentError] = useState<string | null>(null);
   const [jsonEditorOpen, setJsonEditorOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(
+    JSON.stringify(section.content, null, 2)
+  );
 
   // Handle order changes outside of render
   const handleOrderChange = (value: string) => {
@@ -206,6 +218,20 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
       ...prev,
       content: newContent
     }));
+  };
+
+  const handleSave = async () => {
+    try {
+      const parsedContent = JSON.parse(editedContent);
+      await onSave({
+        ...section,
+        content: parsedContent,
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Invalid JSON:', error);
+      alert('Invalid JSON format');
+    }
   };
 
   const renderContentEditor = () => {
@@ -515,7 +541,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
               value={JSON.stringify(editedSection.content, null, 2)}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(e.target.value)}
               placeholder="Enter content in JSON format"
-              className="bg-white text-black placeholder:text-gray-500"
+              className="min-h-[200px] bg-white text-gray-900 placeholder:text-gray-500"
             />
           </div>
         );
@@ -524,9 +550,9 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <Card>
+      <Card className="bg-white">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex items-center justify-between text-gray-900">
             <span>{section.title}</span>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
@@ -560,6 +586,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
       <Button
         type="submit"
         disabled={isSubmitting || !!contentError}
+        className="bg-green-500 hover:bg-green-600 text-white"
       >
         {isSubmitting ? 'Saving...' : 'Save Changes'}
       </Button>
@@ -571,6 +598,32 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
         onSave={handleJsonSave}
         title={`Edit ${section.title} Content`}
       />
+
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="max-w-4xl bg-white text-gray-900">
+          <DialogHeader>
+            <DialogTitle>Edit {section.title} Content</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <TinyMCE
+              value={editedContent}
+              onChange={setEditedContent}
+              height={500}
+            />
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setIsEditing(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 } 

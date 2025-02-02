@@ -70,12 +70,7 @@ services:
     command: >
       sh -c "
         echo 'Waiting for MongoDB and Redis to be ready...' &&
-        sleep 15 &&
-        echo 'Initializing the application...' &&
-        cd /app && NODE_PATH=/app ts-node --project tsconfig.scripts.json scripts/seed-sections.ts &&
-        cd /app && NODE_PATH=/app ts-node --project tsconfig.scripts.json scripts/seed-skills.ts &&
-        cd /app && NODE_PATH=/app ts-node --project tsconfig.scripts.json scripts/seed-admin.ts &&
-        echo 'Starting the application...' &&
+        sleep 5 &&
         node server.js"
 
 networks:

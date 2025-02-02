@@ -1,11 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { formatDistanceToNow } from 'date-fns'
+import { useToast } from '@/components/ui/use-toast'
+
+type FilterType = 'priority' | 'read' | 'all'
 
 interface Message {
   _id: string;
@@ -17,10 +20,11 @@ interface Message {
 }
 
 export default function MessagesManager() {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'unread' | 'recent'>('all');
+  const [filter, setFilter] = useState<FilterType>('priority');
+  const [currentPage, setCurrentPage] = useState(1);
+  const messagesPerPage = 10;
 
   useEffect(() => {
     fetchMessages();
@@ -28,104 +32,154 @@ export default function MessagesManager() {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch('/api/contact');
-      if (!response.ok) {
-        throw new Error('Failed to fetch messages');
-      }
+      const response = await fetch('/api/messages');
+      if (!response.ok) throw new Error('Failed to fetch messages');
       const data = await response.json();
       setMessages(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch messages');
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load messages',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleMarkAsRead = async (messageId: string, read: boolean) => {
+  const handleMarkAsRead = async (id: string) => {
     try {
-      const response = await fetch(`/api/contact/${messageId}`, {
-        method: 'PUT',
+      const response = await fetch(`/api/messages/${id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ read }),
+        body: JSON.stringify({ read: true }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update message');
-      }
+      if (!response.ok) throw new Error('Failed to update message');
 
       await fetchMessages();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update message');
+      toast({
+        title: 'Success',
+        description: 'Message marked as read',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update message',
+        variant: 'destructive',
+      });
     }
   };
 
-  const filteredMessages = messages.filter(message => {
-    if (filter === 'unread') return !message.read;
-    if (filter === 'recent') {
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      return new Date(message.createdAt) > oneWeekAgo;
-    }
-    return true;
-  });
+  const getFilteredMessages = () => {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-  if (loading) return <div>Loading messages...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+    switch (filter) {
+      case 'priority':
+        return messages.filter(
+          (msg) =>
+            !msg.read ||
+            new Date(msg.createdAt) >= oneWeekAgo
+        );
+      case 'read':
+        return messages.filter((msg) => msg.read);
+      case 'all':
+      default:
+        return messages;
+    }
+  };
+
+  const filteredMessages = getFilteredMessages();
+  const totalPages = Math.ceil(filteredMessages.length / messagesPerPage);
+  const currentMessages = filteredMessages.slice(
+    (currentPage - 1) * messagesPerPage,
+    currentPage * messagesPerPage
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        <Button
-          variant={filter === 'all' ? 'default' : 'outline'}
-          onClick={() => setFilter('all')}
-        >
-          All
-        </Button>
-        <Button
-          variant={filter === 'unread' ? 'default' : 'outline'}
-          onClick={() => setFilter('unread')}
-        >
-          Unread
-        </Button>
-        <Button
-          variant={filter === 'recent' ? 'default' : 'outline'}
-          onClick={() => setFilter('recent')}
-        >
-          Last Week
-        </Button>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Messages</h2>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setFilter('priority')}
+            variant={filter === 'priority' ? 'default' : 'outline'}
+            className={filter === 'priority' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}
+          >
+            Priority
+          </Button>
+          <Button
+            onClick={() => setFilter('read')}
+            variant={filter === 'read' ? 'default' : 'outline'}
+            className={filter === 'read' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}
+          >
+            Read
+          </Button>
+          <Button
+            onClick={() => setFilter('all')}
+            variant={filter === 'all' ? 'default' : 'outline'}
+            className={filter === 'all' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}
+          >
+            All
+          </Button>
+        </div>
       </div>
 
-      <ScrollArea className="h-[calc(100vh-200px)]">
-        <div className="space-y-4 pr-4">
-          {filteredMessages.map(message => (
-            <Card key={message._id} className="p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold">{message.name}</h3>
-                    {!message.read && (
-                      <Badge variant="default">New</Badge>
+      <div className="grid gap-4">
+        {currentMessages.map((message) => (
+          <Card key={message._id} className="hover:bg-gray-50 transition-colors">
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium">{message.name}</h3>
+                    <Badge
+                      className={!message.read ?
+                        "bg-green-500 hover:bg-green-600 text-white" :
+                        "bg-gray-500 hover:bg-gray-600 text-white"
+                      }
+                    >
+                      {message.read ? 'Read' : 'Unread'}
+                    </Badge>
+                    {new Date(message.createdAt) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
+                      <Badge className="bg-green-500 hover:bg-green-600 text-white">
+                        New
+                      </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground mb-1">{message.email}</p>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                  </p>
-                  <p className="whitespace-pre-wrap">{message.message}</p>
+                  <p className="text-sm text-gray-500">{message.email}</p>
+                  <p className="text-sm">{message.message}</p>
                 </div>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleMarkAsRead(message._id, !message.read)}
-                >
-                  {message.read ? 'Mark as Unread' : 'Mark as Read'}
-                </Button>
+                {!message.read && (
+                  <Button
+                    variant="outline"
+                    className="text-green-500 hover:text-green-700 hover:bg-green-50"
+                    onClick={() => handleMarkAsRead(message._id)}
+                  >
+                    Mark as Read
+                  </Button>
+                )}
               </div>
-            </Card>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-4">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <Button
+              key={page}
+              variant={currentPage === page ? 'default' : 'outline'}
+              className={currentPage === page ? 'bg-green-500 hover:bg-green-600 text-white' : ''}
+              onClick={() => setCurrentPage(page)}
+            >
+              {page}
+            </Button>
           ))}
         </div>
-      </ScrollArea>
+      )}
     </div>
   );
 } 

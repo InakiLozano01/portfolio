@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select } from '@/components/ui/select'
-import { PlusCircle, Trash2 } from 'lucide-react'
+import { PlusCircle, Trash2, Plus } from 'lucide-react'
 import { FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap, FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker, FaAws, FaFigma, FaAngular, FaVuejs, FaRust, FaLinux, FaWindows, FaApple } from 'react-icons/fa'
 import { SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, SiIntellijidea, SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta, SiMongodb, SiPython, SiTensorflow, SiNextdotjs, SiTailwindcss, SiPrisma, SiSupabase, SiVercel, SiFirebase, SiRedis, SiVite, SiAstro, SiDjango, SiLaravel, SiExpress, SiNestjs, SiGraphql, SiPostman, SiJest, SiCypress, SiSelenium, SiWebpack, SiRollupdotjs, SiSwagger, SiKubernetes, SiNginx, SiApache, SiWebstorm, SiPycharm, SiPhpstorm } from 'react-icons/si'
 import { VscCode } from 'react-icons/vsc'
@@ -138,10 +138,9 @@ export default function SkillsManager({ skills, onSave }: Props) {
           <div className="flex items-center gap-4">
             <Button
               onClick={() => setIsAddingSkill(true)}
-              className="flex items-center gap-2"
-              variant="outline"
+              className="bg-green-500 hover:bg-green-600 text-white"
             >
-              <PlusCircle className="w-4 h-4" />
+              <Plus className="w-4 h-4 mr-2" />
               Add Skill
             </Button>
             <div className="flex items-center gap-2">
@@ -242,7 +241,10 @@ export default function SkillsManager({ skills, onSave }: Props) {
                 <Button variant="outline" onClick={() => setIsAddingSkill(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddSkill}>
+                <Button
+                  onClick={handleAddSkill}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                >
                   Add Skill
                 </Button>
               </div>

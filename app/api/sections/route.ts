@@ -20,23 +20,17 @@ export async function GET() {
     const referer = headersList.get('referer') || '';
     const isAdminRequest = referer.includes('/admin');
 
-    // In development, skip cache and fetch directly from DB
-    if (isDevelopment) {
-      await connectToDatabase();
-      const query = isAdminRequest ? {} : { visible: true };
-      const sections = await SectionModel.find(query).sort({ order: 1 });
-      return NextResponse.json(sections);
-    }
-
-    // Try to get from cache first
+    // Try to get from cache first (even in development)
     const sections = await getCachedSections();
+
+    // If we have cached data, use it
     if (sections && sections.length > 0) {
       // Filter out invisible sections for non-admin requests
       const filteredSections = isAdminRequest ? sections : sections.filter((s: Section) => s.visible);
       return NextResponse.json(filteredSections);
     }
 
-    // If not in cache, get from database
+    // If not in cache or cache failed, get from database
     await connectToDatabase();
     const query = isAdminRequest ? {} : { visible: true };
     const dbSections = await SectionModel.find(query).sort({ order: 1 });

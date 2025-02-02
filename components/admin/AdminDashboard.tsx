@@ -1,86 +1,45 @@
 'use client';
 
-import * as React from 'react';
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
+import BlogManager from './BlogManager';
+import MessagesManager from './MessagesManager';
 import SectionsManager from './SectionsManager';
 import SkillsManager from './SkillsManager';
+import ProjectsManager from './ProjectsManager';
 
-interface Skill {
-  _id: string;
-  name: string;
-  category: string;
-  proficiency: number;
-  yearsOfExperience: number;
-  icon: string;
-}
-
-const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = React.useState('sections');
-  const [skills, setSkills] = React.useState<Skill[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    fetchSkills();
-  }, []);
-
-  const fetchSkills = async () => {
-    try {
-      const response = await fetch('/api/skills');
-      if (!response.ok) {
-        throw new Error('Failed to fetch skills');
-      }
-      const data = await response.json();
-      setSkills(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch skills');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveSkill = async (skill: Skill) => {
-    try {
-      const response = await fetch('/api/skills', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(skill),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update skill');
-      }
-
-      await fetchSkills();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update skill');
-    }
-  };
+export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('sections');
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="sections">Sections</TabsTrigger>
-        <TabsTrigger value="skills">Skills</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="sections" className="space-y-4">
-        <SectionsManager />
-      </TabsContent>
-
-      <TabsContent value="skills" className="space-y-4">
-        {loading ? (
-          <div>Loading skills...</div>
-        ) : error ? (
-          <div className="text-red-500">{error}</div>
-        ) : (
-          <SkillsManager skills={skills} onSave={handleSaveSkill} />
-        )}
-      </TabsContent>
-    </Tabs>
+    <div className="container mx-auto p-4">
+      <Card className="p-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-5 w-full">
+            <TabsTrigger value="sections">Sections</TabsTrigger>
+            <TabsTrigger value="skills">Skills</TabsTrigger>
+            <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="blogs">Blog</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
+          </TabsList>
+          <TabsContent value="sections">
+            <SectionsManager />
+          </TabsContent>
+          <TabsContent value="skills">
+            <SkillsManager />
+          </TabsContent>
+          <TabsContent value="projects">
+            <ProjectsManager />
+          </TabsContent>
+          <TabsContent value="blogs">
+            <BlogManager />
+          </TabsContent>
+          <TabsContent value="messages">
+            <MessagesManager />
+          </TabsContent>
+        </Tabs>
+      </Card>
+    </div>
   );
-};
-
-export default AdminDashboard; 
+} 
