@@ -1,5 +1,7 @@
+/// <reference types="react" />
 'use client';
 
+import type { FC } from 'react';
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
@@ -9,8 +11,35 @@ import SectionsManager from './SectionsManager';
 import SkillsManager from './SkillsManager';
 import ProjectsManager from './ProjectsManager';
 
-export default function AdminDashboard() {
+interface Skill {
+  _id: string;
+  name: string;
+  category: string;
+  proficiency: number;
+  yearsOfExperience: number;
+  icon: string;
+}
+
+const AdminDashboard: FC = () => {
   const [activeTab, setActiveTab] = useState('sections');
+  const [skills, setSkills] = useState<Skill[]>([]);
+
+  const handleSaveSkill = async (skill: Skill) => {
+    try {
+      // TODO: Implement the API call to save the skill
+      console.log('Saving skill:', skill);
+      // For now, just update the local state
+      setSkills((prevSkills: Skill[]) => {
+        const index = prevSkills.findIndex((s: Skill) => s._id === skill._id);
+        if (index >= 0) {
+          return [...prevSkills.slice(0, index), skill, ...prevSkills.slice(index + 1)];
+        }
+        return [...prevSkills, skill];
+      });
+    } catch (error) {
+      console.error('Error saving skill:', error);
+    }
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -27,7 +56,7 @@ export default function AdminDashboard() {
             <SectionsManager />
           </TabsContent>
           <TabsContent value="skills">
-            <SkillsManager />
+            <SkillsManager skills={skills} onSave={handleSaveSkill} />
           </TabsContent>
           <TabsContent value="projects">
             <ProjectsManager />
@@ -42,4 +71,6 @@ export default function AdminDashboard() {
       </Card>
     </div>
   );
-} 
+};
+
+export default AdminDashboard; 

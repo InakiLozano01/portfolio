@@ -121,7 +121,17 @@ export default function BlogManager() {
                                             variant="ghost"
                                             size="icon"
                                             className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                            onClick={() => handleDelete(blog._id)}
+                                            onClick={() => {
+                                                if (blog._id) {
+                                                    handleDelete(blog._id);
+                                                } else {
+                                                    toast({
+                                                        title: "Error",
+                                                        description: "Blog ID is missing",
+                                                        variant: "destructive",
+                                                    });
+                                                }
+                                            }}
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
