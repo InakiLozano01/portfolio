@@ -48,6 +48,8 @@ services:
     restart: always
     ports:
       - "3003:3000"
+    volumes:
+      - ./public/images:/app/public/images
     depends_on:
       mongodb:
         condition: service_healthy

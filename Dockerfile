@@ -13,7 +13,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci --include=dev
+RUN npm install --include=dev
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -56,6 +56,11 @@ COPY --from=builder /app/data ./data
 COPY --from=builder /app/.env ./.env
 COPY --from=builder /app/tsconfig*.json ./
 COPY --from=builder /app/package*.json ./
+
+# Create upload directory and set permissions
+RUN mkdir -p ./public/images/projects && \
+    chown -R nextjs:nodejs ./public/images && \
+    chmod -R 755 ./public/images
 
 # Ensure data directory has correct permissions
 RUN chown -R nextjs:nodejs ./data ./scripts ./lib ./models

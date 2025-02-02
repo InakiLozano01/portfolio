@@ -23,9 +23,22 @@ const nextConfig = {
         }
         return config;
     },
-    // Allow image domains for TinyMCE
     images: {
-        domains: ['localhost'],
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: 'inakiserver.lat',
+                port: '',
+                pathname: '/**',
+            },
+            {
+                protocol: 'http',
+                hostname: 'localhost',
+                port: '3003',
+                pathname: '/**',
+            }
+        ],
+        unoptimized: process.env.NODE_ENV === 'development'
     }
 }
 

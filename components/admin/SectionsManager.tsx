@@ -76,7 +76,7 @@ export default function SectionsManager() {
         throw new Error('Failed to create section');
       }
 
-      await fetchSections();
+      await handleRefreshCache();
       setIsAddingSection(false);
       setNewSection({
         title: '',
@@ -106,7 +106,7 @@ export default function SectionsManager() {
         throw new Error('Failed to delete section');
       }
 
-      await fetchSections();
+      await handleRefreshCache();
       toast.success('Section deleted successfully');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to delete section');
@@ -129,7 +129,7 @@ export default function SectionsManager() {
         throw new Error('Failed to update section');
       }
 
-      await fetchSections();
+      await handleRefreshCache();
       toast.success('Section updated successfully');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update section');
@@ -155,7 +155,6 @@ export default function SectionsManager() {
         throw new Error('Failed to refresh cache');
       }
 
-      toast.success('Content cache has been refreshed');
       await fetchSections();
     } catch (error) {
       console.error('Error refreshing cache:', error);

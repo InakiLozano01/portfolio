@@ -59,13 +59,18 @@ export async function getCachedSections(type?: string) {
 
 export async function clearSectionsCache() {
   try {
-    const keys = await redis.keys('section_*');
-    if (keys.length > 0) {
-      await redis.del(keys);
-      console.log('[Cache] Cache cleared successfully');
+    // Get all section-related cache keys
+    const sectionKeys = await redis.keys('section*'); // This will match both 'sections' and 'section_*'
+
+    if (sectionKeys.length > 0) {
+      await redis.del(...sectionKeys);
+      console.log('[Cache] Cleared the following keys:', sectionKeys);
+    } else {
+      console.log('[Cache] No section-related keys found to clear');
     }
   } catch (error) {
     console.error('[Cache Error] Failed to clear cache:', error);
+    throw error; // Re-throw to handle in the API route
   }
 }
 
