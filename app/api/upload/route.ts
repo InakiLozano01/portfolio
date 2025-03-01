@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
 import { randomUUID } from 'crypto';
+import { invalidateCache } from '@/lib/cache';
 
 type AllowedFormats = {
     'image/jpeg': string[];
@@ -143,6 +144,10 @@ export async function POST(request: Request) {
             try {
                 await fs.access(absolutePath, fs.constants.R_OK);
                 console.log('Verified file was written successfully');
+
+                // Set appropriate file permissions to ensure readability
+                await fs.chmod(absolutePath, 0o644);
+                console.log('Set file permissions to 644');
             } catch (verifyError: unknown) {
                 const errorMessage = verifyError instanceof Error
                     ? verifyError.message
@@ -153,6 +158,16 @@ export async function POST(request: Request) {
             // Get dimensions of the processed image
             const processedMetadata = await sharp(resizedImage).metadata();
             console.log('Final image metadata:', processedMetadata);
+
+            // Invalidate relevant caches after upload
+            try {
+                // Invalidate projects cache to ensure new images are displayed
+                await invalidateCache('projects');
+                console.log('Successfully invalidated projects cache');
+            } catch (cacheError) {
+                console.error('Failed to invalidate cache:', cacheError);
+                // Don't fail the request if cache invalidation fails
+            }
 
             return NextResponse.json({
                 path: relativePath,

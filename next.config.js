@@ -38,7 +38,14 @@ const nextConfig = {
                 pathname: '/**',
             }
         ],
-        unoptimized: process.env.NODE_ENV === 'development'
+        // Always keep images unoptimized for better compatibility with direct file access
+        unoptimized: true,
+        // Increase cache time for images to avoid frequent reprocessing
+        minimumCacheTTL: 3600,
+        // Allow SVG and other formats
+        dangerouslyAllowSVG: true,
+        contentDispositionType: 'attachment',
+        contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;"
     }
 }
 

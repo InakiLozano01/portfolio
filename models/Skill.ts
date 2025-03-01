@@ -1,11 +1,16 @@
 import mongoose from 'mongoose';
 
+export interface ISkill extends mongoose.Document {
+  name: string;
+  category: string;
+  proficiency: number;
+  yearsOfExperience: number;
+  icon: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 const SkillSchema = new mongoose.Schema({
-  _id: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    auto: true
-  },
   name: {
     type: String,
     required: true,
@@ -46,6 +51,8 @@ const SkillSchema = new mongoose.Schema({
   strict: true
 });
 
-// Export as 'Skill' model if it doesn't exist, otherwise use existing model
-const Skill = mongoose.models.Skill || mongoose.model('Skill', SkillSchema);
-export default Skill; 
+// Delete the model if it exists (this helps with hot reloading)
+delete mongoose.models.Skill;
+
+// Export the model
+export default mongoose.model<ISkill>('Skill', SkillSchema); 

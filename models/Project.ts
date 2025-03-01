@@ -1,5 +1,22 @@
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import slugify from 'slugify';
+import './Skill';  // Import Skill model to ensure it's registered
+
+export interface IProject extends mongoose.Document {
+  title: string;
+  subtitle: string;
+  slug: string;
+  description: string;
+  technologies: Types.ObjectId[] | Array<{ _id: Types.ObjectId; name: string }>;
+  thumbnail?: string;
+  thumbnailAlt?: string;
+  imageHeight?: number;
+  imageWidth?: number;
+  githubUrl?: string;
+  featured: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const ProjectSchema = new mongoose.Schema({
   title: {
@@ -68,20 +85,8 @@ ProjectSchema.pre('validate', function (next) {
   next();
 });
 
-export interface IProject extends mongoose.Document {
-  title: string;
-  subtitle: string;
-  slug: string;
-  description: string;
-  technologies: mongoose.Types.ObjectId[];
-  thumbnail?: string;
-  thumbnailAlt?: string;
-  imageHeight?: number;
-  imageWidth?: number;
-  githubUrl?: string;
-  featured: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// Delete the model if it exists (this helps with hot reloading)
+delete mongoose.models.Project;
 
-export default mongoose.models.Project || mongoose.model<IProject>('Project', ProjectSchema); 
+// Export the model
+export default mongoose.model<IProject>('Project', ProjectSchema); 
