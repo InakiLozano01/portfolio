@@ -55,6 +55,7 @@ RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/scripts ./scripts
+RUN chmod +x /app/scripts/entrypoint.sh
 COPY --from=builder /app/lib ./lib
 COPY --from=builder /app/models ./models
 COPY --from=builder /app/data ./data
@@ -100,4 +101,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
 # Use a shell to run the application so we can see logs
-CMD ["sh", "-c", "node server.js"] 
+CMD ["sh", "/app/scripts/entrypoint.sh"]
+
