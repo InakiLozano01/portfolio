@@ -12,7 +12,8 @@
     "db:seed": "ts-node --project tsconfig.scripts.json scripts/init-db.ts",
     "create:admin": "ts-node --project tsconfig.scripts.json scripts/create-admin.ts",
     "seed:sections": "ts-node --project tsconfig.scripts.json scripts/seed-sections.ts",
-    "seed-blogs": "ts-node --project tsconfig.scripts.json scripts/seed-blogs.ts"
+    "seed-blogs": "ts-node --project tsconfig.scripts.json scripts/seed-blogs.ts",
+    "test": "jest"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.7.4",
@@ -101,6 +102,11 @@
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "@types/jest": "^29.5.5",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/jest-dom": "^6.0.0"
   }
 }
