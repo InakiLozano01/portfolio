@@ -43,6 +43,7 @@ Tests live under `__tests__` and cover API routes and components. A minimal Jest
 ## Docker
 
 Docker and `docker-compose.yml` are provided. The application image uses environment variables defined in `env.production`. Run the stack with `docker-compose up --build`.
+The container starts via `/app/scripts/entrypoint.sh`, which waits for MongoDB and Redis, fixes image permissions and then runs the server.
 
 ## Comments
 
