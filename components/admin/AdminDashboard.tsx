@@ -26,15 +26,31 @@ const AdminDashboard: FC = () => {
 
   const handleSaveSkill = async (skill: Skill) => {
     try {
-      // TODO: Implement the API call to save the skill
-      console.log('Saving skill:', skill);
-      // For now, just update the local state
+      const method = skill._id ? 'PUT' : 'POST';
+      const response = await fetch('/api/skills', {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(skill)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save skill');
+      }
+
+      const savedSkill = await response.json();
+
       setSkills((prevSkills: Skill[]) => {
-        const index = prevSkills.findIndex((s: Skill) => s._id === skill._id);
+        const index = prevSkills.findIndex((s: Skill) => s._id === savedSkill._id);
         if (index >= 0) {
-          return [...prevSkills.slice(0, index), skill, ...prevSkills.slice(index + 1)];
+          return [
+            ...prevSkills.slice(0, index),
+            savedSkill,
+            ...prevSkills.slice(index + 1)
+          ];
         }
-        return [...prevSkills, skill];
+        return [...prevSkills, savedSkill];
       });
     } catch (error) {
       console.error('Error saving skill:', error);
