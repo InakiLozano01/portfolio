@@ -25,7 +25,9 @@ docker-compose up --build
 ## Environment variables
 
 All required variables are documented in `.env.example`. They include database URLs, NextAuth configuration and flags used during the build.
+
 An additional `GOOGLE_AI_API_KEY` is required for comment moderation.
+
 
 ## Development workflow
 
