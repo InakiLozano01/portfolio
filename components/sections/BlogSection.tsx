@@ -124,7 +124,7 @@ export default function BlogSection() {
                     {filteredBlogs.map((blog) => (
                         <Card
                             key={blog._id}
-                            className="cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden group"
+                            className="cursor-pointer hover:shadow-lg hover:bg-primary/5 transition-shadow duration-200 overflow-hidden group"
                             onClick={() => handleBlogClick(blog)}
                         >
                             <CardHeader className="relative">
