@@ -4,6 +4,7 @@ import DOMPurify from 'isomorphic-dompurify'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import BackNavigationHandler from '@/components/BackNavigationHandler'
+import BlogComments from '@/components/BlogComments'
 
 interface BlogPageProps {
     params: {
@@ -42,6 +43,7 @@ export default async function BlogPage({ params }: BlogPageProps) {
                         __html: DOMPurify.sanitize(blog.content)
                     }}
                 />
+                <BlogComments blogId={blog._id} />
             </article>
             <div className="hidden lg:block w-32 bg-[#263547]" />
         </div>
