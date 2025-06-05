@@ -91,7 +91,7 @@ export default function Projects() {
                         href={`/projects/${project.slug}`}
                         className="transition-transform hover:scale-105"
                     >
-                        <Card className="h-full flex flex-col">
+                        <Card className="h-full flex flex-col hover:bg-primary/5">
                             <div className="relative aspect-video w-full">
                                 <Image
                                     src={project.thumbnail || '/images/projects/default-project.jpg'}

@@ -26,6 +26,9 @@ docker-compose up --build
 
 All required variables are documented in `.env.example`. They include database URLs, NextAuth configuration and flags used during the build.
 
+An additional `GOOGLE_AI_API_KEY` is required for comment moderation.
+
+
 ## Development workflow
 
 - `npm run dev` – run Next.js in development mode
@@ -40,4 +43,8 @@ Tests live under `__tests__` and cover API routes and components. A minimal Jest
 ## Docker
 
 Docker and `docker-compose.yml` are provided. The application image uses environment variables defined in `env.production`. Run the stack with `docker-compose up --build`.
+
+## Comments
+
+Visitors can leave comments on blog posts using an alias. Comments are moderated through Google AI Studio (Gemma) and basic rate limiting prevents spam.
 
