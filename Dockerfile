@@ -102,3 +102,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 
 # Use a shell to run the application so we can see logs
 CMD ["sh", "/app/scripts/entrypoint.sh"]
+
