@@ -3,6 +3,7 @@ import './globals.css'
 import Script from 'next/script'
 import { metadata } from './metadata'
 import ClientLayout from './client-layout'
+import { StructuredData } from '@/components/structured-data'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,13 +20,14 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         <meta name="theme-color" content="#1a2433" />
         <link rel="canonical" href="https://inakiserver.lat" />
-      </head>
-      <body className={inter.className} suppressHydrationWarning>
+        <StructuredData />
+
+        {/* Google Analytics */}
         <Script
-          strategy="lazyOnload"
           src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+          strategy="afterInteractive"
         />
-        <Script strategy="lazyOnload" id="ga-script">
+        <Script id="google-analytics" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
@@ -33,6 +35,8 @@ export default function RootLayout({
             gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
           `}
         </Script>
+      </head>
+      <body className={inter.className} suppressHydrationWarning>
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

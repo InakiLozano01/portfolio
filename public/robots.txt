@@ -1,0 +1,21 @@
+# Robots.txt - Generated fallback
+# This will be overwritten by next-sitemap if it runs successfully
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/
+
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://inakilozano.com/sitemap.xml 

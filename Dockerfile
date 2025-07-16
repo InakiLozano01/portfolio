@@ -7,9 +7,9 @@ WORKDIR /app
 
 # Install swc binary for Alpine Linux
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
-        npm install @next/swc-linux-x64-musl; \
+    npm install @next/swc-linux-x64-musl; \
     elif [ "$(uname -m)" = "aarch64" ]; then \
-        npm install @next/swc-linux-arm64-musl; \
+    npm install @next/swc-linux-arm64-musl; \
     fi
 
 # Install dependencies
@@ -43,6 +43,10 @@ COPY .env.production .env
 # Build the application
 RUN npm run build
 
+# The postbuild script (next-sitemap) should run automatically after build
+# Ensure sitemap files are generated
+RUN ls -la public/ || echo "Public directory contents after build"
+
 # Production image, copy all files and run next
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -54,6 +58,7 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
+# Note: next-sitemap generates files in public/ and root directory automatically
 COPY --from=builder /app/scripts ./scripts
 RUN chmod +x /app/scripts/entrypoint.sh
 COPY --from=builder /app/lib ./lib
@@ -62,6 +67,7 @@ COPY --from=builder /app/data ./data
 COPY --from=builder /app/.env ./.env
 COPY --from=builder /app/tsconfig*.json ./
 COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/next-sitemap.config.js ./
 
 # Create upload directory and set permissions
 RUN mkdir -p ./public/images/projects && \
@@ -70,6 +76,10 @@ RUN mkdir -p ./public/images/projects && \
 
 # Ensure data directory has correct permissions
 RUN chown -R nextjs:nodejs ./data ./scripts ./lib ./models
+
+# Set permissions for next-sitemap to write sitemap and robots files
+RUN chown -R nextjs:nodejs ./public && \
+    chmod -R 755 ./public
 
 # Install only the necessary dependencies for running scripts
 RUN npm install -g ts-node typescript
@@ -98,7 +108,7 @@ ENV REDIS_URL=""
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
 # Use a shell to run the application so we can see logs
 CMD ["sh", "/app/scripts/entrypoint.sh"]

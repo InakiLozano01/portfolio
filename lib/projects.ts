@@ -37,4 +37,18 @@ export const getProjectBySlug = cache(async (slug: string) => {
             _id: tech._id.toString()
         }))
     }
+})
+
+export const getAllProjects = cache(async () => {
+    await connectToDatabase()
+
+    const projects = await Project.find({ published: true })
+        .select('slug updatedAt')
+        .lean()
+        .exec()
+
+    return projects.map(project => ({
+        slug: project.slug,
+        lastModified: project.updatedAt
+    }))
 }) 

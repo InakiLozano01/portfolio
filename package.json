@@ -7,6 +7,7 @@
     "dev:precompile": "node scripts/precompile.js",
     "dev": "npm-run-all --parallel dev:*",
     "build": "next build",
+    "postbuild": "next-sitemap",
     "start": "next start",
     "lint": "next lint",
     "db:seed": "ts-node --project tsconfig.scripts.json scripts/init-db.ts",
@@ -87,7 +88,8 @@
     "tailwindcss-animate": "^1.0.7",
     "tinymce": "^6.8.2",
     "vaul": "^0.9.0",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "next-sitemap": "^4.2.3"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",

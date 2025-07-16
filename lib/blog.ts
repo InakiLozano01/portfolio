@@ -17,4 +17,18 @@ export const getBlogBySlug = cache(async (slug: string) => {
         createdAt: blog.createdAt.toISOString(),
         updatedAt: blog.updatedAt.toISOString()
     }
+})
+
+export const getAllBlogs = cache(async () => {
+    await connectToDatabase()
+
+    const blogs = await Blog.find({ published: true })
+        .select('slug updatedAt')
+        .lean()
+        .exec()
+
+    return blogs.map(blog => ({
+        slug: blog.slug,
+        lastModified: blog.updatedAt
+    }))
 }) 
