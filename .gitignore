@@ -13,3 +13,5 @@ next
 public/images/projects/*
 
 .package-lock.json
+mongodb_data
+redis_data
