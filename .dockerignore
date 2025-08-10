@@ -4,6 +4,8 @@ npm-debug.log
 yarn-debug.log
 yarn-error.log
 
+mongodb_data
+
 # Next.js build output
 .next
 out
