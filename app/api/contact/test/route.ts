@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 import { emailService } from '@/lib/email';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // This endpoint is for testing email configuration
 // Remove or secure this in production
 export async function GET() {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     try {
         // Test the email connection
         const isConnected = await emailService.testConnection();
@@ -28,6 +34,10 @@ export async function GET() {
 
 // Test endpoint to send a test email
 export async function POST() {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     try {
         const testEmailData = {
             name: 'Test User',

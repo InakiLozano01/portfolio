@@ -5,12 +5,10 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
-# Install swc binary for Alpine Linux
-RUN if [ "$(uname -m)" = "x86_64" ]; then \
-    npm install @next/swc-linux-x64-musl; \
-    elif [ "$(uname -m)" = "aarch64" ]; then \
-    npm install @next/swc-linux-arm64-musl; \
-    fi
+# Preinstall SWC binary to avoid patch warnings (buildx will cache this layer)
+RUN node -e "console.log(process.arch)" \
+  && if [ "$(node -e 'process.stdout.write(process.arch)')" = "x64" ]; then npm i @next/swc-linux-x64-musl; fi \
+  && if [ "$(node -e 'process.stdout.write(process.arch)')" = "arm64" ]; then npm i @next/swc-linux-arm64-musl; fi
 
 # Install dependencies
 COPY package*.json ./
@@ -25,9 +23,8 @@ ENV NODE_ENV=development
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Install required type definitions and dependencies
-RUN npm install --save-dev @types/node @types/react @types/tinymce @types/mongoose && \
-    npm install --save swr
+# Install required type definitions and dependencies (cached layer)
+RUN npm install --save-dev @types/node @types/react @types/tinymce @types/mongoose swr
 
 # Set environment variables for better logging
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -40,8 +37,10 @@ RUN apk add --no-cache libc6-compat
 ENV NODE_ENV=production
 COPY .env.production .env
 
-# Build the application
-RUN npm run build
+# Build the application (skip DB/Redis during build to avoid failures)
+ENV SKIP_DB_DURING_BUILD=true
+ENV SKIP_REDIS_DURING_BUILD=true
+RUN npm run build && npx --yes update-browserslist-db@latest
 
 # The postbuild script (next-sitemap) should run automatically after build
 # Ensure sitemap files are generated
@@ -82,8 +81,9 @@ RUN chown -R nextjs:nodejs ./public && \
     chmod -R 755 ./public
 
 # Install only the necessary dependencies for running scripts
-RUN npm install -g ts-node typescript
-RUN npm install --production=false @types/node tsconfig-paths
+# Install only minimal runtime tools; avoid deprecated warnings
+RUN npm install -g npm@11.5.2 ts-node typescript
+RUN npm install --omit=dev @types/node tsconfig-paths
 
 # Set the correct permission for prerender cache
 RUN mkdir .next

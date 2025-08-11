@@ -73,19 +73,24 @@ class EmailService {
 
     private initializeTransporter() {
         try {
+            const port = parseInt(process.env.SMTP_PORT || '465')
+            const isSsl = (process.env.SMTP_ENCRYPT || '').toUpperCase() === 'SSL' || port === 465
+
             this.transporter = nodemailer.createTransport({
                 host: process.env.SMTP_SERVER,
-                port: parseInt(process.env.SMTP_PORT || '465'),
-                secure: process.env.SMTP_ENCRYPT === 'SSL', // true for 465, false for other ports
+                port,
+                secure: isSsl,
+                requireTLS: !isSsl, // for 587/TLS
+                pool: true,
                 auth: {
-                    user: process.env.CONTACT_MAIL_FROM,
-                    pass: process.env.SMTP_PASSWORD, // You'll need to add this to your env
+                    user: process.env.SMTP_USERNAME || process.env.CONTACT_MAIL_FROM,
+                    pass: process.env.SMTP_PASSWORD,
                 },
-                // Additional security options
                 tls: {
-                    rejectUnauthorized: false, // Only set to false if you're having certificate issues
+                    // allow self-signed when debugging; for production you can set to true
+                    rejectUnauthorized: false,
                 },
-            });
+            })
         } catch (error) {
             console.error('Failed to initialize email transporter:', error);
         }
@@ -248,10 +253,16 @@ class EmailService {
             const sanitizedData = this.sanitizeData(data);
 
             // Prepare email content
+            const fromAddress = process.env.CONTACT_MAIL_FROM || process.env.SMTP_USERNAME || 'no-reply@example.com'
+            const toAddress = process.env.CONTACT_MAIL_TO || fromAddress
+            const subject = process.env.CONTACT_MAIL_SUBJECT || 'Contact Message received'
+
             const mailOptions = {
-                from: process.env.CONTACT_MAIL_FROM,
-                to: process.env.CONTACT_MAIL_TO,
-                subject: process.env.CONTACT_MAIL_SUBJECT || 'Contact Message received',
+                from: fromAddress,
+                sender: process.env.SMTP_USERNAME || fromAddress,
+                replyTo: sanitizedData.email,
+                to: toAddress,
+                subject,
                 html: `
           <h2>New Contact Message</h2>
           <p><strong>Name:</strong> ${sanitizedData.name}</p>

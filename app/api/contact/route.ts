@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Contact from '@/models/Contact';
 import { headers } from 'next/headers';
+import { emailService } from '@/lib/email';
 
 // Rate limit: 5 messages per hour per IP
 const RATE_LIMIT = 5;
@@ -42,6 +43,18 @@ export async function POST(request: Request) {
       ...body,
       ipAddress
     });
+
+    // Send email to admin (best-effort, don't block response on failure)
+    try {
+      await emailService.sendContactEmail({
+        name: body.name,
+        email: body.email,
+        message: body.message,
+        ipAddress,
+      });
+    } catch (e) {
+      console.error('Contact email sending failed:', e);
+    }
 
     return NextResponse.json(contact);
   } catch (error) {

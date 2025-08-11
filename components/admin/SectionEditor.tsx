@@ -240,7 +240,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
         return (
           <>
             <div className="space-y-2">
-              <Label className="text-gray-900">Headline</Label>
+              <Label className="text-slate-700 font-semibold">Headline</Label>
               <Input
                 value={editedSection.content.headline || ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
@@ -248,11 +248,11 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   headline: e.target.value
                 }))}
                 placeholder="Enter a catchy headline"
-                className="bg-white text-black placeholder:text-gray-500"
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-gray-900">Description</Label>
+              <Label className="text-slate-700 font-semibold">Description</Label>
               <Textarea
                 value={editedSection.content.description || ''}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
@@ -260,7 +260,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   description: e.target.value
                 }))}
                 placeholder="Describe yourself and your work"
-                className="bg-white text-black placeholder:text-gray-500"
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
               />
             </div>
           </>
@@ -270,7 +270,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
         return (
           <>
             <div className="space-y-2">
-              <Label className="text-gray-900">Description</Label>
+              <Label className="text-slate-700 font-semibold">Description</Label>
               <Textarea
                 value={editedSection.content.description || ''}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
@@ -278,11 +278,11 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   description: e.target.value
                 }))}
                 placeholder="Tell your story"
-                className="bg-white text-black placeholder:text-gray-500"
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-gray-900">Highlights (one per line)</Label>
+              <Label className="text-slate-700 font-semibold">Highlights (one per line)</Label>
               <Textarea
                 value={(editedSection.content.highlights || []).join('\n')}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
@@ -290,7 +290,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   highlights: e.target.value.split('\n').filter(Boolean)
                 }))}
                 placeholder="List your key achievements or highlights"
-                className="bg-white text-black placeholder:text-gray-500"
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
               />
             </div>
           </>
@@ -302,33 +302,33 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             <Button
               type="button"
               onClick={addEducationEntry}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50"
               variant="outline"
             >
               <PlusCircle className="w-4 h-4" />
               Add Education
             </Button>
             {(editedSection.content.education || []).map((edu: Education, index: number) => (
-              <Card key={index}>
-                <CardContent className="space-y-2 pt-4">
+              <Card key={index} className="bg-slate-50 border border-slate-200">
+                <CardContent className="space-y-3 pt-4">
                   <div className="flex justify-end mb-2">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-100"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       onClick={() => removeEducationEntry(index)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                   <div>
-                    <Label className="text-gray-900">Institution</Label>
+                    <Label className="text-slate-700 font-semibold">Institution</Label>
                     <Input
                       value={edu.institution}
                       onChange={(e) => handleEducationChange(index, 'institution', e.target.value)}
                       placeholder="Enter institution name"
-                      className="bg-white text-black placeholder:text-gray-500"
+                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
                     />
                   </div>
                   <div>
@@ -549,47 +549,51 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Card className="bg-white">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between text-gray-900">
-            <span>{section.title}</span>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Label className="text-gray-900">Order</Label>
-                <Input
-                  type="number"
-                  value={editedSection.order || 0}
-                  onChange={(e) => handleOrderChange(e.target.value)}
-                  className="w-20 bg-white text-black placeholder:text-gray-500"
-                />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setJsonEditorOpen(true)}
-                title="Edit JSON"
-              >
-                <Code className="h-4 w-4" />
-              </Button>
+    <form onSubmit={handleSubmit} className="space-y-0">
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Label className="text-slate-700 font-semibold">Order</Label>
+              <Input
+                type="number"
+                value={editedSection.order || 0}
+                onChange={(e) => handleOrderChange(e.target.value)}
+                className="w-20 border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+              />
             </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setJsonEditorOpen(true)}
+            title="Edit JSON"
+            className="border-slate-300 text-slate-600 hover:bg-slate-50"
+          >
+            <Code className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="space-y-6">
           {renderContentEditor()}
           {contentError && (
-            <p className="text-sm text-red-500">{contentError}</p>
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{contentError}</p>
+            </div>
           )}
-        </CardContent>
-      </Card>
-      <Button
-        type="submit"
-        disabled={isSubmitting || !!contentError}
-        className="bg-green-500 hover:bg-green-600 text-white"
-      >
-        {isSubmitting ? 'Saving...' : 'Save Changes'}
-      </Button>
+        </div>
+
+        <div className="sticky bottom-0 bg-white flex justify-end pt-4 mt-6 border-t border-slate-200 z-10">
+          <Button
+            type="submit"
+            disabled={isSubmitting || !!contentError}
+            className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-slate-400"
+          >
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      </div>
 
       <JsonEditor
         open={jsonEditorOpen}
@@ -600,9 +604,9 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
       />
 
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="max-w-4xl bg-white text-gray-900">
+        <DialogContent className="max-w-4xl bg-white">
           <DialogHeader>
-            <DialogTitle>Edit {section.title} Content</DialogTitle>
+            <DialogTitle className="text-slate-900">Edit {section.title} Content</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
             <TinyMCE
@@ -612,12 +616,16 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             />
           </div>
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setIsEditing(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(false)}
+              className="border-slate-300 text-slate-600 hover:bg-slate-50"
+            >
               Cancel
             </Button>
             <Button
               onClick={handleSave}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               Save Changes
             </Button>

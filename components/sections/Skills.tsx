@@ -28,7 +28,7 @@ const iconMap = {
   FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap,
   FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker,
   SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql,
-  SiIntellijidea, SiGooglecloud, SiOpenai,
+  SiIntellijidea, SiGooglecloud, SiOpenai, SiGithubcopilot, SiMeta,
   VscCode,
   CursorIcon
 }
@@ -189,7 +189,7 @@ export default function Skills() {
         aria-label={`${selectedCategory === 'all' ? 'All skills' : `${selectedCategory} skills`}`}
       >
         {paginatedSkills.map((skill, index) => {
-          const Icon = iconMap[skill.icon as keyof typeof iconMap]
+          const Icon = (iconMap[skill.icon as keyof typeof iconMap] || VscCode) as React.ComponentType<IconProps>
           return (
             <motion.div
               key={skill.name}

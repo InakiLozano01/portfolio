@@ -49,7 +49,7 @@ services:
     ports:
       - "3003:3000"
     volumes:
-      - ./public/images:/app/public/images:z
+      - ./public/images:/app/public/images:ro,z
     depends_on:
       mongodb:
         condition: service_healthy

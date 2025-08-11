@@ -7,6 +7,8 @@ import path from 'path';
 import fs from 'fs/promises';
 import { randomUUID } from 'crypto';
 import { invalidateCache } from '@/lib/cache';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 type AllowedFormats = {
     'image/jpeg': string[];
@@ -29,6 +31,10 @@ const ALLOWED_FORMATS: AllowedFormats = {
 
 export async function POST(request: Request) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const formData = await request.formData();
         const file = formData.get('file') as File;
 
