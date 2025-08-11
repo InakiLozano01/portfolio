@@ -20,8 +20,7 @@ export async function GET() {
     }
 
     await connectToDatabase();
-    // Ensure Skill model is loaded before using populate
-    await Skill.init();
+    // Ensure models are registered, but avoid forcing collection creation in prod
     const projects = await Project.find({})
       .populate('technologies')
       .sort({ createdAt: -1 })

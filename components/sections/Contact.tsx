@@ -109,7 +109,7 @@ export default function ContactSection() {
   if (!content) return null
 
   return (
-    <div className="w-full">
+    <div className="w-full pt-14 md:pt-0">
       <h2 className="text-3xl font-bold mb-8 text-primary">Get in Touch</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <motion.div

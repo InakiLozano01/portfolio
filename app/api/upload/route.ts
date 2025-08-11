@@ -106,7 +106,9 @@ export async function POST(request: Request) {
 
             // Generate unique filename
             const filename = `${randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '-')}`;
-            const relativePath = `/images/projects/${filename}`;
+            // Use posix join and avoid a leading slash so we don't break path.join resolution
+            const relativePath = path.posix.join('images', 'projects', filename);
+            const dirPath = path.join(process.cwd(), 'public', 'images', 'projects');
             const absolutePath = path.join(process.cwd(), 'public', relativePath);
 
             // Log paths for debugging
@@ -117,29 +119,13 @@ export async function POST(request: Request) {
                 cwd: process.cwd()
             });
 
-            // Check if directory exists and is writable
+            // Ensure destination directory exists (best-effort). Don't over-validate with fs.access.
             try {
-                await fs.access(path.dirname(absolutePath), fs.constants.W_OK);
-                console.log('Directory exists and is writable');
-            } catch (error) {
-                console.error('Directory access error:', {
-                    error,
-                    path: path.dirname(absolutePath)
-                });
-                // Try to create the directory
-                await fs.mkdir(path.dirname(absolutePath), { recursive: true });
-                console.log('Created directory');
-
-                // Verify directory was created
-                try {
-                    await fs.access(path.dirname(absolutePath), fs.constants.W_OK);
-                    console.log('Verified directory is writable after creation');
-                } catch (verifyError: unknown) {
-                    const errorMessage = verifyError instanceof Error
-                        ? verifyError.message
-                        : 'Unknown error while verifying directory';
-                    throw new Error(`Failed to create writable directory: ${errorMessage}`);
-                }
+                await fs.mkdir(dirPath, { recursive: true });
+                console.log('Ensured upload directory exists:', dirPath);
+            } catch (mkdirError) {
+                console.error('Failed to ensure upload directory:', mkdirError);
+                // Continue; writeFile will surface any actual permission errors
             }
 
             // Save the file
@@ -176,7 +162,7 @@ export async function POST(request: Request) {
             }
 
             return NextResponse.json({
-                path: relativePath,
+                path: `/${relativePath}`,
                 width: processedMetadata.width,
                 height: processedMetadata.height
             });

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import SkillIcon from '@/components/SkillIcon'
 import type { IProject } from '@/models/Project'
 import type { Document, Types } from 'mongoose'
 
@@ -26,6 +27,8 @@ export default function Projects() {
     const [projects, setProjects] = useState<ProjectWithTechnologies[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [techFilter, setTechFilter] = useState<string>('all')
+    const [availableTechs, setAvailableTechs] = useState<{ name: string, count: number }[]>([])
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -34,6 +37,12 @@ export default function Projects() {
                 if (!response.ok) throw new Error('Failed to fetch projects')
                 const data = await response.json()
                 setProjects(data)
+                // collect techs for filters
+                const counts = new Map<string, number>()
+                data.forEach((p: ProjectWithTechnologies) => p.technologies.forEach(t => {
+                    counts.set(t.name, (counts.get(t.name) || 0) + 1)
+                }))
+                setAvailableTechs(Array.from(counts.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)))
             } catch (err) {
                 setError('Failed to load projects')
                 console.error('Error loading projects:', err)
@@ -81,11 +90,30 @@ export default function Projects() {
         )
     }
 
+    const filteredProjects = techFilter === 'all' ? projects : projects.filter(p => p.technologies.some(t => t.name === techFilter))
+
     return (
         <section id="projects" className="container mx-auto px-4 py-16">
-            <h2 className="text-3xl font-bold mb-8 text-primary">Projects</h2>
+            <h2 className="text-3xl font-bold mb-6 text-primary">Projects</h2>
+            <div className="flex flex-wrap gap-2 mb-6">
+                <button
+                    onClick={() => setTechFilter('all')}
+                    className={`px-3 py-2 rounded-full text-sm font-medium ${techFilter === 'all' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                    All <span className="ml-1 text-xs opacity-70">{projects.length}</span>
+                </button>
+                {availableTechs.map(t => (
+                    <button
+                        key={t.name}
+                        onClick={() => setTechFilter(t.name)}
+                        className={`px-3 py-2 rounded-full text-sm font-medium ${techFilter === t.name ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    >
+                        {t.name} <span className="ml-1 text-xs opacity-70">{t.count}</span>
+                    </button>
+                ))}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr gap-6">
-                {projects.map((project) => (
+                {filteredProjects.map((project) => (
                     <Link
                         key={project._id.toString()}
                         href={`/projects/${project.slug}`}
@@ -114,9 +142,10 @@ export default function Projects() {
                                         <Badge
                                             key={tech._id.toString()}
                                             variant="outline"
-                                            className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20"
+                                            className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 inline-flex items-center gap-1"
                                         >
-                                            {tech.name}
+                                            <SkillIcon name={tech.name} icon={tech.icon} size={14} className="w-3.5 h-3.5" />
+                                            <span>{tech.name}</span>
                                         </Badge>
                                     ))}
                                 </div>

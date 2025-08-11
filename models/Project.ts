@@ -85,8 +85,7 @@ ProjectSchema.pre('validate', function (next) {
   next();
 });
 
-// Delete the model if it exists (this helps with hot reloading)
-delete mongoose.models.Project;
+// Reuse existing model if it exists to avoid recompilation issues
+const ProjectModel = (mongoose.models.Project || mongoose.model<IProject>('Project', ProjectSchema)) as mongoose.Model<IProject>;
 
-// Export the model
-export default mongoose.model<IProject>('Project', ProjectSchema); 
+export default ProjectModel; 

@@ -1,37 +1,13 @@
 'use client'
 
 import { motion, useReducedMotion } from 'framer-motion'
-import { FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap, FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker } from 'react-icons/fa'
-import { SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, SiIntellijidea, SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta } from 'react-icons/si'
 import { VscCode } from 'react-icons/vsc'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 import Image from 'next/image'
+import { iconMap, isCustomIconPath, resolveIconKey, type IconProps } from '@/components/skills/icon-registry'
 
-interface IconProps {
-  className?: string;
-}
-
-const CursorIcon: React.FC<IconProps> = ({ className }) => (
-  <div className={className}>
-    <Image
-      src="/images/skills/cursor.webp"
-      alt="Cursor"
-      width={20}
-      height={20}
-      className="w-full h-full"
-    />
-  </div>
-);
-
-const iconMap = {
-  FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap,
-  FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker,
-  SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql,
-  SiIntellijidea, SiGooglecloud, SiOpenai, SiGithubcopilot, SiMeta,
-  VscCode,
-  CursorIcon
-}
+// Icon map and helpers are imported from icon-registry
 
 interface Skill {
   name: string;
@@ -47,6 +23,9 @@ export default function Skills() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'proficiency' | 'years' | 'name'>('proficiency')
+  const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(8)
   const gridRef = useRef<HTMLDivElement>(null)
@@ -121,21 +100,34 @@ export default function Skills() {
   }, [])
 
   const categories = useMemo(() => {
-    const cats = new Set(content.map(skill => {
+    const cats = new Map<string, number>()
+    content.forEach(skill => {
       // Capitalize first letter of each category
       const category = skill.category
-      return category.charAt(0).toUpperCase() + category.slice(1)
-    }))
-    return ['all', ...Array.from(cats).sort()]
+      const norm = category.charAt(0).toUpperCase() + category.slice(1)
+      cats.set(norm, (cats.get(norm) || 0) + 1)
+    })
+    return Array.from(cats.entries()).sort((a, b) => a[0].localeCompare(b[0]))
   }, [content])
 
   const filteredSkills = useMemo(() => {
-    if (selectedCategory === 'all') return content
-    return content.filter(skill => {
-      const category = skill.category.charAt(0).toUpperCase() + skill.category.slice(1)
-      return category === selectedCategory
+    const withCategory = selectedCategory === 'all'
+      ? content
+      : content.filter(skill => {
+        const category = skill.category.charAt(0).toUpperCase() + skill.category.slice(1)
+        return category === selectedCategory
+      })
+    const q = searchQuery.trim().toLowerCase()
+    const withSearch = q
+      ? withCategory.filter(s => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
+      : withCategory
+    const sorted = [...withSearch].sort((a, b) => {
+      if (sortBy === 'proficiency') return (sortDir === 'desc' ? b.proficiency - a.proficiency : a.proficiency - b.proficiency)
+      if (sortBy === 'years') return (sortDir === 'desc' ? b.yearsOfExperience - a.yearsOfExperience : a.yearsOfExperience - b.yearsOfExperience)
+      return sortDir === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)
     })
-  }, [content, selectedCategory])
+    return sorted
+  }, [content, selectedCategory, searchQuery, sortBy, sortDir])
 
   const paginatedSkills = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
@@ -161,13 +153,22 @@ export default function Skills() {
           <p className="text-lg text-gray-600 mb-2">{description}</p>
         )}
 
-        <div>
+        <div className="space-y-3">
           <div className="flex flex-wrap gap-2 items-center" role="tablist" aria-label="Filter skills by category">
-            {categories.map(category => (
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === 'all' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} touch-target`}
+              role="tab"
+              aria-selected={selectedCategory === 'all'}
+              aria-controls={`all-panel`}
+            >
+              All <span className="ml-1 text-xs opacity-70">{content.length}</span>
+            </button>
+            {categories.map(([category, count]) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedCategory === category
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === category
                   ? 'bg-primary text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
@@ -175,14 +176,34 @@ export default function Skills() {
                 aria-selected={selectedCategory === category}
                 aria-controls={`${category}-panel`}
               >
-                {category.charAt(0).toUpperCase() + category.slice(1)}
+                {category} <span className="ml-1 text-xs opacity-70">{count}</span>
               </button>
             ))}
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className="ml-2 px-3 py-1.5 rounded-full text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50"
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search skills…"
+              className="h-9 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
+            />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="h-9 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
+              aria-label="Sort by"
             >
-              Clear filters
+              <option value="proficiency">Sort by proficiency</option>
+              <option value="years">Sort by years</option>
+              <option value="name">Sort by name</option>
+            </select>
+            <button
+              onClick={() => setSortDir(prev => (prev === 'desc' ? 'asc' : 'desc'))}
+              className="h-9 px-3 rounded-md border border-gray-300 text-sm hover:bg-gray-50"
+              aria-label="Toggle sort direction"
+            >
+              {sortDir === 'desc' ? 'Desc' : 'Asc'}
             </button>
           </div>
         </div>
@@ -196,7 +217,8 @@ export default function Skills() {
         aria-label={`${selectedCategory === 'all' ? 'All skills' : `${selectedCategory} skills`}`}
       >
         {paginatedSkills.map((skill, index) => {
-          const Icon = (iconMap[skill.icon as keyof typeof iconMap] || VscCode) as React.ComponentType<IconProps>
+          const iconKey = resolveIconKey(skill.icon, skill.name)
+          const Icon = (iconKey ? iconMap[iconKey as keyof typeof iconMap] : undefined) || (iconMap[skill.icon as keyof typeof iconMap] as any) || VscCode
           return (
             <motion.div
               key={skill.name}
@@ -206,11 +228,21 @@ export default function Skills() {
               className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1 h-40"
             >
               <div className="flex items-center gap-2 mb-2">
-                {Icon && (
-                  <Icon
-                    className="w-6 h-6 text-primary"
-                    aria-hidden="true"
+                {isCustomIconPath(skill.icon) ? (
+                  <Image
+                    src={skill.icon.startsWith('http') ? skill.icon : (skill.icon.startsWith('/') ? skill.icon : `/${skill.icon}`)}
+                    alt={skill.name}
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 object-contain"
                   />
+                ) : (
+                  Icon && (
+                    <Icon
+                      className="w-6 h-6 text-primary"
+                      aria-hidden="true"
+                    />
+                  )
                 )}
                 <h3 className="font-medium text-base">{skill.name}</h3>
               </div>

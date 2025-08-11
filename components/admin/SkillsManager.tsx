@@ -10,11 +10,10 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select } from '@/components/ui/select'
 import { PlusCircle, Trash2, Plus } from 'lucide-react'
-import { FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap, FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker, FaAws, FaFigma, FaAngular, FaVuejs, FaRust, FaLinux, FaWindows, FaApple } from 'react-icons/fa'
-import { SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, SiIntellijidea, SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta, SiMongodb, SiPython, SiTensorflow, SiNextdotjs, SiTailwindcss, SiPrisma, SiSupabase, SiVercel, SiFirebase, SiRedis, SiVite, SiAstro, SiDjango, SiLaravel, SiExpress, SiNestjs, SiGraphql, SiPostman, SiJest, SiCypress, SiSelenium, SiWebpack, SiRollupdotjs, SiSwagger, SiKubernetes, SiNginx, SiApache, SiWebstorm, SiPycharm, SiPhpstorm } from 'react-icons/si'
 import { VscCode } from 'react-icons/vsc'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
+import IconPicker from '@/components/admin/IconPicker'
 
 interface Skill {
   _id: string;
@@ -25,36 +24,7 @@ interface Skill {
   icon: string;
 }
 
-interface IconProps {
-  className?: string;
-}
-
-const CursorIcon: React.FC<IconProps> = ({ className }) => (
-  <div className={className}>
-    <Image
-      src="/images/skills/cursor.webp"
-      alt="Cursor"
-      width={20}
-      height={20}
-      className="w-full h-full"
-    />
-  </div>
-);
-
-const iconMap: { [key: string]: React.ComponentType<IconProps> } = {
-  FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap,
-  FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker, FaAws, FaFigma,
-  FaAngular, FaVuejs, FaRust, FaLinux, FaWindows, FaApple,
-  SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql,
-  SiIntellijidea, SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta,
-  SiMongodb, SiPython, SiTensorflow, SiNextdotjs, SiTailwindcss, SiPrisma,
-  SiSupabase, SiVercel, SiFirebase, SiRedis, SiVite, SiAstro, SiDjango,
-  SiLaravel, SiExpress, SiNestjs, SiGraphql, SiPostman, SiJest, SiCypress,
-  SiSelenium, SiWebpack, SiRollupdotjs, SiSwagger, SiKubernetes, SiNginx,
-  SiApache, SiWebstorm, SiPycharm, SiPhpstorm,
-  VscCode,
-  CursorIcon
-}
+import { iconMap, type IconProps, isCustomIconPath } from '@/components/skills/icon-registry'
 
 interface Props {
   skills: Skill[];
@@ -225,26 +195,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                 </div>
                 <div className="md:col-span-2">
                   <Label className="text-slate-700 font-semibold">Icon</Label>
-                  <Select
-                    value={newSkill.icon}
-                    onChange={e => setNewSkill(prev => ({ ...prev, icon: e.target.value }))}
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
-                  >
-                    <option value="">Select icon</option>
-                    {Object.keys(iconMap).map(icon => (
-                      <option key={icon} value={icon}>
-                        {icon}
-                      </option>
-                    ))}
-                  </Select>
-                  {newSkill.icon && iconMap[newSkill.icon] && (
-                    <div className="mt-3 flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                      <span className="text-slate-700 font-medium">Preview:</span>
-                      {React.createElement(iconMap[newSkill.icon], {
-                        className: "w-6 h-6 text-blue-600"
-                      })}
-                    </div>
-                  )}
+                  <IconPicker value={newSkill.icon} onChange={(val) => setNewSkill(prev => ({ ...prev, icon: val }))} />
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
@@ -305,11 +256,13 @@ export default function SkillsManager({ skills, onSave }: Props) {
                       .map(skill => (
                         <TableRow key={skill._id} className="hover:bg-slate-50 transition-colors">
                           <TableCell className="w-12">
-                            {skill.icon && iconMap[skill.icon] &&
-                              React.createElement(iconMap[skill.icon], {
-                                className: "w-6 h-6 text-blue-600"
-                              })
-                            }
+                            {skill.icon && (
+                              isCustomIconPath(skill.icon) ? (
+                                <Image src={skill.icon.startsWith('/') ? skill.icon : `/${skill.icon}`} alt={skill.name || 'Icon'} width={24} height={24} className="w-6 h-6 object-contain" />
+                              ) : (
+                                iconMap[skill.icon] ? React.createElement(iconMap[skill.icon], { className: 'w-6 h-6 text-blue-600' }) : <VscCode className="w-6 h-6 text-blue-600" />
+                              )
+                            )}
                           </TableCell>
                           <TableCell>
                             {editingSkill?._id === skill._id ? (
@@ -330,6 +283,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                                     </option>
                                   ))}
                                 </Select>
+                                <IconPicker value={editingSkill.icon} onChange={(val) => setEditingSkill({ ...editingSkill, icon: val })} />
                               </div>
                             ) : (
                               <div>

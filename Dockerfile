@@ -59,7 +59,7 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 # Note: next-sitemap generates files in public/ and root directory automatically
 COPY --from=builder /app/scripts ./scripts
-RUN chmod +x /app/scripts/entrypoint.sh
+RUN chmod +x /app/scripts/entrypoint.sh || true
 COPY --from=builder /app/lib ./lib
 COPY --from=builder /app/models ./models
 COPY --from=builder /app/data ./data
@@ -80,10 +80,9 @@ RUN chown -R nextjs:nodejs ./data ./scripts ./lib ./models
 RUN chown -R nextjs:nodejs ./public && \
     chmod -R 755 ./public
 
-# Install only the necessary dependencies for running scripts
 # Install only minimal runtime tools; avoid deprecated warnings
-RUN npm install -g npm@11.5.2 ts-node typescript
-RUN npm install --omit=dev @types/node tsconfig-paths
+# Note: We do NOT run `npm install` in the runtime image to avoid compiling native deps (e.g., bcrypt) again.
+RUN npm install -g npm@11.5.2
 
 # Set the correct permission for prerender cache
 RUN mkdir .next
@@ -92,6 +91,13 @@ RUN chown nextjs:nodejs .next
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Ensure sharp and its platform-specific binaries are available at runtime
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@img ./node_modules/@img
+
+# sharp uses prebuilt libvips from optional packages; ignore global libvips
+ENV SHARP_IGNORE_GLOBAL_LIBVIPS=1
 
 USER nextjs
 

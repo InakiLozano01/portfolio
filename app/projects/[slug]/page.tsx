@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Github, ArrowLeft } from 'lucide-react'
 import { IProject } from '../../../models/Project'
+import SkillIcon from '@/components/SkillIcon'
 import mongoose from 'mongoose'
 import DOMPurify from 'isomorphic-dompurify'
 import { getProjectBySlug } from '../../../lib/projects'
@@ -71,11 +72,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 <div className="flex flex-wrap gap-2 mb-8 justify-center border-b border-[#263547]/20 pb-8">
                     {project.technologies.map((tech) => (
                         <Badge
-                            key={tech._id.toString()}
+                            key={(tech as any)._id.toString()}
                             variant="outline"
-                            className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20"
+                            className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 inline-flex items-center gap-1"
                         >
-                            {tech.name}
+                            <SkillIcon name={(tech as any).name} icon={(tech as any).icon} size={14} className="w-3.5 h-3.5" />
+                            <span>{(tech as any).name}</span>
                         </Badge>
                     ))}
                 </div>
@@ -97,26 +99,30 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 <div
                     className="space-y-6 text-muted-foreground"
                     dangerouslySetInnerHTML={{
-                        __html: DOMPurify.sanitize(project.description, {
-                            ADD_ATTR: ['class'],
-                            ALLOWED_TAGS: ['h2', 'h3', 'p', 'ul', 'li', 'img', 'a'],
-                            ADD_TAGS: ['style']
-                        }).replace(
-                            /<h2>/g,
-                            '<h2 class="text-2xl font-semibold text-primary mt-8 mb-4">'
-                        ).replace(
-                            /<h3>/g,
-                            '<h3 class="text-xl font-medium text-primary mt-6 mb-3">'
-                        ).replace(
-                            /<p>/g,
-                            '<p class="leading-relaxed">'
-                        ).replace(
-                            /<ul>/g,
-                            '<ul class="list-disc list-inside space-y-2 ml-4">'
-                        ).replace(
-                            /<img/g,
-                            '<img class="rounded-lg shadow-lg my-4 max-w-full h-auto"'
-                        )
+                        __html: (() => {
+                            const allowedTags = [
+                                'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li', 'img', 'a', 'strong', 'em', 'b', 'i', 'u', 's', 'del', 'mark', 'span', 'br', 'hr', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'figure', 'figcaption', 'sub', 'sup'
+                            ]
+                            const allowedAttrs = ['href', 'target', 'rel', 'src', 'alt', 'width', 'height', 'class', 'style', 'loading']
+                            const sanitized = DOMPurify.sanitize(project.description || '', {
+                                ALLOWED_TAGS: allowedTags,
+                                ALLOWED_ATTR: allowedAttrs
+                            })
+                            return sanitized
+                                .replace(/<h1>/g, '<h1 class="text-3xl font-bold text-primary mt-10 mb-6">')
+                                .replace(/<h2>/g, '<h2 class="text-2xl font-semibold text-primary mt-8 mb-4">')
+                                .replace(/<h3>/g, '<h3 class="text-xl font-medium text-primary mt-6 mb-3">')
+                                .replace(/<p>/g, '<p class="leading-relaxed mb-4">')
+                                .replace(/<ul>/g, '<ul class="list-disc list-inside space-y-2 ml-4">')
+                                .replace(/<ol>/g, '<ol class="list-decimal list-inside space-y-2 ml-4">')
+                                .replace(/<blockquote>/g, '<blockquote class="border-l-4 border-primary/30 pl-4 italic">')
+                                .replace(/<pre>/g, '<pre class="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto my-4">')
+                                .replace(/<code>/g, '<code class="bg-gray-100 text-gray-800 rounded px-1 py-0.5">')
+                                .replace(/<table>/g, '<table class="w-full border-collapse my-4">')
+                                .replace(/<th>/g, '<th class="border px-3 py-2 bg-gray-50 text-left">')
+                                .replace(/<td>/g, '<td class="border px-3 py-2">')
+                                .replace(/<img/g, '<img class="rounded-lg shadow-lg my-4 max-w-full h-auto"')
+                        })()
                     }}
                 />
             </article>

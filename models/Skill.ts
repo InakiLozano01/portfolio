@@ -51,8 +51,7 @@ const SkillSchema = new mongoose.Schema({
   strict: true
 });
 
-// Delete the model if it exists (this helps with hot reloading)
-delete mongoose.models.Skill;
+// Reuse existing model if it exists to avoid recompilation issues
+const SkillModel = (mongoose.models.Skill || mongoose.model<ISkill>('Skill', SkillSchema)) as mongoose.Model<ISkill>;
 
-// Export the model
-export default mongoose.model<ISkill>('Skill', SkillSchema); 
+export default SkillModel; 

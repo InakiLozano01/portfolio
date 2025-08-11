@@ -49,7 +49,7 @@ services:
     ports:
       - "3003:3000"
     volumes:
-      - ./public/images:/app/public/images:ro,z
+      - ./public/images:/app/public/images:rw
     depends_on:
       mongodb:
         condition: service_healthy
@@ -69,12 +69,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
 networks:
   portfolio_network:
