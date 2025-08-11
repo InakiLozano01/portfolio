@@ -4,6 +4,7 @@ import { SessionProvider } from 'next-auth/react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ToastProvider as CustomToastProvider } from '@/components/ui/use-toast';
 import { ToastProvider, ToastViewport } from '@/components/ui/toast';
+import { CustomToaster } from '@/components/ui/custom-toaster';
 import { Toaster } from '@/components/ui/sonner';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -14,6 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <CustomToastProvider>
             {children}
             <ToastViewport />
+            <CustomToaster />
           </CustomToastProvider>
           <Toaster />
         </ToastProvider>

@@ -1,18 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Search } from 'lucide-react'
+// Removed unused imports
 import { type Blog } from '@/models/BlogClient'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDistanceToNow } from 'date-fns'
 import { formatDate } from '@/lib/utils'
 
 export default function BlogSection() {
-    const router = useRouter();
     const [blogs, setBlogs] = useState<Blog[]>([]);
     const [filteredBlogs, setFilteredBlogs] = useState<Blog[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -41,18 +39,31 @@ export default function BlogSection() {
     }, []);
 
     useEffect(() => {
+        const query = searchQuery.trim().toLowerCase()
         const filtered = blogs.filter((blog) =>
-            blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            blog.subtitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            blog.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            blog.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+            query.length === 0 ||
+            blog.title.toLowerCase().includes(query) ||
+            blog.subtitle.toLowerCase().includes(query) ||
+            blog.content.toLowerCase().includes(query) ||
+            blog.tags.some((tag) => tag.toLowerCase().includes(query))
         );
         setFilteredBlogs(filtered);
     }, [searchQuery, blogs]);
 
-    const handleBlogClick = (blog: Blog) => {
-        router.push(`/blog/${blog.slug}`);
-    };
+    const highlight = (text: string) => {
+        const q = searchQuery.trim()
+        if (!q) return text
+        const regex = new RegExp(`(${q.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'ig')
+        return text.split(regex).map((part, i) =>
+            regex.test(part) ? (
+                <mark key={i} className="bg-yellow-200 text-black rounded px-0.5">{part}</mark>
+            ) : (
+                <span key={i}>{part}</span>
+            )
+        )
+    }
+
+    // Using Link for prefetch and accessibility
 
     if (loading) {
         return (
@@ -122,35 +133,39 @@ export default function BlogSection() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredBlogs.map((blog) => (
-                        <Card
-                            key={blog._id}
-                            className="cursor-pointer hover:shadow-lg hover:bg-primary/5 transition-shadow duration-200 overflow-hidden group"
-                            onClick={() => handleBlogClick(blog)}
-                        >
-                            <CardHeader className="relative">
-                                <CardTitle className="text-xl mb-2 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">
-                                    {blog.title}
-                                </CardTitle>
-                                <p className="text-muted-foreground text-sm">
-                                    {blog.subtitle}
-                                </p>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                    {blog.tags.map((tag) => (
-                                        <span
-                                            key={tag}
-                                            className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs"
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <span>Created {formatDistanceToNow(formatDate(blog.createdAt), { addSuffix: true })}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <Link key={blog._id} href={`/blog/${blog.slug}`} prefetch={true} className="block">
+                            <Card className="hover:shadow-lg hover:bg-primary/5 transition-shadow duration-200 overflow-hidden group">
+                                <CardHeader className="relative">
+                                    <CardTitle className="text-xl mb-2 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">
+                                        {highlight(blog.title)}
+                                    </CardTitle>
+                                    <p className="text-muted-foreground text-sm">
+                                        {highlight(blog.subtitle)}
+                                    </p>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex flex-wrap gap-2 mb-4">
+                                        {blog.tags.map((tag) => (
+                                            <button
+                                                key={tag}
+                                                className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary/20"
+                                                onClick={(e) => {
+                                                    e.preventDefault()
+                                                    e.stopPropagation()
+                                                    setSearchQuery(tag)
+                                                }}
+                                                aria-label={`Filter by tag ${tag}`}
+                                            >
+                                                {highlight(tag)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <span>Created {formatDistanceToNow(formatDate(blog.createdAt), { addSuffix: true })}</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
                     ))}
                 </div>
             )}

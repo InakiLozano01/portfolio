@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 import Image from 'next/image'
@@ -17,12 +17,13 @@ interface HeaderProps {
   onSectionChange?: (index: number) => void;
 }
 
-export default function Header({ 
-  staticSections = [], 
-  currentIndex = 0, 
-  onSectionChange = () => {} 
+export default function Header({
+  staticSections = [],
+  currentIndex = 0,
+  onSectionChange = () => { }
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
 
   const handleSectionClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault()
@@ -44,12 +45,68 @@ export default function Header({
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  // Close on Escape and prevent body scroll when open
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMenuOpen(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    if (isMenuOpen) {
+      document.body.classList.add('overflow-hidden')
+    } else {
+      document.body.classList.remove('overflow-hidden')
+    }
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.classList.remove('overflow-hidden')
+    }
+  }, [isMenuOpen])
+
+  // Focus trap within mobile menu
+  useEffect(() => {
+    if (!isMenuOpen || !menuRef.current) return
+    const menuEl = menuRef.current
+    const focusFirst = () => {
+      const first = menuEl.querySelector<HTMLElement>('a, button, [tabindex]:not([tabindex="-1"])')
+      first?.focus()
+    }
+    focusFirst()
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      const focusables = menuEl.querySelectorAll<HTMLElement>('a, button, [tabindex]:not([tabindex="-1"])')
+      if (!focusables.length) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      const active = document.activeElement as HTMLElement | null
+      if (e.shiftKey) {
+        if (active === first) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (active === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
+    document.addEventListener('keydown', handler, true)
+    return () => document.removeEventListener('keydown', handler, true)
+  }, [isMenuOpen])
+
   if (!staticSections || staticSections.length === 0) {
     return null
   }
 
   return (
-    <header className="h-[48px] md:h-[56px] flex-shrink-0 bg-[#1a2433] text-white z-50">
+    <header className="h-[48px] md:h-[56px] flex-shrink-0 bg-[#1a2433] text-white z-50 relative">
+      {/* Skip to content link */}
+      <a
+        href="#content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:bg-white focus:text-black focus:px-3 focus:py-1 focus:rounded focus:z-50"
+      >
+        Skip to content
+      </a>
       <nav className="h-full container mx-auto px-4">
         <div className="h-full flex justify-between items-center">
           <Link href="/" className="text-lg md:text-xl font-bold text-white truncate max-w-[200px] md:max-w-none flex items-center gap-2" aria-label="Home">
@@ -62,7 +119,7 @@ export default function Header({
             />
             Iñaki F. Lozano
           </Link>
-          
+
           {/* Mobile menu button */}
           <button
             className="md:hidden text-white hover:text-[#FF5456] transition-colors"
@@ -83,9 +140,8 @@ export default function Header({
                   key={section.id}
                   href={section.id === 'home' ? '/' : `/#${section.id}`}
                   onClick={(e) => handleSectionClick(e, section.id)}
-                  className={`hover:text-[#FF5456] transition-colors cursor-pointer ${
-                    isActive ? 'text-[#FF5456]' : 'text-white'
-                  }`}
+                  className={`hover:text-[#FF5456] transition-colors cursor-pointer ${isActive ? 'text-[#FF5456]' : 'text-white'
+                    }`}
                   aria-current={isActive ? 'page' : undefined}
                 >
                   {section.label}
@@ -96,31 +152,40 @@ export default function Header({
 
           {/* Mobile menu */}
           {isMenuOpen && (
-            <nav
-              id="mobile-menu"
-              className="absolute top-[48px] left-0 right-0 bg-[#1a2433] p-4 md:hidden"
-              aria-label="Mobile navigation"
-            >
-              {staticSections.map((section, index) => {
-                const isActive = index === currentIndex
-                return (
-                  <a
-                    key={section.id}
-                    href={section.id === 'home' ? '/' : `/#${section.id}`}
-                    onClick={(e) => {
-                      handleSectionClick(e, section.id)
-                      setIsMenuOpen(false)
-                    }}
-                    className={`block py-2 hover:text-[#FF5456] transition-colors ${
-                      isActive ? 'text-[#FF5456]' : 'text-white'
-                    }`}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    {section.label}
-                  </a>
-                )
-              })}
-            </nav>
+            <>
+              {/* Backdrop overlay */}
+              <button
+                aria-hidden="true"
+                className="fixed inset-0 bg-black/40 md:hidden z-40"
+                onClick={() => setIsMenuOpen(false)}
+                tabIndex={-1}
+              />
+              <nav
+                ref={menuRef}
+                id="mobile-menu"
+                className="absolute top-[48px] left-0 right-0 bg-[#1a2433] p-4 md:hidden shadow-lg z-50"
+                aria-label="Mobile navigation"
+              >
+                {staticSections.map((section, index) => {
+                  const isActive = index === currentIndex
+                  return (
+                    <a
+                      key={section.id}
+                      href={section.id === 'home' ? '/' : `/#${section.id}`}
+                      onClick={(e) => {
+                        handleSectionClick(e, section.id)
+                        setIsMenuOpen(false)
+                      }}
+                      className={`block py-2 hover:text-[#FF5456] transition-colors ${isActive ? 'text-[#FF5456]' : 'text-white'
+                        }`}
+                      aria-current={isActive ? 'page' : undefined}
+                    >
+                      {section.label}
+                    </a>
+                  )
+                })}
+              </nav>
+            </>
           )}
         </div>
       </nav>

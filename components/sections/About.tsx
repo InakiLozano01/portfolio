@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import type { AboutContent } from '@/models/Section'
 import LoadingSpinner from '@/components/ui/loading-spinner'
@@ -10,6 +10,7 @@ export default function About() {
   const [content, setContent] = useState<AboutContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -38,9 +39,9 @@ export default function About() {
     <div className="w-full pt-52 pb-24 md:py-0">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
+          initial={reduceMotion ? false : { opacity: 0, x: -50 }}
+          animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.5 }}
           className="relative w-[200px] md:w-[300px] h-[200px] md:h-[300px] mx-auto mt-16 md:mt-0"
         >
           <Image
@@ -49,13 +50,15 @@ export default function About() {
             fill
             sizes="(max-width: 768px) 200px, 300px"
             priority
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMzAwJyBoZWlnaHQ9JzMwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCBmaWxsPSIjZWVlIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+PC9zdmc+"
             className="rounded-full object-cover"
           />
         </motion.div>
         <motion.div
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          initial={reduceMotion ? false : { opacity: 0, x: 50 }}
+          animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.5, delay: 0.2 }}
           className="text-center md:text-left"
         >
           <h2 className="text-3xl font-bold mb-4 text-primary">About Me</h2>
@@ -63,7 +66,7 @@ export default function About() {
             {content.description}
           </p>
           <h3 className="text-xl font-semibold mb-2 text-primary">Hobbies & Interests</h3>
-          <ul 
+          <ul
             className="list-disc list-inside text-gray-600 mb-6 space-y-1"
             aria-label="Hobbies and interests"
           >
@@ -78,6 +81,14 @@ export default function About() {
             aria-label="Download CV (PDF)"
           >
             <span>Download CV</span>
+          </a>
+          <a
+            href="/CV.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 ml-3 px-6 py-3 rounded-full font-semibold border border-primary text-primary hover:bg-primary/10 transition-colors duration-200"
+          >
+            View CV
           </a>
         </motion.div>
       </div>

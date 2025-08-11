@@ -8,6 +8,7 @@ import DOMPurify from 'isomorphic-dompurify'
 import { getProjectBySlug } from '../../../lib/projects'
 import { notFound } from 'next/navigation'
 import BackNavigationHandler from '@/components/BackNavigationHandler'
+import ShareActions from '@/components/ShareActions'
 
 interface ISkill {
     _id: mongoose.Types.ObjectId;
@@ -47,7 +48,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">
                     {project.title}
                 </h1>
-                <p className="text-xl text-muted-foreground mb-6">{project.subtitle}</p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
+                    <p className="text-xl text-muted-foreground">{project.subtitle}</p>
+                    <ShareActions url={`${process.env.NEXT_PUBLIC_APP_URL || ''}/projects/${project.slug}`} title={project.title} />
+                </div>
 
                 {project.thumbnail && (
                     <div className="relative w-full mb-8">
@@ -58,6 +62,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                             height={1080}
                             className="w-full rounded-lg shadow-lg"
                             priority
+                            placeholder="blur"
+                            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTkyMCcgaGVpZ2h0PScxMDgwJyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnPjxyZWN0IGZpbGw9IiNlZWUiIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiLz48L3N2Zz4="
                         />
                     </div>
                 )}

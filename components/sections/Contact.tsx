@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { FaEnvelope, FaGithub, FaLinkedin, FaMapMarkerAlt } from 'react-icons/fa'
 import type { ContactContent } from '@/models/Section'
 import LoadingSpinner from '@/components/ui/loading-spinner'
@@ -15,9 +15,12 @@ export default function ContactSection() {
     email: '',
     message: ''
   })
-  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({})
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [counters, setCounters] = useState({ name: 0, email: 0, message: 0 })
+  const statusRef = useRef<HTMLParagraphElement | null>(null)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -39,7 +42,7 @@ export default function ContactSection() {
   }, [])
 
   const validateForm = () => {
-    const errors: {[key: string]: string} = {}
+    const errors: { [key: string]: string } = {}
     if (!formData.name.trim()) {
       errors.name = 'Name is required'
     }
@@ -71,6 +74,7 @@ export default function ContactSection() {
         if (response.ok) {
           setSubmitStatus('success')
           setFormData({ name: '', email: '', message: '' })
+          setCounters({ name: 0, email: 0, message: 0 })
         } else {
           setSubmitStatus('error')
         }
@@ -78,6 +82,8 @@ export default function ContactSection() {
         setSubmitStatus('error')
       }
       setIsSubmitting(false)
+      // Move focus to status message for screen readers
+      queueMicrotask(() => statusRef.current?.focus())
     }
   }
 
@@ -94,6 +100,8 @@ export default function ContactSection() {
         [name]: ''
       }))
     }
+    // Update counters
+    setCounters(prev => ({ ...prev, [name]: value.length }))
   }
 
   if (loading) return <LoadingSpinner />
@@ -106,16 +114,16 @@ export default function ContactSection() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <motion.div
           className="bg-gray-50 rounded-lg p-6 shadow-sm"
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
+          initial={reduceMotion ? false : { opacity: 0, x: -50 }}
+          animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.5 }}
         >
           <h3 className="text-xl font-bold text-gray-800 mb-4">Contact Information</h3>
           <div className="space-y-4">
             <div className="flex items-center">
               <FaEnvelope className="text-[#FD4345] w-5 h-5 mr-3" aria-hidden="true" />
-              <a 
-                href={`mailto:${content.email}`} 
+              <a
+                href={`mailto:${content.email}`}
                 className="text-gray-600 hover:text-[#FD4345]"
                 aria-label="Send email"
               >
@@ -155,9 +163,9 @@ export default function ContactSection() {
 
         <motion.div
           className="bg-gray-50 rounded-lg p-6 shadow-sm"
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          initial={reduceMotion ? false : { opacity: 0, x: 50 }}
+          animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.5, delay: 0.2 }}
         >
           <h3 className="text-xl font-bold text-gray-800 mb-4">Send a Message</h3>
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -171,14 +179,15 @@ export default function ContactSection() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                maxLength={80}
                 required
                 aria-required="true"
                 aria-invalid={!!formErrors.name}
                 aria-describedby={formErrors.name ? 'name-error' : undefined}
-                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${
-                  formErrors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${formErrors.name ? 'border-red-500' : 'border-gray-300'
+                  }`}
               />
+              <div className="mt-1 text-xs text-gray-500" aria-hidden="true">{counters.name}/80</div>
               {formErrors.name && (
                 <p id="name-error" className="mt-1 text-sm text-red-500" role="alert">
                   {formErrors.name}
@@ -195,14 +204,15 @@ export default function ContactSection() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                maxLength={120}
                 required
                 aria-required="true"
                 aria-invalid={!!formErrors.email}
                 aria-describedby={formErrors.email ? 'email-error' : undefined}
-                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${
-                  formErrors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${formErrors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
               />
+              <div className="mt-1 text-xs text-gray-500" aria-hidden="true">{counters.email}/120</div>
               {formErrors.email && (
                 <p id="email-error" className="mt-1 text-sm text-red-500" role="alert">
                   {formErrors.email}
@@ -218,15 +228,16 @@ export default function ContactSection() {
                 name="message"
                 value={formData.message}
                 onChange={handleChange}
+                maxLength={1000}
                 required
                 aria-required="true"
                 aria-invalid={!!formErrors.message}
                 aria-describedby={formErrors.message ? 'message-error' : undefined}
                 rows={4}
-                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${
-                  formErrors.message ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${formErrors.message ? 'border-red-500' : 'border-gray-300'
+                  }`}
               />
+              <div className="mt-1 text-xs text-gray-500" aria-hidden="true">{counters.message}/1000</div>
               {formErrors.message && (
                 <p id="message-error" className="mt-1 text-sm text-red-500" role="alert">
                   {formErrors.message}
@@ -241,16 +252,15 @@ export default function ContactSection() {
             >
               {isSubmitting ? 'Sending...' : 'Send Message'}
             </button>
-            {submitStatus === 'success' && (
-              <p className="text-green-500 text-center" role="status">
-                Message sent successfully!
-              </p>
-            )}
-            {submitStatus === 'error' && (
-              <p className="text-red-500 text-center" role="alert">
-                Failed to send message. Please try again.
-              </p>
-            )}
+            <p
+              ref={statusRef}
+              tabIndex={-1}
+              className={`text-center ${submitStatus === 'success' ? 'text-green-500' : submitStatus === 'error' ? 'text-red-500' : 'sr-only'}`}
+              role={submitStatus === 'error' ? 'alert' : 'status'}
+              aria-live="polite"
+            >
+              {submitStatus === 'success' ? 'Message sent successfully!' : submitStatus === 'error' ? 'Failed to send message. Please try again.' : ''}
+            </p>
           </form>
         </motion.div>
       </div>

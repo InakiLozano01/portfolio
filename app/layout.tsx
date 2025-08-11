@@ -37,7 +37,10 @@ export default function RootLayout({
         </Script>
       </head>
       <body className={inter.className} suppressHydrationWarning>
-        <ClientLayout>{children}</ClientLayout>
+        <ClientLayout>
+          {/* Main content landmark for accessibility and skip link target */}
+          <main id="content">{children}</main>
+        </ClientLayout>
       </body>
     </html>
   )

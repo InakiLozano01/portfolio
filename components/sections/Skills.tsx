@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { FaJava, FaJs, FaPhp, FaPython, FaHtml5, FaReact, FaCss3, FaBootstrap, FaNodeJs, FaGithub, FaGitlab, FaGit, FaUbuntu, FaDocker } from 'react-icons/fa'
 import { SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, SiIntellijidea, SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta } from 'react-icons/si'
 import { VscCode } from 'react-icons/vsc'
@@ -50,6 +50,7 @@ export default function Skills() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(8)
   const gridRef = useRef<HTMLDivElement>(null)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     const fetchSkills = async () => {
@@ -161,7 +162,7 @@ export default function Skills() {
         )}
 
         <div>
-          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter skills by category">
+          <div className="flex flex-wrap gap-2 items-center" role="tablist" aria-label="Filter skills by category">
             {categories.map(category => (
               <button
                 key={category}
@@ -177,6 +178,12 @@ export default function Skills() {
                 {category.charAt(0).toUpperCase() + category.slice(1)}
               </button>
             ))}
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className="ml-2 px-3 py-1.5 rounded-full text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50"
+            >
+              Clear filters
+            </button>
           </div>
         </div>
       </div>
@@ -193,9 +200,9 @@ export default function Skills() {
           return (
             <motion.div
               key={skill.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+              animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.3, delay: index * 0.1 }}
               className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1 h-40"
             >
               <div className="flex items-center gap-2 mb-2">
@@ -219,6 +226,7 @@ export default function Skills() {
                     aria-valuenow={skill.proficiency}
                     aria-valuemin={0}
                     aria-valuemax={100}
+                    aria-label={`Proficiency for ${skill.name}`}
                   >
                     <div
                       className="h-full bg-primary transition-all duration-500"
@@ -236,7 +244,7 @@ export default function Skills() {
         })}
       </div>
 
-      {totalPages > 1 && window.innerWidth >= 768 && (
+      {totalPages > 1 && typeof window !== 'undefined' && window.innerWidth >= 768 && (
         <div className="flex justify-center items-center gap-2 py-4">
           <button
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -246,9 +254,18 @@ export default function Skills() {
           >
             Previous
           </button>
-          <span className="text-gray-600">
-            Page {currentPage} of {totalPages}
-          </span>
+          <div className="flex items-center gap-1" aria-label="Pagination">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                aria-current={currentPage === i + 1}
+                className={`w-8 h-8 rounded-md text-sm ${currentPage === i + 1 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
           <button
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}

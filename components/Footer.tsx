@@ -30,10 +30,10 @@ export default function Footer() {
     <footer className="h-[40px] flex-shrink-0 bg-[#1a2433] text-white">
       <div className="container h-full mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <Link href={contactData.social.linkedin} target="_blank" className="hover:text-[#FD4345] transition-colors">
+          <Link href={contactData.social.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-[#FD4345] transition-colors">
             <FaLinkedin size={20} />
           </Link>
-          <Link href={contactData.social.github} target="_blank" className="hover:text-[#FD4345] transition-colors">
+          <Link href={contactData.social.github} target="_blank" rel="noopener noreferrer" className="hover:text-[#FD4345] transition-colors">
             <FaGithub size={20} />
           </Link>
           <Link href={`mailto:${contactData.email}`} className="hover:text-[#FD4345] transition-colors">

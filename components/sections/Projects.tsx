@@ -89,15 +89,19 @@ export default function Projects() {
                     <Link
                         key={project._id.toString()}
                         href={`/projects/${project.slug}`}
+                        prefetch={true}
                         className="transition-transform hover:scale-105"
                     >
                         <Card className="h-full flex flex-col hover:bg-primary/5">
                             <div className="relative aspect-video w-full">
                                 <Image
                                     src={project.thumbnail || '/images/projects/default-project.jpg'}
-                                    alt={project.title}
+                                    alt={`Thumbnail image for project ${project.title}`}
                                     fill
                                     className="object-cover rounded-t-lg"
+                                    priority={false}
+                                    placeholder="blur"
+                                    blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNjQwJyBoZWlnaHQ9JzM2MCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCBmaWxsPSIjZWVlIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+PC9zdmc+"
                                 />
                             </div>
                             <CardHeader className="flex-grow">

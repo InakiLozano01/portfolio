@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 interface Comment {
   _id: string
@@ -14,6 +14,8 @@ export default function BlogComments({ blogId }: { blogId: string }) {
   const [alias, setAlias] = useState('')
   const [content, setContent] = useState('')
   const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const isValid = useMemo(() => alias.trim().length >= 2 && content.trim().length >= 3, [alias, content])
 
   useEffect(() => {
     const load = async () => {
@@ -28,18 +30,26 @@ export default function BlogComments({ blogId }: { blogId: string }) {
 
   const submit = async () => {
     setError('')
-    const res = await fetch(`/api/blogs/${blogId}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ alias, content })
-    })
-    if (res.ok) {
-      const comment = await res.json()
-      setComments([comment, ...comments])
-      setContent('')
-    } else {
-      const data = await res.json().catch(() => ({}))
-      setError(data.error || 'Failed to send comment')
+    if (!isValid) return
+    setIsSubmitting(true)
+    try {
+      const res = await fetch(`/api/blogs/${blogId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alias: alias.trim(), content: content.trim() })
+      })
+      if (res.ok) {
+        const comment = await res.json()
+        setComments([comment, ...comments])
+        setContent('')
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || 'Failed to send comment')
+      }
+    } catch (e) {
+      setError('Failed to send comment')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -48,9 +58,11 @@ export default function BlogComments({ blogId }: { blogId: string }) {
       <h3 className="text-2xl font-semibold mb-4">Comments</h3>
       <div className="space-y-4 mb-8">
         {comments.map(c => (
-          <div key={c._id} className="border p-2 rounded">
-            <p className="text-sm text-muted-foreground">{c.alias} - {new Date(c.createdAt).toLocaleString()}</p>
-            <p>{c.content}</p>
+          <div key={c._id} className="border p-3 rounded">
+            <p className="text-sm text-muted-foreground">
+              {c.alias} • {new Date(c.createdAt).toLocaleString()}
+            </p>
+            <p className="whitespace-pre-wrap">{c.content}</p>
           </div>
         ))}
         {comments.length === 0 && <p>No comments yet.</p>}
@@ -72,9 +84,11 @@ export default function BlogComments({ blogId }: { blogId: string }) {
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <button
           onClick={submit}
-          className="bg-primary text-white px-4 py-2 rounded"
+          disabled={!isValid || isSubmitting}
+          aria-disabled={!isValid || isSubmitting}
+          className="bg-primary text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Post Comment
+          {isSubmitting ? 'Posting...' : 'Post Comment'}
         </button>
       </div>
     </div>
