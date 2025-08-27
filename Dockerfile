@@ -112,10 +112,6 @@ ENV SKIP_DB_DURING_BUILD=""
 ENV MONGODB_URI=""
 ENV REDIS_URL=""
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
-
 # Use a shell to run the application so we can see logs
 CMD ["sh", "/app/scripts/entrypoint.sh"]
 
