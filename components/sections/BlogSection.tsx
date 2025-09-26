@@ -9,6 +9,7 @@ import { type Blog } from '@/models/BlogClient'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDistanceToNow } from 'date-fns'
 import { formatDate } from '@/lib/utils'
+import NewsletterSignup from '@/components/NewsletterSignup'
 
 export default function BlogSection() {
     const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -25,7 +26,17 @@ export default function BlogSection() {
                     throw new Error('Failed to fetch blogs');
                 }
                 const data = await response.json();
-                const publishedBlogs = data.filter((blog: Blog) => blog.published);
+                const publishedBlogs = data
+                    .filter((blog: Blog) => blog.published)
+                    .map((blog: Blog) => ({
+                        ...blog,
+                        title_en: blog.title_en || blog.title,
+                        title_es: blog.title_es || blog.title,
+                        subtitle_en: blog.subtitle_en || blog.subtitle,
+                        subtitle_es: blog.subtitle_es || blog.subtitle,
+                        content_en: blog.content_en || blog.content,
+                        content_es: blog.content_es || blog.content,
+                    }));
                 setBlogs(publishedBlogs);
                 setFilteredBlogs(publishedBlogs);
             } catch (err) {
@@ -39,22 +50,32 @@ export default function BlogSection() {
     }, []);
 
     useEffect(() => {
-        const query = searchQuery.trim().toLowerCase()
-        const filtered = blogs.filter((blog) =>
-            query.length === 0 ||
-            blog.title.toLowerCase().includes(query) ||
-            blog.subtitle.toLowerCase().includes(query) ||
-            blog.content.toLowerCase().includes(query) ||
-            blog.tags.some((tag) => tag.toLowerCase().includes(query))
-        );
+        const query = searchQuery.trim().toLowerCase();
+        const filtered = blogs.filter((blog) => {
+            if (!query) return true;
+            const haystack = [
+                blog.title_en,
+                blog.title_es,
+                blog.subtitle_en,
+                blog.subtitle_es,
+                blog.content_en,
+                blog.content_es,
+                ...blog.tags,
+            ]
+                .filter(Boolean)
+                .map((value) => value.toLowerCase());
+
+            return haystack.some((value) => value.includes(query));
+        });
         setFilteredBlogs(filtered);
     }, [searchQuery, blogs]);
 
-    const highlight = (text: string) => {
+    const highlight = (text?: string) => {
+        const fallback = text ?? ''
         const q = searchQuery.trim()
-        if (!q) return text
+        if (!q) return fallback
         const regex = new RegExp(`(${q.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'ig')
-        return text.split(regex).map((part, i) =>
+        return fallback.split(regex).map((part, i) =>
             regex.test(part) ? (
                 <mark key={i} className="bg-yellow-200 text-black rounded px-0.5">{part}</mark>
             ) : (
@@ -125,6 +146,9 @@ export default function BlogSection() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="max-w-md mx-auto bg-white text-black placeholder:text-gray-500"
                 />
+                <div className="mt-4 max-w-2xl mx-auto">
+                    <NewsletterSignup />
+                </div>
             </div>
             {filteredBlogs.length === 0 ? (
                 <div className="text-center text-muted-foreground">
@@ -135,13 +159,17 @@ export default function BlogSection() {
                     {filteredBlogs.map((blog) => (
                         <Link key={blog._id} href={`/blog/${blog.slug}`} prefetch={true} className="block">
                             <Card className="hover:shadow-lg hover:bg-primary/5 transition-shadow duration-200 overflow-hidden group">
-                                <CardHeader className="relative">
-                                    <CardTitle className="text-xl mb-2 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">
-                                        {highlight(blog.title)}
+                                <CardHeader className="relative space-y-2">
+                                    <CardTitle className="text-xl bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">
+                                        {highlight(blog.title_en)}
                                     </CardTitle>
                                     <p className="text-muted-foreground text-sm">
-                                        {highlight(blog.subtitle)}
+                                        {highlight(blog.subtitle_en)}
                                     </p>
+                                    <div className="text-muted-foreground text-xs italic space-y-1">
+                                        <p>{highlight(blog.title_es)}</p>
+                                        <p>{highlight(blog.subtitle_es)}</p>
+                                    </div>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex flex-wrap gap-2 mb-4">
@@ -162,6 +190,7 @@ export default function BlogSection() {
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <span>Created {formatDistanceToNow(formatDate(blog.createdAt), { addSuffix: true })}</span>
+                                        <span className="uppercase text-xs tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full">EN / ES</span>
                                     </div>
                                 </CardContent>
                             </Card>

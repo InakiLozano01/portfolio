@@ -123,14 +123,33 @@ export default function BlogManager() {
                             </div>
                         ) : (
                             blogs
-                                .filter((b) => (b.title || '').toLowerCase().includes(search.toLowerCase()) || (b.subtitle || '').toLowerCase().includes(search.toLowerCase()))
+                                .filter((blog) => {
+                                    const query = search.trim().toLowerCase();
+                                    if (!query) return true;
+                                    const haystack = [
+                                        blog.title_en,
+                                        blog.title_es,
+                                        blog.subtitle_en,
+                                        blog.subtitle_es,
+                                        blog.content_en,
+                                        blog.content_es,
+                                        blog.title,
+                                        blog.subtitle,
+                                        blog.content,
+                                        ...blog.tags,
+                                    ]
+                                        .filter(Boolean)
+                                        .map((value) => value.toLowerCase());
+
+                                    return haystack.some((value) => value.includes(query));
+                                })
                                 .map((blog) => (
                                     <Card key={blog._id} className="hover:shadow-md transition-all duration-200 border border-slate-200 hover:border-slate-300">
                                         <CardContent className="p-4">
                                             <div className="flex justify-between items-start">
                                                 <div className="space-y-2 flex-1">
                                                     <div className="flex items-center gap-3">
-                                                        <h3 className="font-semibold text-slate-900 text-lg">{blog.title}</h3>
+                                                        <h3 className="font-semibold text-slate-900 text-lg">{blog.title_en || blog.title}</h3>
                                                         <Badge
                                                             className={blog.published ?
                                                                 "bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200" :
@@ -140,7 +159,7 @@ export default function BlogManager() {
                                                             {blog.published ? 'Published' : 'Draft'}
                                                         </Badge>
                                                     </div>
-                                                    <p className="text-sm text-slate-600">{blog.subtitle}</p>
+                                                    <p className="text-sm text-slate-600">{blog.subtitle_en || blog.subtitle}</p>
                                                 </div>
                                                 <div className="flex gap-2 ml-4">
                                                     <Button

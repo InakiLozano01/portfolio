@@ -3,6 +3,8 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import BlogModel from '@/models/Blog';
+import { normalizeBlogPayload } from '@/lib/blog-normalize';
+import { notifyBlogSubscribers } from '@/lib/blog-newsletter';
 
 export async function GET() {
     try {
@@ -20,10 +22,16 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
+        const raw = await request.json();
+        const body = normalizeBlogPayload(raw);
 
         await connectToDatabase();
         const blog = await BlogModel.create(body);
+
+        // If published, notify subscribers (best effort)
+        if (blog?.published) {
+            await notifyBlogSubscribers(blog);
+        }
 
         return NextResponse.json(blog);
     } catch (error) {
@@ -33,4 +41,4 @@ export async function POST(request: Request) {
             { status: 500 }
         );
     }
-} 
+}

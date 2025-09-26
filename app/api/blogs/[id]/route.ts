@@ -3,6 +3,8 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import BlogModel from '@/models/Blog';
+import { normalizeBlogPayload } from '@/lib/blog-normalize';
+import { notifyBlogSubscribers } from '@/lib/blog-newsletter';
 
 export async function GET(
     request: Request,
@@ -34,9 +36,11 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     try {
-        const body = await request.json();
+        const raw = await request.json();
+        const body = normalizeBlogPayload(raw);
 
         await connectToDatabase();
+        const previous = await BlogModel.findById(params.id).lean();
         const blog = await BlogModel.findByIdAndUpdate(
             params.id,
             body,
@@ -48,6 +52,11 @@ export async function PUT(
                 { error: 'Blog not found' },
                 { status: 404 }
             );
+        }
+
+        // Notify subscribers if just published
+        if (previous && blog && previous.published === false && blog.published === true) {
+            await notifyBlogSubscribers(blog);
         }
 
         return NextResponse.json(blog);

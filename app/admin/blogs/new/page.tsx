@@ -7,17 +7,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Blog, BlogSchema } from '@/models/BlogClient';
+import { BlogSchema } from '@/models/BlogClient';
 import { slugify } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ZodError } from 'zod';
+
+const requiredField = (value: string) => value.trim();
 
 export default function NewBlogPage() {
     const router = useRouter();
-    const [title, setTitle] = useState('');
-    const [subtitle, setSubtitle] = useState('');
-    const [content, setContent] = useState('');
-    const [footer, setFooter] = useState('');
-    const [bibliography, setBibliography] = useState('');
+
+    const [titleEn, setTitleEn] = useState('');
+    const [subtitleEn, setSubtitleEn] = useState('');
+    const [contentEn, setContentEn] = useState('');
+    const [footerEn, setFooterEn] = useState('');
+    const [bibliographyEn, setBibliographyEn] = useState('');
+
+    const [titleEs, setTitleEs] = useState('');
+    const [subtitleEs, setSubtitleEs] = useState('');
+    const [contentEs, setContentEs] = useState('');
+    const [footerEs, setFooterEs] = useState('');
+    const [bibliographyEs, setBibliographyEs] = useState('');
+
     const [published, setPublished] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,22 +39,41 @@ export default function NewBlogPage() {
         setError(null);
         setIsSubmitting(true);
 
-        try {
-            const blogData = {
-                title,
-                subtitle,
-                content,
-                footer,
-                bibliography,
-                published,
-                slug: slugify(title),
-                tags
-            };
+        const englishTitle = requiredField(titleEn);
+        const englishSubtitle = requiredField(subtitleEn);
+        const spanishTitle = requiredField(titleEs);
+        const spanishSubtitle = requiredField(subtitleEs);
 
-            // Validate the data
+        const englishFooter = footerEn.trim();
+        const spanishFooter = footerEs.trim();
+        const englishBibliography = bibliographyEn.trim();
+        const spanishBibliography = bibliographyEs.trim();
+
+        const blogData = {
+            title_en: englishTitle,
+            title_es: spanishTitle,
+            subtitle_en: englishSubtitle,
+            subtitle_es: spanishSubtitle,
+            content_en: contentEn,
+            content_es: contentEs,
+            footer_en: englishFooter || undefined,
+            footer_es: spanishFooter || undefined,
+            bibliography_en: englishBibliography || undefined,
+            bibliography_es: spanishBibliography || undefined,
+            published,
+            slug: slugify(englishTitle || spanishTitle),
+            tags,
+            // Legacy fallbacks for existing consumers
+            title: englishTitle || spanishTitle,
+            subtitle: englishSubtitle || spanishSubtitle,
+            content: contentEn || contentEs,
+            footer: englishFooter || spanishFooter || undefined,
+            bibliography: englishBibliography || spanishBibliography || undefined,
+        };
+
+        try {
             BlogSchema.parse(blogData);
 
-            // Save the blog
             const response = await fetch('/api/blogs', {
                 method: 'POST',
                 headers: {
@@ -59,7 +89,9 @@ export default function NewBlogPage() {
             router.push('/admin');
             router.refresh();
         } catch (err) {
-            if (err instanceof Error) {
+            if (err instanceof ZodError) {
+                setError(err.issues[0]?.message ?? 'Please review the highlighted fields');
+            } else if (err instanceof Error) {
                 setError(err.message);
             } else {
                 setError('An error occurred while saving the blog');
@@ -70,8 +102,10 @@ export default function NewBlogPage() {
     };
 
     const handleTagsChange = (value: string) => {
-        // Split by commas and clean up whitespace
-        const newTags = value.split(',').map(tag => tag.trim()).filter(Boolean);
+        const newTags = value
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean);
         setTags(newTags);
     };
 
@@ -81,66 +115,124 @@ export default function NewBlogPage() {
     };
 
     return (
-        <Card className="max-w-4xl mx-auto">
+        <Card className="max-w-5xl mx-auto">
             <CardHeader>
                 <CardTitle>New Blog</CardTitle>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-gray-900">Title</Label>
-                        <Input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Enter blog title"
-                            required
-                            className="bg-white text-black placeholder:text-gray-500"
-                        />
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 className="font-semibold mb-2">English</h3>
+                            <div className="space-y-2">
+                                <Label className="text-gray-900" htmlFor="title-en">Title (EN)</Label>
+                                <Input
+                                    id="title-en"
+                                    value={titleEn}
+                                    onChange={(e) => setTitleEn(e.target.value)}
+                                    placeholder="Enter English title"
+                                    required
+                                    className="bg-white text-black placeholder:text-gray-500"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-gray-900" htmlFor="subtitle-en">Subtitle (EN)</Label>
+                                <Input
+                                    id="subtitle-en"
+                                    value={subtitleEn}
+                                    onChange={(e) => setSubtitleEn(e.target.value)}
+                                    placeholder="Enter English subtitle"
+                                    required
+                                    className="bg-white text-black placeholder:text-gray-500"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-gray-900">Content (EN)</Label>
+                                <TinyMCE value={contentEn} onChange={setContentEn} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-gray-900" htmlFor="footer-en">Footer (EN)</Label>
+                                <Input
+                                    id="footer-en"
+                                    value={footerEn}
+                                    onChange={(e) => setFooterEn(e.target.value)}
+                                    placeholder="Optional English footer"
+                                    className="bg-white text-black placeholder:text-gray-500"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-gray-900" htmlFor="bibliography-en">Bibliography (EN)</Label>
+                                <Input
+                                    id="bibliography-en"
+                                    value={bibliographyEn}
+                                    onChange={(e) => setBibliographyEn(e.target.value)}
+                                    placeholder="Optional English bibliography"
+                                    className="bg-white text-black placeholder:text-gray-500"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold mb-2">Español</h3>
+                            <div className="space-y-2">
+                                <Label className="text-gray-900" htmlFor="title-es">Título (ES)</Label>
+                                <Input
+                                    id="title-es"
+                                    value={titleEs}
+                                    onChange={(e) => setTitleEs(e.target.value)}
+                                    placeholder="Introduce el título en español"
+                                    required
+                                    className="bg-white text-black placeholder:text-gray-500"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-gray-900" htmlFor="subtitle-es">Subtítulo (ES)</Label>
+                                <Input
+                                    id="subtitle-es"
+                                    value={subtitleEs}
+                                    onChange={(e) => setSubtitleEs(e.target.value)}
+                                    placeholder="Introduce el subtítulo en español"
+                                    required
+                                    className="bg-white text-black placeholder:text-gray-500"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-gray-900">Contenido (ES)</Label>
+                                <TinyMCE value={contentEs} onChange={setContentEs} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-gray-900" htmlFor="footer-es">Pie (ES)</Label>
+                                <Input
+                                    id="footer-es"
+                                    value={footerEs}
+                                    onChange={(e) => setFooterEs(e.target.value)}
+                                    placeholder="Pie de página opcional"
+                                    className="bg-white text-black placeholder:text-gray-500"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-gray-900" htmlFor="bibliography-es">Bibliografía (ES)</Label>
+                                <Input
+                                    id="bibliography-es"
+                                    value={bibliographyEs}
+                                    onChange={(e) => setBibliographyEs(e.target.value)}
+                                    placeholder="Bibliografía opcional"
+                                    className="bg-white text-black placeholder:text-gray-500"
+                                />
+                            </div>
+                        </div>
                     </div>
+
                     <div className="space-y-2">
-                        <Label className="text-gray-900">Subtitle</Label>
+                        <Label className="text-gray-900" htmlFor="tags">Tags (comma-separated)</Label>
                         <Input
-                            value={subtitle}
-                            onChange={(e) => setSubtitle(e.target.value)}
-                            placeholder="Enter blog subtitle"
-                            required
-                            className="bg-white text-black placeholder:text-gray-500"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-gray-900">Content</Label>
-                        <TinyMCE
-                            value={content}
-                            onChange={setContent}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-gray-900">Footer</Label>
-                        <Input
-                            value={footer}
-                            onChange={(e) => setFooter(e.target.value)}
-                            placeholder="Enter blog footer (optional)"
-                            className="bg-white text-black placeholder:text-gray-500"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-gray-900">Bibliography</Label>
-                        <Input
-                            value={bibliography}
-                            onChange={(e) => setBibliography(e.target.value)}
-                            placeholder="Enter bibliography (optional)"
-                            className="bg-white text-black placeholder:text-gray-500"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-gray-900">Tags (comma-separated)</Label>
-                        <Input
+                            id="tags"
                             value={tags.join(', ')}
                             onChange={(e) => handleTagsChange(e.target.value)}
                             placeholder="Enter tags, separated by commas"
                             className="bg-white text-black placeholder:text-gray-500"
                         />
                     </div>
+
                     <div className="flex items-center space-x-2">
                         <Switch
                             checked={published}
@@ -149,9 +241,11 @@ export default function NewBlogPage() {
                         />
                         <Label htmlFor="published" className="text-gray-900">Published</Label>
                     </div>
+
                     {error && (
                         <p className="text-sm text-red-500">{error}</p>
                     )}
+
                     <div className="flex justify-end space-x-2">
                         <Button
                             type="button"
@@ -171,4 +265,4 @@ export default function NewBlogPage() {
             </CardContent>
         </Card>
     );
-} 
+}

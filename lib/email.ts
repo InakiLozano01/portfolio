@@ -322,3 +322,26 @@ ${sanitizedData.message}
 // Export singleton instance
 export const emailService = new EmailService();
 export default emailService;
+
+// Newsletter helpers
+export async function sendNewsletterEmail({ to, subject, html, text }:
+  { to: string; subject: string; html: string; text?: string }) {
+  try {
+    const svc = emailService as any
+    const transporter: Transporter | null = (svc as any).transporter || null
+    if (!transporter) throw new Error('Email transporter not initialized')
+    const fromAddress = process.env.CONTACT_MAIL_FROM || process.env.SMTP_USERNAME || 'no-reply@example.com'
+    const info = await transporter.sendMail({
+      from: fromAddress,
+      to,
+      subject,
+      html,
+      text: text || html.replace(/<[^>]+>/g, '')
+    })
+    console.log('Newsletter email sent:', info.messageId)
+    return true
+  } catch (e) {
+    console.error('Newsletter email failed', e)
+    return false
+  }
+}

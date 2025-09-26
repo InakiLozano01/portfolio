@@ -9,6 +9,16 @@ interface Params {
 }
 
 async function moderate(content: string): Promise<boolean> {
+  // Basic local moderation fallback
+  const banned = [
+    /\b(?:kill|suicide|rape|nazi|terror|slur|retard|faggot)\b/i,
+    /(https?:\/\/\S{40,})/i,
+    /(.)\1{10,}/,
+  ]
+  for (const rx of banned) {
+    if (rx.test(content)) return false
+  }
+
   const apiKey = process.env.GOOGLE_AI_API_KEY
   if (!apiKey) return true
 
@@ -40,7 +50,7 @@ export async function GET(_req: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   try {
-    const { alias, content } = await req.json()
+    const { alias, content, parentId } = await req.json()
     const ip = (req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown').split(',')[0].trim()
     if (!alias || !content) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
@@ -58,7 +68,11 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ error: 'Comment rejected by moderation' }, { status: 400 })
     }
 
-    const comment = await Comment.create({ blog: params.id, alias, content, ip })
+    const sanitizedAlias = String(alias).slice(0, 40).replace(/[<>]/g, '')
+    const sanitizedContent = String(content).slice(0, 5000).replace(/[<>]/g, '')
+    const parent = parentId ? parentId : null
+
+    const comment = await Comment.create({ blog: params.id, alias: sanitizedAlias, content: sanitizedContent, ip, parent })
     return NextResponse.json(comment)
   } catch (err) {
     console.error('Failed to create comment', err)
