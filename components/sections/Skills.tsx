@@ -10,11 +10,23 @@ import { iconMap, isCustomIconPath, resolveIconKey, type IconProps } from '@/com
 // Icon map and helpers are imported from icon-registry
 
 interface Skill {
+  _id?: string;
   name: string;
   category: string;
   proficiency: number;
   yearsOfExperience: number;
   icon: string;
+}
+
+function coerceSkill(raw: any): Skill {
+  return {
+    _id: raw._id,
+    name: String(raw.name || '').trim(),
+    category: String(raw.category || '').trim(),
+    proficiency: typeof raw.proficiency === 'number' ? raw.proficiency : Number(raw.proficiency) || 0,
+    yearsOfExperience: typeof raw.yearsOfExperience === 'number' ? raw.yearsOfExperience : Number(raw.yearsOfExperience) || 0,
+    icon: String(raw.icon || '').trim()
+  }
 }
 
 export default function Skills() {
@@ -54,7 +66,10 @@ export default function Skills() {
           console.log('[Skills Component] Skills data:', skillsData)
 
           if (Array.isArray(skillsData)) {
-            setContent(skillsData)
+            const normalizedSkills = skillsData
+              .map(coerceSkill)
+              .filter(skill => skill.name && skill.category)
+            setContent(normalizedSkills)
           } else {
             console.error('[Skills Component] Invalid skills data format:', skillsData)
             setError('Invalid skills data format')
@@ -111,7 +126,7 @@ export default function Skills() {
   }, [content])
 
   const filteredSkills = useMemo(() => {
-    const withCategory = selectedCategory === 'all'
+    const dataset = selectedCategory === 'all'
       ? content
       : content.filter(skill => {
         const category = skill.category.charAt(0).toUpperCase() + skill.category.slice(1)
@@ -119,8 +134,8 @@ export default function Skills() {
       })
     const q = searchQuery.trim().toLowerCase()
     const withSearch = q
-      ? withCategory.filter(s => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
-      : withCategory
+      ? dataset.filter(s => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
+      : dataset
     const sorted = [...withSearch].sort((a, b) => {
       if (sortBy === 'proficiency') return (sortDir === 'desc' ? b.proficiency - a.proficiency : a.proficiency - b.proficiency)
       if (sortBy === 'years') return (sortDir === 'desc' ? b.yearsOfExperience - a.yearsOfExperience : a.yearsOfExperience - b.yearsOfExperience)

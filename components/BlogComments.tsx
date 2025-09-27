@@ -71,7 +71,7 @@ export default function BlogComments({ blogId }: { blogId: string }) {
     }
   }
 
-  const vote = async (id: string, dir: 'up'|'down') => {
+  const vote = async (id: string, dir: 'up' | 'down') => {
     try {
       const res = await fetch(`/api/comments/${id}/vote`, {
         method: 'POST',
@@ -83,7 +83,7 @@ export default function BlogComments({ blogId }: { blogId: string }) {
         const r = await fetch(`/api/blogs/${blogId}/comments`)
         if (r.ok) setComments(await r.json())
       }
-    } catch {}
+    } catch { }
   }
 
   const renderNode = (n: CommentNode, depth = 0) => {
@@ -107,17 +107,17 @@ export default function BlogComments({ blogId }: { blogId: string }) {
               placeholder="Your alias"
               value={alias}
               onChange={e => setAlias(e.target.value)}
-              className="w-full p-2 border rounded text-black"
+              className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             />
             <textarea
               placeholder="Your reply"
               value={content}
               onChange={e => setContent(e.target.value)}
-              className="w-full p-2 border rounded h-24 text-black"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             />
             <div className="flex gap-2">
-              <button onClick={submit} disabled={!isValid || isSubmitting} className="bg-primary text-white px-3 py-1 rounded disabled:opacity-50">{isSubmitting ? 'Posting...' : 'Reply'}</button>
-              <button onClick={() => { setReplyTo(null); setContent('') }} className="px-3 py-1 rounded border">Cancel</button>
+              <button onClick={submit} disabled={!isValid || isSubmitting} className="h-9 px-4 rounded-md bg-primary text-white text-sm font-medium disabled:opacity-50">{isSubmitting ? 'Posting...' : 'Reply'}</button>
+              <button onClick={() => { setReplyTo(null); setContent('') }} className="h-9 px-4 rounded-md border text-sm">Cancel</button>
             </div>
           </div>
         )}
@@ -143,20 +143,20 @@ export default function BlogComments({ blogId }: { blogId: string }) {
           placeholder="Your alias"
           value={alias}
           onChange={e => setAlias(e.target.value)}
-          className="w-full p-2 border rounded text-black"
+          className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
         />
         <textarea
           placeholder="Your comment"
           value={content}
           onChange={e => setContent(e.target.value)}
-          className="w-full p-2 border rounded h-24 text-black"
+          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
         />
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <button
           onClick={submit}
           disabled={!isValid || isSubmitting}
           aria-disabled={!isValid || isSubmitting}
-          className="bg-primary text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-10 px-4 rounded-md bg-primary text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? 'Posting...' : 'Post Comment'}
         </button>

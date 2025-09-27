@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, notFound } from 'next/navigation';
 import { TinyMCE } from '@/components/ui/tinymce';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,8 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
 
     const [published, setPublished] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
+    const [pendingTag, setPendingTag] = useState('');
+    const tagsInputRef = useRef<HTMLInputElement | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -91,6 +93,58 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
 
         fetchBlog();
     }, [params.id]);
+
+    const commitPendingTag = useCallback((raw?: string) => {
+        const value = typeof raw === 'string' ? raw : pendingTag;
+        const normalized = value.trim().replace(/\s+/g, '-').toLowerCase();
+        if (!normalized) {
+            setPendingTag('');
+            return;
+        }
+        if (tags.includes(normalized)) {
+            setPendingTag('');
+            return;
+        }
+        setTags((prev) => [...prev, normalized]);
+        setPendingTag('');
+    }, [pendingTag, tags]);
+
+    const removeTag = useCallback((tag: string) => {
+        setTags((prev) => prev.filter((item) => item !== tag));
+    }, []);
+
+    const handleTagInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        if (value.includes(',')) {
+            const parts = value.split(',');
+            const last = parts.pop() ?? '';
+            parts.forEach((part) => commitPendingTag(part));
+            setPendingTag(last);
+        } else {
+            setPendingTag(value);
+        }
+    }, [commitPendingTag]);
+
+    const handleTagInputKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter' || event.key === 'Tab') {
+            if (pendingTag.trim()) {
+                event.preventDefault();
+                commitPendingTag();
+            }
+        }
+        if (event.key === 'Backspace' && !pendingTag) {
+            setTags((prev) => prev.slice(0, -1));
+        }
+    }, [commitPendingTag, pendingTag]);
+
+    useEffect(() => {
+        if (!pendingTag) return;
+        if (!pendingTag.includes(',')) return;
+        const parts = pendingTag.split(',');
+        const last = parts.pop() ?? '';
+        parts.forEach((part) => commitPendingTag(part));
+        setPendingTag(last);
+    }, [pendingTag, commitPendingTag]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -158,14 +212,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
         }
     };
 
-    const handleTagsChange = (value: string) => {
-        const newTags = value
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter(Boolean);
-        setTags(newTags);
-    };
-
     const handleBack = () => {
         router.push('/#blog');
         router.refresh();
@@ -199,7 +245,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                     onChange={(e) => setTitleEn(e.target.value)}
                                     placeholder="Enter English title"
                                     required
-                                    className="bg-white text-black placeholder:text-gray-500"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -210,7 +255,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                     onChange={(e) => setSubtitleEn(e.target.value)}
                                     placeholder="Enter English subtitle"
                                     required
-                                    className="bg-white text-black placeholder:text-gray-500"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -224,7 +268,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                     value={footerEn}
                                     onChange={(e) => setFooterEn(e.target.value)}
                                     placeholder="Optional English footer"
-                                    className="bg-white text-black placeholder:text-gray-500"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -234,7 +277,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                     value={bibliographyEn}
                                     onChange={(e) => setBibliographyEn(e.target.value)}
                                     placeholder="Optional English bibliography"
-                                    className="bg-white text-black placeholder:text-gray-500"
                                 />
                             </div>
                         </div>
@@ -248,7 +290,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                     onChange={(e) => setTitleEs(e.target.value)}
                                     placeholder="Introduce el título en español"
                                     required
-                                    className="bg-white text-black placeholder:text-gray-500"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -259,7 +300,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                     onChange={(e) => setSubtitleEs(e.target.value)}
                                     placeholder="Introduce el subtítulo en español"
                                     required
-                                    className="bg-white text-black placeholder:text-gray-500"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -273,7 +313,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                     value={footerEs}
                                     onChange={(e) => setFooterEs(e.target.value)}
                                     placeholder="Pie de página opcional"
-                                    className="bg-white text-black placeholder:text-gray-500"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -283,7 +322,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                     value={bibliographyEs}
                                     onChange={(e) => setBibliographyEs(e.target.value)}
                                     placeholder="Bibliografía opcional"
-                                    className="bg-white text-black placeholder:text-gray-500"
                                 />
                             </div>
                         </div>
@@ -291,13 +329,34 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
 
                     <div className="space-y-2">
                         <Label className="text-gray-900" htmlFor="tags">Tags (comma-separated)</Label>
-                        <Input
-                            id="tags"
-                            value={tags.join(', ')}
-                            onChange={(e) => handleTagsChange(e.target.value)}
-                            placeholder="Enter tags, separated by commas"
-                            className="bg-white text-black placeholder:text-gray-500"
-                        />
+                        <div className="rounded-md border border-gray-300 bg-white px-2 py-2">
+                            <div className="flex flex-wrap gap-2">
+                                {tags.map((tag) => (
+                                    <button
+                                        key={tag}
+                                        type="button"
+                                        onClick={() => removeTag(tag)}
+                                        className="flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-200"
+                                    >
+                                        {tag}
+                                        <span className="ml-1 text-gray-500">×</span>
+                                    </button>
+                                ))}
+                                <input
+                                    id="tags"
+                                    ref={tagsInputRef}
+                                    value={pendingTag}
+                                    onChange={handleTagInputChange}
+                                    onBlur={() => commitPendingTag()}
+                                    onKeyDown={handleTagInputKeyDown}
+                                    placeholder={tags.length ? '' : 'ai, llms, machine-learning'}
+                                    className="min-w-[120px] flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+                                />
+                            </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            Separate with commas or press enter to add. Click a tag to remove.
+                        </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -312,7 +371,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                 type="file"
                                 accept="application/pdf"
                                 onChange={(e) => setPdfEnFile(e.target.files?.[0] || null)}
-                                className="bg-white text-black"
                             />
                             <Button
                                 type="button"
@@ -346,7 +404,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                 type="file"
                                 accept="application/pdf"
                                 onChange={(e) => setPdfEsFile(e.target.files?.[0] || null)}
-                                className="bg-white text-black"
                             />
                             <Button
                                 type="button"

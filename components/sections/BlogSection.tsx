@@ -147,7 +147,7 @@ export default function BlogSection() {
                     className="max-w-md mx-auto bg-white text-black placeholder:text-gray-500"
                 />
                 <div className="mt-4 max-w-2xl mx-auto">
-                    <NewsletterSignup />
+                    <NewsletterSignup className="bg-white" />
                 </div>
             </div>
             {filteredBlogs.length === 0 ? (

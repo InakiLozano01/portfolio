@@ -1,7 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import DOMPurify from 'isomorphic-dompurify'
+import { Editor as TinyMCEEditor } from '@tinymce/tinymce-react'
+import { useRef } from 'react'
 import { slugify } from '@/lib/utils'
 
 type BlogLike = {
@@ -30,7 +32,19 @@ export default function BlogArticle({ blog }: { blog: BlogLike }) {
   const hasEn = !!(blog.content_en || blog.content)
   const hasEs = !!(blog.content_es || blog.content)
 
-  const [lang, setLang] = useState<'en'|'es'>(hasEn ? 'en' : 'es')
+  const [lang, setLang] = useState<'en' | 'es'>(hasEn ? 'en' : 'es')
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    if (!document.getElementById('katex-stylesheet')) {
+      const link = document.createElement('link')
+      link.id = 'katex-stylesheet'
+      link.rel = 'stylesheet'
+      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css'
+      link.crossOrigin = 'anonymous'
+      document.head.appendChild(link)
+    }
+  }, [])
 
   const current = useMemo(() => {
     const pick = (en?: string, es?: string, legacy?: string) => {
@@ -48,19 +62,13 @@ export default function BlogArticle({ blog }: { blog: BlogLike }) {
     }
   }, [lang, blog])
 
-  const { sanitizedHtml, toc } = useMemo(() => {
-    const sanitized = DOMPurify.sanitize(current.content)
-    const headingRegex = /<(h2|h3)>([^<]+)<\/\1>/g
-    const matches = Array.from(sanitized.matchAll(headingRegex))
-    const toc = matches.map((m) => ({
-      level: m[1] as 'h2' | 'h3',
-      text: m[2],
-      id: slugify(m[2])
-    }))
-    const htmlWithIds = sanitized
-      .replace(/<h2>([^<]+)<\/h2>/g, (_m, t) => `<h2 id=\"${slugify(t)}\">${t}</h2>`)
-      .replace(/<h3>([^<]+)<\/h3>/g, (_m, t) => `<h3 id=\"${slugify(t)}\">${t}</h3>`)
-    return { sanitizedHtml: htmlWithIds, toc }
+  const sanitizedHtml = useMemo(() => {
+    const sanitized = DOMPurify.sanitize(current.content || '', {
+      ADD_ATTR: ['style', 'data-start', 'data-end', 'data-col-size', 'data-turn-id', 'data-testid', 'data-turn', 'data-scroll-anchor', 'data-message-author-role', 'data-message-id', 'data-message-model-slug', 'data-katex-display'],
+      ADD_TAGS: ['iframe', 'math', 'mi', 'mn', 'mo', 'ms', 'mspace', 'mtext', 'semantics', 'annotation', 'annotation-xml']
+    })
+
+    return sanitized
   }, [current.content])
 
   const reading = useMemo(() => {
@@ -80,19 +88,18 @@ export default function BlogArticle({ blog }: { blog: BlogLike }) {
           </p>
         </div>
         <div className="inline-flex border rounded overflow-hidden">
-          {(['en','es'] as const).map(l => {
+          {(['en', 'es'] as const).map(l => {
             const disabled = l === 'en' ? !hasEn : !hasEs
             return (
               <button
                 key={l}
                 onClick={() => !disabled && setLang(l)}
-                className={`px-3 py-1 text-sm transition ${
-                  lang === l
-                    ? 'bg-primary text-white'
-                    : disabled
-                      ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                      : 'bg-transparent text-primary hover:bg-primary/10'
-                }`}
+                className={`px-3 py-1 text-sm transition ${lang === l
+                  ? 'bg-primary text-white'
+                  : disabled
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : 'bg-transparent text-primary hover:bg-primary/10'
+                  }`}
                 disabled={disabled}
               >
                 {l.toUpperCase()}
@@ -109,22 +116,7 @@ export default function BlogArticle({ blog }: { blog: BlogLike }) {
         </div>
       )}
 
-      {toc.length > 0 && (
-        <nav aria-label="Table of contents" className="mb-6 border-l-2 border-primary/20 pl-4">
-          <p className="text-sm uppercase tracking-wide text-muted-foreground">Contents</p>
-          <ul className="mt-2 space-y-1">
-            {toc.map((item, i) => (
-              <li key={`${item.id}-${i}`} className={item.level === 'h3' ? 'ml-4' : ''}>
-                <a href={`#${item.id}`} className="text-primary hover:underline">
-                  {item.text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
-
-      <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />
+      <div className="blog-content prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />
     </div>
   )
 }

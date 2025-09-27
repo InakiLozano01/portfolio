@@ -3,7 +3,7 @@ export function StructuredData() {
         '@context': 'https://schema.org',
         '@type': 'WebSite',
         name: 'Iñaki F. Lozano Portfolio',
-        description: 'Full Stack Developer specializing in modern web technologies. Passionate about creating efficient, scalable, and user-friendly applications.',
+        description: 'Computation Engineering student focused on secure document workflows, scalable backends, and modern DevOps practices.',
         url: 'https://inakiserver.lat',
         sameAs: [
             'https://inakilozano.com',
@@ -29,8 +29,8 @@ export function StructuredData() {
         name: 'Iñaki F. Lozano',
         givenName: 'Iñaki',
         familyName: 'Lozano',
-        jobTitle: 'Full Stack Developer',
-        description: 'Full Stack Developer specializing in modern web technologies including React, Next.js, Node.js, TypeScript, and MongoDB. Passionate about creating efficient, scalable, and user-friendly applications.',
+        jobTitle: 'Computation Engineering Student & Software Developer',
+        description: 'Researcher and developer working on advanced electronic signatures, scalable APIs, and DevOps automation.',
         url: 'https://inakiserver.lat',
         sameAs: [
             'https://inakilozano.com',
@@ -39,40 +39,40 @@ export function StructuredData() {
         image: 'https://inakiserver.lat/pfp.jpg',
         worksFor: {
             '@type': 'Organization',
-            name: 'Freelance Developer'
+            name: 'Court of Accounts of Tucumán'
         },
         knowsAbout: [
-            'Full Stack Development',
-            'React',
-            'Next.js',
-            'Node.js',
-            'TypeScript',
-            'JavaScript',
-            'MongoDB',
-            'Web Development',
-            'Software Engineering',
-            'Frontend Development',
-            'Backend Development'
+            'Advanced Electronic Signatures',
+            'Document Integrity',
+            'Backend Development',
+            'API Design',
+            'DevOps',
+            'CI/CD',
+            'Cloud Deployment',
+            'Python',
+            'Java',
+            'Artificial Intelligence'
         ],
         skills: [
+            'Python',
+            'Flask',
+            'Java',
+            'Spring',
+            'SQL',
+            'JavaScript',
             'React',
-            'Next.js',
             'TypeScript',
-            'Node.js',
-            'MongoDB',
-            'PostgreSQL',
             'Docker',
-            'AWS',
-            'Git',
-            'Tailwind CSS'
+            'Google Cloud Platform',
+            'CodeIgniter'
         ]
     }
 
     const organizationSchema = {
         '@context': 'https://schema.org',
         '@type': 'Organization',
-        name: 'Iñaki F. Lozano - Full Stack Developer',
-        description: 'Professional full stack development services specializing in modern web technologies.',
+        name: 'Iñaki F. Lozano - Software Developer',
+        description: 'Secure document workflows, scalable backend architecture, and DevOps automation.',
         url: 'https://inakiserver.lat',
         sameAs: [
             'https://inakilozano.com',
@@ -90,11 +90,11 @@ export function StructuredData() {
         },
         areaServed: 'Worldwide',
         serviceType: [
-            'Web Development',
-            'Full Stack Development',
-            'Frontend Development',
-            'Backend Development',
-            'Software Consulting'
+            'Secure Document Signing Solutions',
+            'Backend Architecture',
+            'API Development',
+            'DevOps Consulting',
+            'Software Research and Prototyping'
         ]
     }
 

@@ -111,7 +111,7 @@ export default function Header({
         <div className="h-full flex justify-between items-center">
           <Link href="/" className="text-lg md:text-xl font-bold text-white truncate max-w-[200px] md:max-w-none flex items-center gap-2" aria-label="Home">
             <Image
-              src="/favicon-32x32.png"
+              src="/inakilozanodotcomlogo.png"
               alt="Logo"
               width={24}
               height={24}

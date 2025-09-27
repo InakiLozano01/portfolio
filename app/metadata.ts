@@ -5,40 +5,33 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inakiserver.lat'
 export const metadata: Metadata = {
     metadataBase: new URL(baseUrl),
     title: {
-        default: 'Iñaki F. Lozano | Full Stack Developer & Software Engineer',
+        default: 'Iñaki F. Lozano | Computation Engineering Student & Software Developer',
         template: '%s | Iñaki F. Lozano'
     },
-    description: 'Experienced Full Stack Developer. Passionate about AI and Innovation. Creating modern, scalable web applications with exceptional user experiences. Available for freelance projects and collaborations.',
+    description: 'Driven Computation Engineering student focused on technology and innovation. Researching secure document workflows, building scalable backends, and blending DevOps, AI, and full stack development skills.',
     keywords: [
-        'Full Stack Developer',
-        'Software Engineer',
-        'Web Development',
-        'Python Developer',
-        'JAva Developer',
-        'Computer Engineer',
-        'AI Enthusiast',
-        'Machine Learning',
-        'Deep Learning',
-        'Artificial Intelligence',
-        'Tech Innovator',
-        'Cloud Computing',
+        'Computation Engineering student',
+        'Software Developer',
+        'Secure document workflows',
+        'Advanced electronic signatures',
         'DevOps',
+        'CI/CD',
         'Docker',
-        'React Developer',
-        'Next.js Developer',
-        'TypeScript Developer',
-        'Node.js Developer',
-        'MongoDB Developer',
-        'Frontend Developer',
-        'Backend Developer',
-        'JavaScript Developer',
-        'Freelance Developer',
-        'Web Applications',
-        'Software Development',
-        'Modern Web Technologies',
-        'Responsive Design',
+        'Python',
+        'Flask',
+        'Java',
+        'Spring',
+        'SQL',
+        'JavaScript',
+        'TypeScript',
+        'React',
+        'GCP',
+        'PHP',
+        'CodeIgniter',
+        'Backend Development',
         'API Development',
         'Database Design',
+        'Scalable architectures',
         'Iñaki Lozano',
         'Inaki Lozano'
     ],
@@ -47,28 +40,31 @@ export const metadata: Metadata = {
         type: 'website',
         locale: 'en_US',
         url: baseUrl,
-        title: 'Iñaki F. Lozano | Full Stack Developer & Software Engineer',
-        description: 'Experienced Full Stack Developer specializing in React, Next.js, Node.js, TypeScript, and MongoDB. Creating modern, scalable web applications with exceptional user experiences.',
+        title: 'Iñaki F. Lozano | Computation Engineering Student & Software Developer',
+        description: 'Computation Engineering student leading secure document initiatives for the Court of Accounts of Tucumán and developing scalable e-commerce backends. Skilled across DevOps, AI, and full stack development.',
         siteName: 'Iñaki F. Lozano Portfolio',
         images: [
             {
                 url: '/pfp.jpg',
                 width: 1200,
                 height: 630,
-                alt: 'Iñaki F. Lozano - Full Stack Developer & Software Engineer',
+                alt: 'Iñaki F. Lozano - Computation Engineering Student & Software Developer',
                 type: 'image/jpeg'
             }
         ]
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Iñaki F. Lozano | Full Stack Developer & Software Engineer',
-        description: 'Experienced Full Stack Developer specializing in React, Next.js, Node.js, TypeScript, and MongoDB.',
+        title: 'Iñaki F. Lozano | Computation Engineering Student & Software Developer',
+        description: 'Driven technologist researching secure document signing standards, building scalable APIs, and honing AI and DevOps skills.',
         images: ['/pfp.jpg'],
         creator: '@inakilozano'
     },
     icons: {
         icon: [
+            {
+                url: '/favicon.ico'
+            },
             {
                 url: '/favicon-32x32.png',
                 sizes: '32x32',
@@ -78,13 +74,25 @@ export const metadata: Metadata = {
                 url: '/favicon-16x16.png',
                 sizes: '16x16',
                 type: 'image/png'
+            },
+            {
+                url: '/favicon-48x48.png',
+                sizes: '48x48',
+                type: 'image/png'
+            },
+            {
+                url: '/favicon-256x256.png',
+                sizes: '256x256',
+                type: 'image/png'
             }
         ],
-        apple: {
-            url: '/apple-touch-icon.png',
-            sizes: '180x180',
-            type: 'image/png'
-        },
+        apple: [
+            {
+                url: '/apple-touch-icon.png',
+                sizes: '180x180',
+                type: 'image/png'
+            }
+        ],
         other: [
             {
                 rel: 'manifest',

@@ -1,4 +1,4 @@
-import { Redis } from 'ioredis';
+import type { Redis } from 'ioredis';
 
 class MemoryCache {
   private cache: Map<string, { value: string; expiry: number | null }>;
@@ -93,7 +93,8 @@ if (isDevelopment || skipRedisDuringBuild) {
 } else {
   try {
     console.log('[Redis] Attempting to connect to:', process.env.REDIS_URL);
-    redis = new Redis(process.env.REDIS_URL || '', {
+    const { Redis: RedisClient } = require('ioredis') as typeof import('ioredis');
+    redis = new RedisClient(process.env.REDIS_URL || '', {
       maxRetriesPerRequest: 3,
       retryStrategy(times: number) {
         const delay = Math.min(times * 50, 2000);

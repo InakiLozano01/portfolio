@@ -94,6 +94,7 @@ export function TinyMCE({ value, onChange, height = 500, disabled = false, id }:
 
                 // Toolbar configuration
                 toolbar1: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | forecolor backcolor | code fullscreen',
+                block_formats: 'Paragraph=p; Heading 2=h2; Heading 3=h3; Heading 4=h4; Quote=blockquote',
 
                 // Plugin configuration
                 plugins: FREE_PLUGINS,
