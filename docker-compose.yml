@@ -1,24 +1,16 @@
 services:
   mongodb:
-    image: mongo:latest
+    image: mongo:8.0
     restart: always
     ports:
       - "27017:27017"
+    command: ["mongod","--auth","--bind_ip_all"]
+    env_file:
+      - .env.mongo
     volumes:
       - mongodb_data:/data/db
-    networks:
-      - portfolio_network
-    healthcheck:
-      test: mongosh --eval "db.runCommand('ping').ok" --quiet mongodb://localhost:27017/portfolio
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
+    networks: [portfolio_network]
 
   redis:
     image: redis:alpine
@@ -27,8 +19,7 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    networks:
-      - portfolio_network
+    networks: [portfolio_network]
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
@@ -36,39 +27,33 @@ services:
       retries: 5
     logging:
       driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      options: { max-size: "10m", max-file: "3" }
     command: redis-server --save 60 1 --loglevel verbose
 
   portfolio:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        SKIP_DB_DURING_BUILD: "true"        # build-time only
+        SKIP_REDIS_DURING_BUILD: "true"     # build-time only
     restart: always
     ports:
       - "3003:3000"
     volumes:
       - ./public/images:/app/public/images:rw
     depends_on:
-      mongodb:
-        condition: service_healthy
       redis:
         condition: service_healthy
-    networks:
-      - portfolio_network
-    environment:
-      - NODE_ENV=production
-      - NEXT_TELEMETRY_DISABLED=1
-      - MONGODB_URI=mongodb://mongodb:27017/portfolio
-      - REDIS_URL=redis://redis:6379
-      - SKIP_REDIS_DURING_BUILD=false
-      - SKIP_DB_DURING_BUILD=false
+    networks: [portfolio_network]
+    env_file:
+      - .env.production
+    environment:                         # runtime overrides
+      SKIP_DB_DURING_BUILD: "false"
+      SKIP_REDIS_DURING_BUILD: "false"
     logging:
       driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      options: { max-size: "10m", max-file: "3" }
 
 networks:
   portfolio_network:

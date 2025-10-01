@@ -31,18 +31,49 @@ export async function GET(
     console.log('[Sections API] Looking for section with title:', title);
 
     // Try to get from cache first
-    const sections = await getCachedSections(params.id);
-    if (sections && sections.length > 0) {
-      const section = sections[0];
-      // Only return visible sections for non-admin requests
-      if (!isAdminRequest && !section.visible) {
-        return NextResponse.json(
-          { error: 'Section not found' },
-          { status: 404 }
-        );
+    const cachedSections = await getCachedSections(params.id);
+    const sections = Array.isArray(cachedSections)
+      ? cachedSections
+      : cachedSections
+        ? [cachedSections]
+        : [];
+
+    if (sections.length > 0) {
+      const sectionFromCache = sections.find((section: any) => {
+        if (!section || typeof section !== 'object') {
+          return false;
+        }
+
+        const sectionTitle = typeof section.title === 'string' ? section.title.toLowerCase() : '';
+        const matchesTitle = sectionTitle === params.id.toLowerCase();
+        const matchesId = typeof section._id === 'string' && section._id === params.id;
+
+        return matchesTitle || matchesId;
+      }) ?? sections[0];
+
+      if (sectionFromCache) {
+        if (!isAdminRequest && sectionFromCache.visible === false) {
+          await connectToDatabase();
+          const freshSection = await SectionModel.findOne({
+            title,
+            visible: true
+          });
+
+          if (freshSection) {
+            await clearSectionsCache();
+            console.log('[Sections API] Refreshed section from database after stale cache');
+            return NextResponse.json(freshSection);
+          }
+
+          return NextResponse.json(
+            { error: 'Section not found' },
+            { status: 404 }
+          );
+        }
+
+        console.log('[Sections API] Found section in cache');
+        return NextResponse.json(sectionFromCache);
       }
-      console.log('[Sections API] Found section in cache');
-      return NextResponse.json(section);
     }
 
     // If not in cache, connect to MongoDB

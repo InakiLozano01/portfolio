@@ -10,6 +10,7 @@ next
 .env.development.local
 .env.production.local
 .env.test.local
+.env.mongo
 public/images/projects/*
 
 .package-lock.json

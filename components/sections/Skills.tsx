@@ -52,7 +52,6 @@ export default function Skills() {
           throw new Error('Failed to fetch skills section')
         }
         const sectionData = await sectionResponse.json()
-        console.log('[Skills Component] Section data:', sectionData)
 
         if (sectionData && sectionData.content) {
           setDescription(sectionData.content.description)
@@ -63,7 +62,6 @@ export default function Skills() {
             throw new Error('Failed to fetch skills data')
           }
           const skillsData = await skillsResponse.json()
-          console.log('[Skills Component] Skills data:', skillsData)
 
           if (Array.isArray(skillsData)) {
             const normalizedSkills = skillsData
@@ -132,15 +130,34 @@ export default function Skills() {
         const category = skill.category.charAt(0).toUpperCase() + skill.category.slice(1)
         return category === selectedCategory
       })
+
     const q = searchQuery.trim().toLowerCase()
     const withSearch = q
       ? dataset.filter(s => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
       : dataset
+
+    // Create a stable sort key that includes the skill ID for uniqueness
     const sorted = [...withSearch].sort((a, b) => {
-      if (sortBy === 'proficiency') return (sortDir === 'desc' ? b.proficiency - a.proficiency : a.proficiency - b.proficiency)
-      if (sortBy === 'years') return (sortDir === 'desc' ? b.yearsOfExperience - a.yearsOfExperience : a.yearsOfExperience - b.yearsOfExperience)
-      return sortDir === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)
+      let comparison = 0
+
+      switch (sortBy) {
+        case 'proficiency':
+          comparison = a.proficiency - b.proficiency
+          break
+        case 'years':
+          comparison = a.yearsOfExperience - b.yearsOfExperience
+          break
+        case 'name':
+          comparison = a.name.localeCompare(b.name)
+          break
+        default:
+          comparison = 0
+      }
+
+      // Apply sort direction
+      return sortDir === 'desc' ? -comparison : comparison
     })
+
     return sorted
   }, [content, selectedCategory, searchQuery, sortBy, sortDir])
 
@@ -232,11 +249,18 @@ export default function Skills() {
         aria-label={`${selectedCategory === 'all' ? 'All skills' : `${selectedCategory} skills`}`}
       >
         {paginatedSkills.map((skill, index) => {
-          const iconKey = resolveIconKey(skill.icon, skill.name)
-          const Icon = (iconKey ? iconMap[iconKey as keyof typeof iconMap] : undefined) || (iconMap[skill.icon as keyof typeof iconMap] as any) || VscCode
+          // Use skill ID or create a unique key from name + category to avoid conflicts
+          const uniqueKey = skill._id || `${skill.name}-${skill.category}`
+
+          // Simplify icon resolution to avoid potential issues
+          let Icon = VscCode
+          if (skill.icon && iconMap[skill.icon as keyof typeof iconMap]) {
+            Icon = iconMap[skill.icon as keyof typeof iconMap] as any
+          }
+
           return (
             <motion.div
-              key={skill.name}
+              key={uniqueKey}
               initial={reduceMotion ? false : { opacity: 0, y: 20 }}
               animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
               transition={reduceMotion ? { duration: 0 } : { duration: 0.3, delay: index * 0.1 }}
@@ -326,4 +350,3 @@ export default function Skills() {
     </div>
   )
 }
-

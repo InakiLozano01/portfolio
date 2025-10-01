@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import BlogModel from '@/models/Blog';
 import { normalizeBlogPayload } from '@/lib/blog-normalize';
-import { notifyBlogSubscribers } from '@/lib/blog-newsletter';
+import { notifyBlogSubscribers } from '@/lib/server/blog-newsletter';
 
 export async function GET(
     request: Request,

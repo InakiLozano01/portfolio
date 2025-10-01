@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
+import { constants as fsConstants } from 'fs';
 import { randomUUID } from 'crypto';
 import { invalidateCache } from '@/lib/cache';
 import { getServerSession } from 'next-auth';
@@ -28,6 +29,121 @@ const ALLOWED_FORMATS: AllowedFormats = {
     'image/gif': ['.gif'],
     'image/svg+xml': ['.svg']
 };
+
+const APP_PUBLIC_IMAGES_DIR = path.resolve('/app/public/images');
+
+async function pathExists(pathToCheck: string) {
+    try {
+        await fs.access(pathToCheck, fsConstants.R_OK);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function ensureDirectory(dirPath: string) {
+    try {
+        await fs.mkdir(dirPath, { recursive: true });
+        return true;
+    } catch (mkdirError: any) {
+        if (mkdirError?.code === 'EEXIST') {
+            return true;
+        }
+
+        if (mkdirError?.code === 'EACCES') {
+            const exists = await pathExists(dirPath);
+            if (exists) {
+                console.warn('Directory exists but is not writable when ensuring uploads', {
+                    dirPath,
+                });
+                return true;
+            }
+        }
+
+        console.error('Failed to ensure upload directory exists', {
+            dirPath,
+            error: mkdirError instanceof Error ? mkdirError.message : mkdirError,
+        });
+        return false;
+    }
+}
+
+async function persistImage(targetImagesDir: string, filename: string, data: Buffer) {
+    const projectsDir = path.join(targetImagesDir, 'projects');
+
+    const dirReady = await ensureDirectory(projectsDir);
+    if (!dirReady) {
+        throw new Error(`Upload directory ${projectsDir} is not available`);
+    }
+
+    const filePath = path.join(projectsDir, filename);
+
+    try {
+        await fs.writeFile(filePath, data);
+        try {
+            await fs.chmod(filePath, 0o644);
+        } catch (chmodError) {
+            console.warn('Failed to adjust permissions for uploaded image', {
+                filePath,
+                error: chmodError instanceof Error ? chmodError.message : chmodError,
+            });
+        }
+        return filePath;
+    } catch (writeError) {
+        console.error('Failed to write image to disk', {
+            filePath,
+            error: writeError instanceof Error ? writeError.message : writeError,
+        });
+        throw writeError;
+    }
+}
+
+async function ensureSymlink(targetDir: string, linkDir: string) {
+    try {
+        const stats = await fs.lstat(linkDir);
+        if (stats.isSymbolicLink()) {
+            const currentTarget = await fs.readlink(linkDir);
+            const resolvedTarget = path.resolve(path.dirname(linkDir), currentTarget);
+            if (resolvedTarget === targetDir) {
+                return true;
+            }
+            console.warn('Public images symlink points to unexpected target', {
+                linkDir,
+                currentTarget,
+                expected: targetDir,
+            });
+            return false;
+        }
+
+        // Directory already exists as a real folder; leave it in place.
+        return false;
+    } catch (error: any) {
+        if (error?.code !== 'ENOENT') {
+            console.error('Failed to inspect existing public images link', {
+                linkDir,
+                error: error instanceof Error ? error.message : error,
+            });
+            return false;
+        }
+    }
+
+    try {
+        await fs.mkdir(path.dirname(linkDir), { recursive: true });
+        await fs.symlink(targetDir, linkDir, 'dir');
+        console.log('Created symlink for public images directory', {
+            targetDir,
+            linkDir,
+        });
+        return true;
+    } catch (symlinkError) {
+        console.error('Failed to create public images symlink', {
+            targetDir,
+            linkDir,
+            error: symlinkError instanceof Error ? symlinkError.message : symlinkError,
+        });
+        return false;
+    }
+}
 
 export async function POST(request: Request) {
     try {
@@ -106,45 +222,71 @@ export async function POST(request: Request) {
 
             // Generate unique filename
             const filename = `${randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '-')}`;
-            // Use posix join and avoid a leading slash so we don't break path.join resolution
-            const relativePath = path.posix.join('images', 'projects', filename);
-            const dirPath = path.join(process.cwd(), 'public', 'images', 'projects');
-            const absolutePath = path.join(process.cwd(), 'public', relativePath);
+            const runtimeImagesDir = path.join(process.cwd(), 'public', 'images');
+            const responsePath = path.posix.join('images', 'projects', filename);
 
-            // Log paths for debugging
-            console.log('Paths:', {
+            console.log('Upload target resolution', {
                 filename,
-                relativePath,
-                absolutePath,
-                cwd: process.cwd()
+                runtimeImagesDir,
+                appImagesDir: APP_PUBLIC_IMAGES_DIR,
+                cwd: process.cwd(),
             });
 
-            // Ensure destination directory exists (best-effort). Don't over-validate with fs.access.
-            try {
-                await fs.mkdir(dirPath, { recursive: true });
-                console.log('Ensured upload directory exists:', dirPath);
-            } catch (mkdirError) {
-                console.error('Failed to ensure upload directory:', mkdirError);
-                // Continue; writeFile will surface any actual permission errors
+            const verificationTargets = new Set<string>();
+            let persistedSomewhere = false;
+            let symlinkActive = false;
+
+            // Attempt to persist inside /app/public/images when available.
+            let canonicalFilePath: string | null = null;
+            if (await pathExists('/app/public')) {
+                try {
+                    canonicalFilePath = await persistImage(APP_PUBLIC_IMAGES_DIR, filename, resizedImage);
+                    verificationTargets.add(canonicalFilePath);
+                    persistedSomewhere = true;
+                } catch (canonicalError) {
+                    console.error('Failed to persist image in /app/public/images', {
+                        error: canonicalError instanceof Error ? canonicalError.message : canonicalError,
+                    });
+                }
             }
 
-            // Save the file
-            await fs.writeFile(absolutePath, resizedImage);
-            console.log('Successfully wrote file to disk');
+            // When running from the standalone build, try to symlink images into the runtime public directory.
+            const runningInStandalone = process.cwd().includes(`${path.sep}.next${path.sep}standalone`);
+            if (canonicalFilePath && runningInStandalone) {
+                symlinkActive = await ensureSymlink(APP_PUBLIC_IMAGES_DIR, runtimeImagesDir);
+                if (symlinkActive) {
+                    verificationTargets.add(path.join(runtimeImagesDir, 'projects', filename));
+                }
+            }
 
-            // Verify file was written
-            try {
-                await fs.access(absolutePath, fs.constants.R_OK);
-                console.log('Verified file was written successfully');
+            // Always ensure the runtime public directory has a copy if the symlink is not ready.
+            if (!symlinkActive) {
+                try {
+                    const runtimeFilePath = await persistImage(runtimeImagesDir, filename, resizedImage);
+                    verificationTargets.add(runtimeFilePath);
+                    persistedSomewhere = true;
+                } catch (runtimeError) {
+                    console.error('Failed to persist image in runtime public directory', {
+                        error: runtimeError instanceof Error ? runtimeError.message : runtimeError,
+                    });
+                }
+            }
 
-                // Set appropriate file permissions to ensure readability
-                await fs.chmod(absolutePath, 0o644);
-                console.log('Set file permissions to 644');
-            } catch (verifyError: unknown) {
-                const errorMessage = verifyError instanceof Error
-                    ? verifyError.message
-                    : 'Unknown error while verifying file';
-                throw new Error(`Failed to verify file was written: ${errorMessage}`);
+            if (!persistedSomewhere) {
+                throw new Error('Failed to store uploaded image in any public directory');
+            }
+
+            // Verify at least one path is readable.
+            for (const targetPath of verificationTargets) {
+                try {
+                    await fs.access(targetPath, fsConstants.R_OK);
+                    console.log('Verified image is readable', { targetPath });
+                } catch (verifyError: unknown) {
+                    const errorMessage = verifyError instanceof Error
+                        ? verifyError.message
+                        : 'Unknown error while verifying file readability';
+                    throw new Error(`Failed to verify image at ${targetPath}: ${errorMessage}`);
+                }
             }
 
             // Get dimensions of the processed image
@@ -162,7 +304,7 @@ export async function POST(request: Request) {
             }
 
             return NextResponse.json({
-                path: `/${relativePath}`,
+                path: `/${responsePath}`,
                 width: processedMetadata.width,
                 height: processedMetadata.height
             });
