@@ -88,7 +88,7 @@ export default function Carousel({
 
   return (
     <div
-      className="relative w-full h-full overflow-hidden"
+      className="relative w-full h-full overflow-hidden touch-pan-y"
       role="region"
       aria-roledescription="carousel"
       aria-label="Sections"
@@ -124,7 +124,7 @@ export default function Carousel({
             x: reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 },
             opacity: reduceMotion ? { duration: 0 } : { duration: 0.2 },
           }}
-          className="absolute w-full h-full"
+          className="absolute inset-0 w-full h-full touch-pan-y"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -132,7 +132,7 @@ export default function Carousel({
           {childrenArray[internalIndex]}
         </motion.div>
       </AnimatePresence>
-      <div className="absolute bottom-4 md:bottom-4 left-0 right-0 flex justify-center gap-2 mb-8 md:mb-0">
+      <div className="absolute left-0 right-0 bottom-4 md:bottom-6 flex justify-center gap-2 pointer-events-none">
         {childrenArray.map((_, index) => (
           <button
             key={index}
@@ -146,7 +146,7 @@ export default function Carousel({
                 onSwipe?.(index)
               }
             }}
-            className={`w-2 h-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/50 ${index === internalIndex ? 'bg-primary scale-125' : 'bg-gray-400/50'
+            className={`pointer-events-auto w-2 h-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/50 ${index === internalIndex ? 'bg-primary scale-125' : 'bg-gray-400/50'
               }`}
           />
         ))}

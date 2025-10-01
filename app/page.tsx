@@ -95,6 +95,9 @@ export default function Page() {
       if (sectionIndex !== -1) {
         setCurrentIndex(sectionIndex)
       }
+    } else if (sections.length > 0) {
+      // Reset to first section if no hash
+      setCurrentIndex(0)
     }
 
     const handleResize = () => {
@@ -134,15 +137,43 @@ export default function Page() {
     updateSection(newIndex)
   }
 
+  useEffect(() => {
+    const currentSectionId = sections[currentIndex]?.id
+    if (!currentSectionId) return
+
+    setTimeout(() => {
+      const currentSectionEl = document.getElementById(currentSectionId)
+      if (currentSectionEl) {
+        currentSectionEl.scrollTo({ top: 0, behavior: 'auto' })
+      }
+    }, 50)
+  }, [currentIndex, sections])
+
+  const getSectionContainerClasses = (id: string) => {
+    const basePadding = 'w-full px-4 md:px-8'
+    const verticalPadding = isDesktop ? 'py-10 md:py-12' : 'pt-24 pb-20'
+    const layout = isDesktop
+      ? 'min-h-full flex flex-col items-stretch md:justify-start'
+      : 'min-h-[calc(100vh-48px)] flex flex-col items-stretch'
+    const additional = id === 'skills' ? (isDesktop ? 'pb-12' : 'pb-28') : ''
+    return `${basePadding} ${verticalPadding} ${layout} ${additional}`
+  }
+
+  const getInnerWrapperClasses = (id: string) => {
+    const base = 'w-full max-w-6xl mx-auto'
+    if (id === 'about') return `${base} md:px-12`
+    return base
+  }
+
   if (!mounted || loading) return null
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#263547]">
+    <div className="flex flex-col min-h-screen md:h-screen md:overflow-hidden bg-[#263547]">
       <Header staticSections={sections} currentIndex={currentIndex} onSectionChange={updateSection} />
 
-      <main className="flex-grow relative">
-        <div className="absolute inset-0 bg-white">
-          <div className="absolute inset-0 z-0">
+      <main className="flex-grow relative bg-white">
+        <div className="md:absolute md:inset-0">
+          <div className="md:absolute md:inset-0 z-0 pointer-events-none">
             <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -163,16 +194,20 @@ export default function Page() {
             </button>
           )}
 
-          <div className="h-full">
+          <div className="md:h-full pb-28 md:pb-0">
             <Carousel
               currentIndex={currentIndex}
               onSwipe={updateSection}
             >
               {sections.map(({ id, component: Component }) => (
-                <section key={id} id={id} className="h-full relative z-10 overflow-y-auto">
-                  <div className={`w-full px-4 md:px-8 py-8 md:py-12 ${id === 'skills' ? 'min-h-full' : 'h-full flex items-center justify-center'
-                    }`}>
-                    <div className={`w-full max-w-6xl mx-auto ${id === 'about' ? 'md:px-12' : ''}`}>
+                <section
+                  key={id}
+                  id={id}
+                  className="h-full relative z-10 overflow-y-auto overflow-x-hidden scroll-mt-24 md:scroll-mt-32"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
+                  <div className={getSectionContainerClasses(id)}>
+                    <div className={getInnerWrapperClasses(id)}>
                       <Component />
                     </div>
                   </div>

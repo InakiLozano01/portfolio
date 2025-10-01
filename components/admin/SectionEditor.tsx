@@ -130,7 +130,13 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
 
     setIsSubmitting(true);
     try {
-      await onSave(editedSection);
+      const sanitizedContent = sanitizeSectionContent(section.title, editedSection.content);
+      const sanitizedSection = {
+        ...editedSection,
+        content: sanitizedContent
+      };
+      setEditedSection(sanitizedSection);
+      await onSave(sanitizedSection);
     } finally {
       setIsSubmitting(false);
     }
@@ -205,12 +211,57 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
       experiences: editedSection.content.experiences?.map((item: Experience, i: number) =>
         i === expIndex ? {
           ...item,
-          responsibilities: item.responsibilities?.map((r: string, rIndex: number) =>
+          responsibilities: (item.responsibilities || []).map((r: string, rIndex: number) =>
             rIndex === respIndex ? value : r
           )
         } : item
       )
     }));
+  };
+
+  const addResponsibility = (expIndex: number) => {
+    handleContentChange(JSON.stringify({
+      ...editedSection.content,
+      experiences: editedSection.content.experiences?.map((item: Experience, i: number) =>
+        i === expIndex ? {
+          ...item,
+          responsibilities: [...(item.responsibilities || []), '']
+        } : item
+      )
+    }));
+  };
+
+  const removeResponsibility = (expIndex: number, respIndex: number) => {
+    handleContentChange(JSON.stringify({
+      ...editedSection.content,
+      experiences: editedSection.content.experiences?.map((item: Experience, i: number) =>
+        i === expIndex ? {
+          ...item,
+          responsibilities: (item.responsibilities || []).filter((_, index) => index !== respIndex)
+        } : item
+      )
+    }));
+  };
+
+  const sanitizeSectionContent = (title: string, content: Record<string, any>) => {
+    if (!content) return content;
+    const sanitized = JSON.parse(JSON.stringify(content));
+
+    switch (title.toLowerCase()) {
+      case 'about':
+        sanitized.highlights = (sanitized.highlights || []).map((item: string) => item.trim()).filter(Boolean);
+        break;
+      case 'experience':
+        sanitized.experiences = (sanitized.experiences || []).map((exp: Experience) => ({
+          ...exp,
+          responsibilities: (exp.responsibilities || []).map((resp: string) => resp.trim()).filter(Boolean)
+        }));
+        break;
+      default:
+        break;
+    }
+
+    return sanitized;
   };
 
   const handleJsonSave = (newContent: Record<string, any>) => {
@@ -223,9 +274,10 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
   const handleSave = async () => {
     try {
       const parsedContent = JSON.parse(editedContent);
+      const sanitizedContent = sanitizeSectionContent(section.title, parsedContent);
       await onSave({
         ...section,
-        content: parsedContent,
+        content: sanitizedContent,
       });
       setIsEditing(false);
     } catch (error) {
@@ -287,8 +339,17 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                 value={(editedSection.content.highlights || []).join('\n')}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
-                  highlights: e.target.value.split('\n').filter(Boolean)
+                  highlights: e.target.value.split('\n')
                 }))}
+                onBlur={(e: React.FocusEvent<HTMLTextAreaElement>) => {
+                  handleContentChange(JSON.stringify({
+                    ...editedSection.content,
+                    highlights: e.target.value
+                      .split('\n')
+                      .map((item) => item.trim())
+                      .filter(Boolean)
+                  }))
+                }}
                 placeholder="List your key achievements or highlights"
                 className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
               />
@@ -434,7 +495,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                         variant="ghost"
                         size="sm"
                         className="text-blue-500 hover:text-blue-700"
-                        onClick={() => handleResponsibilityChange(index, 0, '')}
+                        onClick={() => addResponsibility(index)}
                       >
                         <PlusCircle className="w-4 h-4 mr-1" />
                         Add Responsibility
@@ -453,7 +514,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                           variant="ghost"
                           size="icon"
                           className="text-blue-500 hover:text-blue-700 hover:bg-blue-100 shrink-0"
-                          onClick={() => handleResponsibilityChange(index, respIndex, '')}
+                          onClick={() => removeResponsibility(index, respIndex)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

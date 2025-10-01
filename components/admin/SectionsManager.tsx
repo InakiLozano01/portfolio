@@ -177,7 +177,7 @@ export default function SectionsManager() {
   if (error) return <div className="text-red-500">{error}</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col space-y-6 sm:space-y-8">
       <div className="p-6 bg-white rounded-lg shadow-md border-l-4 border-blue-600">
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
@@ -277,8 +277,8 @@ export default function SectionsManager() {
         </Card>
       )}
 
-      <ScrollArea className="h-[calc(100vh-20rem)]">
-        <div className="space-y-6">
+      <ScrollArea className="max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-16rem)] min-h-[320px]">
+        <div className="space-y-6 p-4 pt-4 sm:p-6">
           {sections.map(section => (
             <Card key={section._id} className="bg-white shadow-md border-0 relative group">
               <CardHeader className="bg-gradient-to-r from-blue-600 to-red-600 text-white relative">

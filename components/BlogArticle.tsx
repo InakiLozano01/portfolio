@@ -36,14 +36,32 @@ export default function BlogArticle({ blog }: { blog: BlogLike }) {
 
   useEffect(() => {
     if (typeof document === 'undefined') return
-    if (!document.getElementById('katex-stylesheet')) {
-      const link = document.createElement('link')
-      link.id = 'katex-stylesheet'
-      link.rel = 'stylesheet'
-      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css'
-      link.crossOrigin = 'anonymous'
-      document.head.appendChild(link)
-    }
+
+    const stylesheets = [
+      {
+        id: 'katex-stylesheet',
+        href: 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css'
+      },
+      {
+        id: 'tinymce-content-stylesheet',
+        href: 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.7.3/skins/content/default/content.min.css'
+      },
+      {
+        id: 'tinymce-content-inline-stylesheet',
+        href: 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.7.3/skins/content/default/content.inline.min.css'
+      }
+    ] as const
+
+    stylesheets.forEach(({ id, href }) => {
+      if (!document.getElementById(id)) {
+        const link = document.createElement('link')
+        link.id = id
+        link.rel = 'stylesheet'
+        link.href = href
+        link.crossOrigin = 'anonymous'
+        document.head.appendChild(link)
+      }
+    })
   }, [])
 
   const current = useMemo(() => {
@@ -63,12 +81,12 @@ export default function BlogArticle({ blog }: { blog: BlogLike }) {
   }, [lang, blog])
 
   const sanitizedHtml = useMemo(() => {
-    const sanitized = DOMPurify.sanitize(current.content || '', {
-      ADD_ATTR: ['style', 'data-start', 'data-end', 'data-col-size', 'data-turn-id', 'data-testid', 'data-turn', 'data-scroll-anchor', 'data-message-author-role', 'data-message-id', 'data-message-model-slug', 'data-katex-display'],
-      ADD_TAGS: ['iframe', 'math', 'mi', 'mn', 'mo', 'ms', 'mspace', 'mtext', 'semantics', 'annotation', 'annotation-xml']
+    return DOMPurify.sanitize(current.content || '', {
+      USE_PROFILES: { html: true },
+      ADD_TAGS: ['iframe', 'figure', 'figcaption', 'video', 'source', 'math', 'mi', 'mn', 'mo', 'ms', 'mspace', 'mtext', 'semantics', 'annotation', 'annotation-xml'],
+      ADD_ATTR: ['style', 'class', 'id', 'title', 'target', 'rel', 'frameborder', 'allow', 'allowfullscreen', 'controls', 'autoplay', 'muted', 'playsinline', 'loop', 'data-katex-display'],
+      ALLOW_DATA_ATTR: true,
     })
-
-    return sanitized
   }, [current.content])
 
   const reading = useMemo(() => {
@@ -116,7 +134,7 @@ export default function BlogArticle({ blog }: { blog: BlogLike }) {
         </div>
       )}
 
-      <div className="blog-content prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />
+      <div className="blog-content mce-content-body" dangerouslySetInnerHTML={{ __html: sanitizedHtml.replace(/\n/g, '<br />') }} />
     </div>
   )
 }

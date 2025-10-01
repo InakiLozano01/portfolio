@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -75,7 +75,7 @@ export default function BlogSection() {
         const q = searchQuery.trim()
         if (!q) return fallback
         const regex = new RegExp(`(${q.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'ig')
-        return fallback.split(regex).map((part, i) =>
+    return fallback.split(regex).map((part, i) =>
             regex.test(part) ? (
                 <mark key={i} className="bg-yellow-200 text-black rounded px-0.5">{part}</mark>
             ) : (
@@ -85,6 +85,18 @@ export default function BlogSection() {
     }
 
     // Using Link for prefetch and accessibility
+
+    const maxVisibleTags = 6
+
+    const getTagDisplay = useMemo(() => {
+        return (tags: string[]) => {
+            if (tags.length <= maxVisibleTags) return { visible: tags, hidden: [] }
+            return {
+                visible: tags.slice(0, maxVisibleTags),
+                hidden: tags.slice(maxVisibleTags),
+            }
+        }
+    }, [])
 
     if (loading) {
         return (
@@ -173,20 +185,32 @@ export default function BlogSection() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex flex-wrap gap-2 mb-4">
-                                        {blog.tags.map((tag) => (
-                                            <button
-                                                key={tag}
-                                                className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary/20"
-                                                onClick={(e) => {
-                                                    e.preventDefault()
-                                                    e.stopPropagation()
-                                                    setSearchQuery(tag)
-                                                }}
-                                                aria-label={`Filter by tag ${tag}`}
-                                            >
-                                                {highlight(tag)}
-                                            </button>
-                                        ))}
+                                        {(() => {
+                                            const { visible, hidden } = getTagDisplay(blog.tags)
+                                            return (
+                                                <>
+                                                    {visible.map((tag) => (
+                                                        <button
+                                                            key={tag}
+                                                            className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary/20"
+                                                            onClick={(e) => {
+                                                                e.preventDefault()
+                                                                e.stopPropagation()
+                                                                setSearchQuery(tag)
+                                                            }}
+                                                            aria-label={`Filter by tag ${tag}`}
+                                                        >
+                                                            {highlight(tag)}
+                                                        </button>
+                                                    ))}
+                                                    {hidden.length > 0 && (
+                                                        <span className="px-2 py-1 bg-primary/5 text-primary rounded-full text-xs">
+                                                            +{hidden.length} more
+                                                        </span>
+                                                    )}
+                                                </>
+                                            )
+                                        })()}
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <span>Created {formatDistanceToNow(formatDate(blog.createdAt), { addSuffix: true })}</span>

@@ -2,8 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  scroll-padding-top: 48px;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 56px;
+  }
 }
 
 @layer utilities {
@@ -92,11 +105,57 @@ body {
 
   body {
     @apply bg-background text-foreground;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* Ensure proper touch scrolling on iOS */
+  * {
+    -webkit-overflow-scrolling: touch;
   }
 }
 
+
 .blog-content {
-  @apply text-black;
+  @apply text-black leading-relaxed whitespace-pre-wrap;
+}
+
+.blog-content::selection {
+  @apply bg-primary/20;
+}
+
+.blog-content p,
+.blog-content.mce-content-body p,
+.blog-content .mce-content-body p {
+  @apply mb-4 last:mb-0;
+}
+
+.blog-content p + p {
+  @apply mt-2;
+}
+
+.blog-content figure {
+  @apply my-6;
+}
+
+.blog-content figcaption {
+  @apply mt-2 text-sm text-gray-500 text-center;
+}
+
+.blog-content pre {
+  @apply bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto my-6;
+}
+
+.blog-content code {
+  @apply bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded;
+}
+
+.blog-content pre code {
+  @apply bg-transparent p-0 rounded-none text-inherit;
+}
+
+.blog-content a {
+  @apply text-primary underline decoration-primary/40 hover:decoration-primary;
 }
 
 .blog-content img {

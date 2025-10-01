@@ -249,7 +249,7 @@ const AdminDashboard: FC = () => {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 p-6 bg-slate-50">
+        <main className="flex-1 p-6 bg-slate-50 overflow-y-auto">
           {activeSection === 'overview' && (
             <div className="space-y-6">
               <StatusCards />
