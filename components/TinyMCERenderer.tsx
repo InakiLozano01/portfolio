@@ -13,8 +13,13 @@ export default function TinyMCERenderer({ html }: TinyMCERendererProps) {
   const editorRef = useRef<TinyMCEEditor | null>(null)
 
   useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.setContent(content || '')
+    const editor = editorRef.current
+    if (!editor || !editor.initialized) {
+      return
+    }
+    const currentContent = editor.getContent({ format: 'raw' })
+    if (currentContent !== content) {
+      editor.setContent(content || '', { format: 'raw' })
     }
   }, [content])
 
@@ -44,15 +49,23 @@ export default function TinyMCERenderer({ html }: TinyMCERendererProps) {
           forced_root_block: 'p',
           quickbars_selection_toolbar: false,
           setup: editor => {
-            editorRef.current = editor
             editor.on('init', () => {
+              editorRef.current = editor
               editor.mode.set('readonly')
               const root = editor.getBody()
               if (root) {
                 root.classList.add('blog-content', 'mce-content-body')
                 root.setAttribute('contenteditable', 'false')
               }
+              if (content) {
+                editor.setContent(content, { format: 'raw' })
+              }
               editor.execCommand('mceAutoResize')
+            })
+            editor.on('remove', () => {
+              if (editorRef.current === editor) {
+                editorRef.current = null
+              }
             })
           }
         }}

@@ -37,7 +37,14 @@ export default async function BlogPage({ params, searchParams }: BlogPageProps) 
         return lang.toLowerCase()
     })()
 
-    const initialLang = preferredLangParam === 'es' ? 'es' : preferredLangParam === 'en' ? 'en' : undefined
+    const initialLang: 'en' | 'es' = (() => {
+        if (preferredLangParam === 'es') return 'es'
+        if (preferredLangParam === 'en') return 'en'
+        const blogHasEnglish = typeof blog.content_en === 'string' ? blog.content_en.trim().length > 0 : false
+        const blogHasSpanish = typeof blog.content_es === 'string' ? blog.content_es.trim().length > 0 : false
+        if (blogHasEnglish || !blogHasSpanish) return 'en'
+        return 'es'
+    })()
 
     return (
         <div className="flex min-h-screen bg-[#263547]">

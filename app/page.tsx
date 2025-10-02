@@ -153,7 +153,7 @@ export default function Page() {
     const basePadding = 'w-full px-4 md:px-8'
     const verticalPadding = isDesktop ? 'py-10 md:py-12' : 'pt-16 pb-16'
     const layout = isDesktop
-      ? 'min-h-full flex flex-col'
+      ? `min-h-full flex flex-col ${id === 'home' ? 'justify-center' : ''}`.trim()
       : 'min-h-[calc(100vh-48px)] flex flex-col justify-start'
     const additional = id === 'skills' ? (isDesktop ? 'pb-20' : 'pb-28') : ''
     return `${basePadding} ${verticalPadding} ${layout} ${additional}`
