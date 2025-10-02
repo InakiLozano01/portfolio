@@ -1,10 +1,13 @@
+
 'use client'
 
+import dynamic from 'next/dynamic'
+import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import DOMPurify from 'isomorphic-dompurify'
-import { Editor as TinyMCEEditor } from '@tinymce/tinymce-react'
-import { useRef } from 'react'
-import { slugify } from '@/lib/utils'
+
+const TinyMCERenderer = dynamic(() => import('./TinyMCERenderer'), { ssr: false })
 
 type BlogLike = {
   title: string
@@ -28,11 +31,58 @@ type BlogLike = {
   updatedAt?: string
 }
 
-export default function BlogArticle({ blog }: { blog: BlogLike }) {
+type LanguageCode = 'en' | 'es'
+
+interface BlogArticleProps {
+  blog: BlogLike
+  initialLang?: LanguageCode
+}
+
+const LANGUAGES: Array<{ code: LanguageCode; label: string; icon: string }> = [
+  { code: 'en', label: 'English', icon: '/uk.png' },
+  { code: 'es', label: 'Español', icon: '/spain.png' }
+]
+
+export default function BlogArticle({ blog, initialLang }: BlogArticleProps) {
   const hasEn = !!(blog.content_en || blog.content)
   const hasEs = !!(blog.content_es || blog.content)
 
-  const [lang, setLang] = useState<'en' | 'es'>(hasEn ? 'en' : 'es')
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const fallbackLang: LanguageCode = useMemo(() => {
+    if (initialLang === 'en' && hasEn) return 'en'
+    if (initialLang === 'es' && hasEs) return 'es'
+    if (hasEn) return 'en'
+    if (hasEs) return 'es'
+    return 'en'
+  }, [initialLang, hasEn, hasEs])
+
+  const [lang, setLang] = useState<LanguageCode>(fallbackLang)
+
+  useEffect(() => {
+    setLang(fallbackLang)
+  }, [fallbackLang])
+
+  const updateUrlLang = (next: LanguageCode) => {
+    const params = new URLSearchParams(searchParams?.toString())
+    if (next === fallbackLang) {
+      params.delete('lang')
+    } else {
+      params.set('lang', next)
+    }
+    const queryString = params.toString()
+    router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false })
+  }
+
+  const handleLangChange = (next: LanguageCode) => {
+    if (lang === next) return
+    const isAvailable = next === 'en' ? hasEn : hasEs
+    if (!isAvailable) return
+    setLang(next)
+    updateUrlLang(next)
+  }
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -44,11 +94,11 @@ export default function BlogArticle({ blog }: { blog: BlogLike }) {
       },
       {
         id: 'tinymce-content-stylesheet',
-        href: 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.7.3/skins/content/default/content.min.css'
+        href: '/tinymce/skins/content/default/content.min.css'
       },
       {
         id: 'tinymce-content-inline-stylesheet',
-        href: 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.7.3/skins/content/default/content.inline.min.css'
+        href: '/tinymce/skins/ui/oxide/content.min.css'
       }
     ] as const
 
@@ -106,13 +156,14 @@ export default function BlogArticle({ blog }: { blog: BlogLike }) {
           </p>
         </div>
         <div className="inline-flex border rounded overflow-hidden">
-          {(['en', 'es'] as const).map(l => {
-            const disabled = l === 'en' ? !hasEn : !hasEs
+          {LANGUAGES.map(({ code, label, icon }) => {
+            const disabled = code === 'en' ? !hasEn : !hasEs
             return (
               <button
-                key={l}
-                onClick={() => !disabled && setLang(l)}
-                className={`px-3 py-1 text-sm transition ${lang === l
+                key={code}
+                type="button"
+                onClick={() => handleLangChange(code)}
+                className={`px-3 py-1 text-sm transition flex items-center gap-2 ${lang === code
                   ? 'bg-primary text-white'
                   : disabled
                     ? 'bg-muted text-muted-foreground cursor-not-allowed'
@@ -120,7 +171,16 @@ export default function BlogArticle({ blog }: { blog: BlogLike }) {
                   }`}
                 disabled={disabled}
               >
-                {l.toUpperCase()}
+                <Image
+                  src={icon}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="h-5 w-5 object-contain"
+                  aria-hidden
+                />
+                <span>{code.toUpperCase()}</span>
+                <span className="sr-only">{label}</span>
               </button>
             )
           })}
@@ -134,7 +194,7 @@ export default function BlogArticle({ blog }: { blog: BlogLike }) {
         </div>
       )}
 
-      <div className="blog-content mce-content-body" dangerouslySetInnerHTML={{ __html: sanitizedHtml.replace(/\n/g, '<br />') }} />
+      <TinyMCERenderer html={sanitizedHtml} />
     </div>
   )
 }

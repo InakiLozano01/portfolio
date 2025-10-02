@@ -279,7 +279,7 @@ export default function BlogManager() {
                                                                     <Send className="w-4 h-4" />
                                                                 </Button>
                                                             </DialogTrigger>
-                                                            <DialogContent className="max-w-5xl">
+                                                        <DialogContent className="max-w-5xl bg-white max-h-[calc(100vh-4rem)] overflow-y-auto">
                                                                 <DialogHeader className="space-y-2">
                                                                     <DialogTitle>Send blog to subscribers</DialogTitle>
                                                                     <DialogDescription>
@@ -287,7 +287,7 @@ export default function BlogManager() {
                                                                     </DialogDescription>
                                                                 </DialogHeader>
                                                                 <div className="grid lg:grid-cols-[minmax(260px,1fr)_minmax(320px,1.25fr)] gap-6">
-                                                                    <div className="rounded-xl border bg-slate-50 p-4 shadow-sm">
+                                                                    <div className="rounded-xl border bg-white p-4 shadow-sm">
                                                                         <div className="flex items-center justify-between gap-2 border-b pb-3">
                                                                             <div className="space-y-1">
                                                                                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recipients</p>
@@ -320,7 +320,7 @@ export default function BlogManager() {
                                                                             placeholder="Search by email or language..."
                                                                             className="mt-4 mb-3 h-9"
                                                                         />
-                                                                        <ScrollArea className="h-64 rounded-lg border bg-white">
+                                                                        <div className="h-64 rounded-lg border bg-white overflow-y-auto">
                                                                             <div className="divide-y">
                                                                                 {filteredSubscribers.map((sub) => {
                                                                                     const id = sub._id?.toString() || ''
@@ -352,7 +352,7 @@ export default function BlogManager() {
                                                                                     <p className="px-3 py-6 text-center text-sm text-slate-500">No subscribers match your search.</p>
                                                                                 )}
                                                                             </div>
-                                                                        </ScrollArea>
+                                                                        </div>
                                                                     </div>
                                                                     <div className="space-y-5">
                                                                         <div className="rounded-xl border bg-white p-4 shadow-sm">

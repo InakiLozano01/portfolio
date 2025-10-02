@@ -45,7 +45,7 @@ export function TinyMCE({ value, onChange, height = 500, disabled = false, id }:
     return (
         <Editor
             id={id}
-            tinymceScriptSrc="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.7.3/tinymce.min.js"
+            tinymceScriptSrc="/tinymce/tinymce.min.js"
             disabled={disabled}
             onInit={(evt: EditorEvent<any>, editor: TinyMCEEditor) => {
                 editorRef.current = editor;

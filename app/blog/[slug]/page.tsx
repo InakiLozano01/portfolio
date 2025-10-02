@@ -13,10 +13,13 @@ import NewsletterSignup from '@/components/NewsletterSignup'
 interface BlogPageProps {
     params: {
         slug: string
+    },
+    searchParams?: {
+        [key: string]: string | string[] | undefined
     }
 }
 
-export default async function BlogPage({ params }: BlogPageProps) {
+export default async function BlogPage({ params, searchParams }: BlogPageProps) {
     const blog = await getBlogBySlug(params.slug)
 
     if (!blog) {
@@ -24,6 +27,17 @@ export default async function BlogPage({ params }: BlogPageProps) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+
+    const preferredLangParam = (() => {
+        const lang = searchParams?.lang
+        if (!lang) return undefined
+        if (Array.isArray(lang)) {
+            return lang[0]?.toLowerCase()
+        }
+        return lang.toLowerCase()
+    })()
+
+    const initialLang = preferredLangParam === 'es' ? 'es' : preferredLangParam === 'en' ? 'en' : undefined
 
     return (
         <div className="flex min-h-screen bg-[#263547]">
@@ -59,7 +73,7 @@ export default async function BlogPage({ params }: BlogPageProps) {
                         <ShareActions url={`${baseUrl}/blog/${blog.slug}`} title={blog.title} />
                     </div>
 
-                    <BlogArticle blog={blog as any} />
+                    <BlogArticle blog={blog as any} initialLang={initialLang} />
 
                     <div className="my-10">
                         <NewsletterSignup compact />
