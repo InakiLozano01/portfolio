@@ -147,15 +147,9 @@ export default function BlogArticle({ blog, initialLang }: BlogArticleProps) {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2 mb-6">
-        <div>
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">{current.title}</h1>
-          <p className="text-xl text-muted-foreground">{current.subtitle}</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {reading} min read
-          </p>
-        </div>
-        <div className="inline-flex border rounded overflow-hidden">
+      <div className="flex items-start flex-col gap-3 mb-6">
+        <div className="flex w-full justify-center">
+          <div className="inline-flex border rounded overflow-hidden whitespace-nowrap text-xs sm:text-sm">
           {LANGUAGES.map(({ code, label, icon }) => {
             const disabled = code === 'en' ? !hasEn : !hasEs
             return (
@@ -163,7 +157,7 @@ export default function BlogArticle({ blog, initialLang }: BlogArticleProps) {
                 key={code}
                 type="button"
                 onClick={() => handleLangChange(code)}
-                className={`px-3 py-1 text-sm transition flex items-center gap-2 ${lang === code
+                className={`px-2.5 sm:px-3 py-1 transition flex items-center gap-1.5 ${lang === code
                   ? 'bg-primary text-white'
                   : disabled
                     ? 'bg-muted text-muted-foreground cursor-not-allowed'
@@ -176,14 +170,24 @@ export default function BlogArticle({ blog, initialLang }: BlogArticleProps) {
                   alt=""
                   width={20}
                   height={20}
-                  className="h-5 w-5 object-contain"
+                  className="h-4 w-6 sm:h-5 sm:w-7 object-cover shrink-0"
                   aria-hidden
                 />
-                <span>{code.toUpperCase()}</span>
+                <span className="uppercase tracking-wide font-medium text-[11px] sm:text-sm leading-none">
+                  {code}
+                </span>
                 <span className="sr-only">{label}</span>
               </button>
             )
           })}
+        </div>
+        </div>
+        <div className="text-center w-full">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">{current.title}</h1>
+          <p className="text-xl text-muted-foreground">{current.subtitle}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {reading} min read
+          </p>
         </div>
       </div>
 

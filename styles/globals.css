@@ -258,3 +258,11 @@ body {
 .tinymce-readonly {
   @apply w-full;
 }
+
+.tinymce-readonly .tox-tinymce {
+  @apply border-0 shadow-none bg-transparent;
+}
+
+.tinymce-readonly iframe {
+  @apply w-full;
+}

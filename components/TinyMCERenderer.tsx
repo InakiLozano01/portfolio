@@ -32,8 +32,10 @@ export default function TinyMCERenderer({ html }: TinyMCERendererProps) {
           statusbar: false,
           promotion: false,
           branding: false,
-          height: 600,
-          plugins: 'lists link table image media charmap autolink code',
+          autoresize_bottom_margin: 32,
+          autoresize_overflow_padding: 24,
+          autoresize_min_height: 320,
+          plugins: 'lists link table image media charmap autolink autoresize code',
           skin_url: '/tinymce/skins/ui/oxide',
           content_css: '/tinymce/skins/content/default/content.min.css',
           convert_urls: false,
@@ -50,6 +52,7 @@ export default function TinyMCERenderer({ html }: TinyMCERendererProps) {
                 root.classList.add('blog-content', 'mce-content-body')
                 root.setAttribute('contenteditable', 'false')
               }
+              editor.execCommand('mceAutoResize')
             })
           }
         }}
