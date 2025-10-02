@@ -27,18 +27,30 @@ export default function Footer() {
   if (!contactData) return null
 
   return (
-    <footer className="h-[40px] flex-shrink-0 bg-[#1a2433] text-white">
+    <footer className="h-[40px] flex-shrink-0 bg-[#1a2433] text-white relative z-30">
       <div className="container h-full mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <Link href={contactData.social.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-[#FD4345] transition-colors">
-            <FaLinkedin size={20} />
-          </Link>
-          <Link href={contactData.social.github} target="_blank" rel="noopener noreferrer" className="hover:text-[#FD4345] transition-colors">
-            <FaGithub size={20} />
-          </Link>
-          <Link href={`mailto:${contactData.email}`} className="hover:text-[#FD4345] transition-colors">
-            <FaEnvelope size={20} />
-          </Link>
+          {contactData.social.linkedin && (
+            <Link href={contactData.social.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-[#FD4345] transition-colors" aria-label="LinkedIn">
+              <span className="pointer-events-none">
+                <FaLinkedin size={20} />
+              </span>
+            </Link>
+          )}
+          {contactData.social.github && (
+            <Link href={contactData.social.github} target="_blank" rel="noopener noreferrer" className="hover:text-[#FD4345] transition-colors" aria-label="GitHub">
+              <span className="pointer-events-none">
+                <FaGithub size={20} />
+              </span>
+            </Link>
+          )}
+          {contactData.email && (
+            <Link href={`mailto:${contactData.email}`} className="hover:text-[#FD4345] transition-colors" aria-label="Email">
+              <span className="pointer-events-none">
+                <FaEnvelope size={20} />
+              </span>
+            </Link>
+          )}
         </div>
         <p className="text-sm text-gray-400">© {currentYear} Iñaki Fernando Lozano</p>
       </div>

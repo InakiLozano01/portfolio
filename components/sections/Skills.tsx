@@ -94,7 +94,7 @@ export default function Skills() {
 
       const gridElement = gridRef.current
       const headerHeight = 200 // Header + navigation height
-      const footerHeight = 100 // Footer height + padding
+      const footerHeight = 140 // Footer height + padding and overlap guard
       const paginationHeight = 60 // Pagination controls height + margin
       const availableHeight = window.innerHeight - headerHeight - footerHeight - paginationHeight
       const itemHeight = 160 // Height of each skill card including margin

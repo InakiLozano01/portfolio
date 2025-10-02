@@ -41,7 +41,7 @@ export default function HomePage() {
   if (!content) return null
 
   return (
-    <div className="w-full h-full flex items-center justify-center">
+    <div className="w-full flex flex-col items-center justify-center py-10 md:py-0">
       <div className="container mx-auto px-4 text-center max-w-3xl">
         <motion.h1
           className="text-4xl md:text-6xl font-bold mb-6 text-primary"

@@ -29,7 +29,9 @@ export default async function BlogPage({ params }: BlogPageProps) {
         <div className="flex min-h-screen bg-[#263547]">
             <BackNavigationHandler />
 
-            <div className="relative flex-1 overflow-x-hidden bg-white">
+            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
+
+            <div className="relative flex-1 overflow-x-hidden overflow-y-auto bg-white">
                 <div className="pointer-events-none absolute inset-0 -z-10">
                     <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                         <defs>
@@ -66,6 +68,8 @@ export default async function BlogPage({ params }: BlogPageProps) {
                     <BlogComments blogId={blog._id} />
                 </article>
             </div>
+
+            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
         </div>
     )
 }

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { PlusCircle, Trash2, AlertCircle, RefreshCw } from 'lucide-react'
 import SectionEditor from './SectionEditor'
 import { toast } from 'sonner'
@@ -277,42 +276,40 @@ export default function SectionsManager() {
         </Card>
       )}
 
-      <ScrollArea className="max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-16rem)] min-h-[320px]">
-        <div className="space-y-6 p-4 pt-4 sm:p-6">
-          {sections.map(section => (
-            <Card key={section._id} className="bg-white shadow-md border-0 relative group">
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-red-600 text-white relative">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="capitalize">{section.title}</CardTitle>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <Label className="text-white text-sm font-medium">Visible</Label>
-                      <Switch
-                        checked={section.visible}
-                        onCheckedChange={() => handleVisibilityChange(section)}
-                      />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-white hover:bg-white/20 transition-colors"
-                      onClick={() => handleDeleteSection(section)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+      <div className="space-y-6 p-4 pt-4 sm:p-6 overflow-y-auto">
+        {sections.map(section => (
+          <Card key={section._id} className="bg-white shadow-md border-0 relative group">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-red-600 text-white relative">
+              <div className="flex justify-between items-center">
+                <CardTitle className="capitalize">{section.title}</CardTitle>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-white text-sm font-medium">Visible</Label>
+                    <Switch
+                      checked={section.visible}
+                      onCheckedChange={() => handleVisibilityChange(section)}
+                    />
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/20 transition-colors"
+                    onClick={() => handleDeleteSection(section)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <SectionEditor
-                  section={section}
-                  onSave={handleSaveSection}
-                />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </ScrollArea>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <SectionEditor
+                section={section}
+                onSave={handleSaveSection}
+              />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       <AlertDialog open={!!sectionToDelete} onOpenChange={() => setSectionToDelete(null)}>
         <AlertDialogContent className="bg-white">
