@@ -151,11 +151,24 @@ export default function Page() {
 
   const getSectionContainerClasses = (id: string) => {
     const basePadding = 'w-full px-4 md:px-8'
-    const verticalPadding = isDesktop ? 'py-10 md:py-12' : 'pt-16 pb-16'
+    
+    // Custom padding for about section on mobile
+    let verticalPadding = isDesktop ? 'py-10 md:py-12' : 'pt-16 pb-20'
+    if (!isDesktop && id === 'about') {
+      verticalPadding = 'pt-4 pb-12' // Minimal top padding for about on mobile
+    }
+    
     const layout = isDesktop
-      ? `min-h-full flex flex-col ${id === 'home' ? 'justify-center' : ''}`.trim()
-      : 'min-h-[calc(100vh-48px)] flex flex-col justify-start'
-    const additional = id === 'skills' ? (isDesktop ? 'pb-20' : 'pb-28') : ''
+      ? `min-h-full flex flex-col items-stretch ${id === 'home' ? 'justify-center' : 'justify-start'}`.trim()
+      : `min-h-[calc(100vh-48px-40px)] flex flex-col ${id === 'about' ? 'justify-start' : ''}`
+    
+    let additional = ''
+    if (id === 'skills') {
+      additional = isDesktop ? 'pb-20' : 'pb-32'
+    } else if (id === 'experience') {
+      additional = isDesktop ? 'md:pb-40' : 'pb-20'
+    }
+    
     return `${basePadding} ${verticalPadding} ${layout} ${additional}`
   }
 
@@ -171,9 +184,9 @@ export default function Page() {
     <div className="flex flex-col min-h-screen md:h-screen md:overflow-hidden bg-[#263547]">
       <Header staticSections={sections} currentIndex={currentIndex} onSectionChange={updateSection} />
 
-      <main className="flex-grow relative bg-white">
+      <main className="flex-grow relative bg-white overflow-hidden">
         <div className="md:absolute md:inset-0">
-          <div className="md:absolute md:inset-0 z-0 pointer-events-none">
+          <div className="fixed inset-0 top-[48px] bottom-[40px] md:absolute md:inset-0 md:top-0 md:bottom-0 z-0 pointer-events-none">
             <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -194,7 +207,7 @@ export default function Page() {
             </button>
           )}
 
-          <div className="min-h-[calc(100vh-48px)] md:h-full">
+          <div className="h-[calc(100vh-48px-40px)] md:h-full md:overflow-hidden z-10">
             <Carousel
               currentIndex={currentIndex}
               onSwipe={updateSection}
@@ -203,7 +216,7 @@ export default function Page() {
                 <section
                   key={id}
                   id={id}
-                  className="h-full relative z-10 overflow-y-auto overflow-x-hidden scroll-mt-24 md:scroll-mt-32"
+                  className="h-full relative z-10 overflow-y-auto overflow-x-hidden"
                   style={{ WebkitOverflowScrolling: 'touch' }}
                 >
                   <div className={getSectionContainerClasses(id)}>
@@ -228,7 +241,7 @@ export default function Page() {
         </div>
       </main>
 
-      <Footer />
+        <Footer />
     </div>
   )
 }

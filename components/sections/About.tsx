@@ -36,13 +36,13 @@ export default function About() {
   if (!content) return null
 
   return (
-    <div className="w-full pt-52 pb-24 md:py-0">
+    <div className="w-full pt-8 pb-8 md:py-0">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, x: -50 }}
           animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
           transition={reduceMotion ? { duration: 0 } : { duration: 0.5 }}
-          className="relative w-[200px] md:w-[300px] h-[200px] md:h-[300px] mx-auto mt-16 md:mt-0"
+          className="relative w-[200px] md:w-[300px] h-[200px] md:h-[300px] mx-auto mt-4 md:mt-0"
         >
           <Image
             src="/pfp.jpg"

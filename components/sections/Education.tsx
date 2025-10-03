@@ -45,7 +45,7 @@ export default function Education() {
   if (!content?.education) return null
 
   return (
-    <div className="w-full py-32 md:py-0">
+    <div className="w-full py-16 md:py-0">
       <h2 className="text-3xl font-bold mb-8 text-primary">Education</h2>
       <div className="space-y-8">
         {content.education.map((edu, index) => (
