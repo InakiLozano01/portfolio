@@ -88,7 +88,7 @@ export default function Carousel({
 
   return (
     <div
-      className="relative w-full h-full overflow-hidden touch-pan-y"
+      className="relative w-full min-h-[calc(100vh-88px)] md:min-h-full overflow-hidden touch-pan-y"
       role="region"
       aria-roledescription="carousel"
       aria-label="Sections"

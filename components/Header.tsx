@@ -99,7 +99,7 @@ export default function Header({
   }
 
   return (
-    <header className="h-[48px] md:h-[56px] flex-shrink-0 bg-[#1a2433] text-white z-50 relative">
+    <header className="h-[72px] md:h-[64px] flex-shrink-0 bg-[#1a2433] text-white z-50 relative shadow-md">
       {/* Skip to content link */}
       <a
         href="#content"

@@ -27,7 +27,7 @@ export default function Footer() {
   if (!contactData) return null
 
   return (
-    <footer className="h-[40px] flex-shrink-0 bg-[#1a2433] text-white relative z-30">
+    <footer className="h-[48px] flex-shrink-0 bg-[#1a2433] text-white relative z-30">
       <div className="container h-full mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center space-x-4">
           {contactData.social.linkedin && (
