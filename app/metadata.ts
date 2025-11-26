@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inakiserver.lat'
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inakilozano.com'
 
 export const metadata: Metadata = {
     metadataBase: new URL(baseUrl),

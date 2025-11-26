@@ -19,6 +19,10 @@ body {
   }
 }
 
+.pb-safe-area {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -130,7 +134,7 @@ body {
   @apply mb-4 last:mb-0;
 }
 
-.blog-content p + p {
+.blog-content p+p {
   @apply mt-2;
 }
 

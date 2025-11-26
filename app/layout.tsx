@@ -19,7 +19,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         <meta name="theme-color" content="#1a2433" />
-        <link rel="canonical" href="https://inakiserver.lat" />
+        <link rel="canonical" href="https://inakilozano.com" />
         <StructuredData />
 
         {/* Google Analytics */}

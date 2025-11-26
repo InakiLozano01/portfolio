@@ -27,7 +27,7 @@ const nextConfig = {
         remotePatterns: [
             {
                 protocol: 'https',
-                hostname: 'inakiserver.lat',
+                hostname: 'inakilozano.com',
                 port: '',
                 pathname: '/**',
             },

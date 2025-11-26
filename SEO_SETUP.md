@@ -1,6 +1,6 @@
 # SEO Setup Guide for Iñaki Lozano Portfolio
 
-This guide provides comprehensive instructions for setting up SEO optimization across your three domains: inakilozano.com, inakilozano.dev, and inakiserver.lat.
+This guide provides comprehensive instructions for setting up SEO optimization across your two domains: inakilozano.com and inakilozano.dev.
 
 ## 🎯 **Domain Strategy Decision**
 
@@ -8,9 +8,8 @@ This guide provides comprehensive instructions for setting up SEO optimization a
 Choose ONE domain as your primary and redirect others to avoid duplicate content penalties:
 
 **Best Options Ranked:**
-1. **inakiserver.lat** - Most unique and brandable
-2. **inakilozano.com** - Traditional and professional 
-3. **inakilozano.dev** - Developer-focused branding
+1. **inakilozano.com** - Traditional and professional (Recommended Primary)
+2. **inakilozano.dev** - Developer-focused branding
 
 ### **Multi-Domain Configuration (Advanced)**
 If you need multiple domains, use this hierarchy:
@@ -20,7 +19,6 @@ If you need multiple domains, use this hierarchy:
 NEXT_PUBLIC_APP_URL=https://inakilozano.com
 
 # Alternative configurations per domain purpose:
-# inakiserver.lat - Technical demos/server projects
 # inakilozano.dev - Open source projects/blog
 ```
 
@@ -85,7 +83,7 @@ NEXT_PUBLIC_GA_ID=your-google-analytics-id
 
 ### 1. Verify Domain Ownership
 
-For each domain (inakilozano.com, inakilozano.dev, inakiserver.lat):
+For each domain (inakilozano.com, inakilozano.dev):
 
 1. Go to [Google Search Console](https://search.google.com/search-console)
 2. Add your domain as a property
@@ -265,8 +263,8 @@ Set up 301 redirects to consolidate SEO authority:
 ```nginx
 # Nginx - Redirect to primary domain
 server {
-    server_name inakilozano.com inakilozano.dev;
-    return 301 https://inakiserver.lat$request_uri;
+    server_name inakilozano.dev;
+    return 301 https://inakilozano.com$request_uri;
 }
 ```
 
@@ -275,13 +273,8 @@ server {
 {
   "redirects": [
     {
-      "source": "https://inakilozano.com/:path*",
-      "destination": "https://inakiserver.lat/:path*",
-      "permanent": true
-    },
-    {
       "source": "https://inakilozano.dev/:path*", 
-      "destination": "https://inakiserver.lat/:path*",
+      "destination": "https://inakilozano.com/:path*",
       "permanent": true
     }
   ]
@@ -301,16 +294,11 @@ GOOGLE_SITE_VERIFICATION=verification-code-1
 # Domain 2: Technical blog
 NEXT_PUBLIC_APP_URL=https://inakilozano.dev  
 GOOGLE_SITE_VERIFICATION=verification-code-2
-
-# Domain 3: Server demos
-NEXT_PUBLIC_APP_URL=https://inakiserver.lat
-GOOGLE_SITE_VERIFICATION=verification-code-3
 ```
 
 **Multi-Domain Content Strategy:**
 - **inakilozano.com**: Professional portfolio, client work, resume
 - **inakilozano.dev**: Technical blog, open source projects, tutorials
-- **inakiserver.lat**: Infrastructure demos, server projects, DevOps content
 
 **Required for Multi-Domain:**
 1. Unique content per domain (at least 70% different)

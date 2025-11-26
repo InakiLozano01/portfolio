@@ -4,9 +4,8 @@ export function StructuredData() {
         '@type': 'WebSite',
         name: 'Iñaki F. Lozano Portfolio',
         description: 'Computation Engineering student focused on secure document workflows, scalable backends, and modern DevOps practices.',
-        url: 'https://inakiserver.lat',
+        url: 'https://inakilozano.com',
         sameAs: [
-            'https://inakilozano.com',
             'https://inakilozano.dev'
         ],
         author: {
@@ -17,7 +16,7 @@ export function StructuredData() {
             '@type': 'SearchAction',
             target: {
                 '@type': 'EntryPoint',
-                urlTemplate: 'https://inakiserver.lat/?search={search_term_string}'
+                urlTemplate: 'https://inakilozano.com/?search={search_term_string}'
             },
             'query-input': 'required name=search_term_string'
         }
@@ -31,12 +30,11 @@ export function StructuredData() {
         familyName: 'Lozano',
         jobTitle: 'Computation Engineering Student & Software Developer',
         description: 'Researcher and developer working on advanced electronic signatures, scalable APIs, and DevOps automation.',
-        url: 'https://inakiserver.lat',
+        url: 'https://inakilozano.com',
         sameAs: [
-            'https://inakilozano.com',
             'https://inakilozano.dev'
         ],
-        image: 'https://inakiserver.lat/pfp.jpg',
+        image: 'https://inakilozano.com/pfp.jpg',
         worksFor: {
             '@type': 'Organization',
             name: 'Court of Accounts of Tucumán'
@@ -73,12 +71,11 @@ export function StructuredData() {
         '@type': 'Organization',
         name: 'Iñaki F. Lozano - Software Developer',
         description: 'Secure document workflows, scalable backend architecture, and DevOps automation.',
-        url: 'https://inakiserver.lat',
+        url: 'https://inakilozano.com',
         sameAs: [
-            'https://inakilozano.com',
             'https://inakilozano.dev'
         ],
-        logo: 'https://inakiserver.lat/pfp.jpg',
+        logo: 'https://inakilozano.com/pfp.jpg',
         founder: {
             '@type': 'Person',
             name: 'Iñaki F. Lozano'
@@ -86,7 +83,7 @@ export function StructuredData() {
         contactPoint: {
             '@type': 'ContactPoint',
             contactType: 'Professional',
-            url: 'https://inakiserver.lat/#contact'
+            url: 'https://inakilozano.com/#contact'
         },
         areaServed: 'Worldwide',
         serviceType: [
@@ -106,37 +103,37 @@ export function StructuredData() {
                 '@type': 'ListItem',
                 position: 1,
                 name: 'Home',
-                item: 'https://inakiserver.lat'
+                item: 'https://inakilozano.com'
             },
             {
                 '@type': 'ListItem',
                 position: 2,
                 name: 'About',
-                item: 'https://inakiserver.lat/#about'
+                item: 'https://inakilozano.com/#about'
             },
             {
                 '@type': 'ListItem',
                 position: 3,
                 name: 'Experience',
-                item: 'https://inakiserver.lat/#experience'
+                item: 'https://inakilozano.com/#experience'
             },
             {
                 '@type': 'ListItem',
                 position: 4,
                 name: 'Projects',
-                item: 'https://inakiserver.lat/#projects'
+                item: 'https://inakilozano.com/#projects'
             },
             {
                 '@type': 'ListItem',
                 position: 5,
                 name: 'Blog',
-                item: 'https://inakiserver.lat/#blog'
+                item: 'https://inakilozano.com/#blog'
             },
             {
                 '@type': 'ListItem',
                 position: 6,
                 name: 'Contact',
-                item: 'https://inakiserver.lat/#contact'
+                item: 'https://inakilozano.com/#contact'
             }
         ]
     }
