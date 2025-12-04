@@ -1,13 +1,33 @@
-'use client';
+import { Inter } from 'next/font/google'
+import '../globals.css'
+import { Providers } from '../providers'
+import { Metadata } from 'next'
 
-export default function AdminLayout({
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+  title: 'Admin Dashboard',
+  description: 'Portfolio Admin Dashboard',
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
+
+export default function AdminRootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-slate-50">
-      {children}
-    </div>
-  );
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
+        <Providers>
+          <div className="min-h-screen bg-slate-50">
+            {children}
+          </div>
+        </Providers>
+      </body>
+    </html>
+  )
 } 

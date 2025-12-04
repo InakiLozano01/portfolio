@@ -36,7 +36,8 @@ RUN apk add --no-cache libc6-compat
 
 # Production build. Do NOT copy .env.production into the image.
 ENV NODE_ENV=production
-RUN npm run build && npx --yes update-browserslist-db@latest
+ENV BROWSERSLIST_IGNORE_OLD_DATA=1
+RUN npm run build
 RUN ls -la public/ || true
 
 # ---------- runner ----------

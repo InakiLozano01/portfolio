@@ -11,7 +11,7 @@ const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const headersList = headers();
+    const headersList = await headers();
     const ipAddress = headersList.get('x-forwarded-for') || 'unknown';
 
     await connectToDatabase();

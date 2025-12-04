@@ -44,6 +44,24 @@ const nextConfig = {
 
   // Image optimization
   images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'inakilozano.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3003',
+        pathname: '/**',
+      },
+    ],
+    unoptimized: true,
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -56,25 +74,6 @@ const nextConfig = {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET
   },
-  experimental: {
-    serverComponentsExternalPackages: ['mongoose']
-  },
-  webpack: (config, { isServer }) => {
-    // Suppress the punycode warning
-    config.ignoreWarnings = [
-      { module: /node_modules\/punycode/ }
-    ];
-
-    // Optimize bundle size
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-      }
-    }
-
-    return config;
-  }
 }
 
 export default nextConfig;

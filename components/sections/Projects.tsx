@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import SkillIcon from '@/components/SkillIcon'
 import type { IProject } from '@/models/Project'
 import type { Document, Types } from 'mongoose'
+import { ExternalLink } from 'lucide-react'
 
 interface Skill extends Document {
     _id: Types.ObjectId;
@@ -15,20 +16,40 @@ interface Skill extends Document {
     category: string;
     proficiency: number;
     yearsOfExperience: number;
-    icon: string;
+  icon: string;
 }
 
 interface ProjectWithTechnologies extends Omit<IProject, 'technologies'> {
-    _id: Types.ObjectId;
-    technologies: Skill[];
+  _id: Types.ObjectId;
+  technologies: Skill[];
 }
 
-export default function Projects() {
+const copy = {
+    en: {
+        heading: 'Projects',
+        all: 'All',
+        loadingError: 'Failed to load projects',
+        filtersLabel: 'Filter projects by technology',
+    },
+    es: {
+        heading: 'Proyectos',
+        all: 'Todos',
+        loadingError: 'No se pudieron cargar los proyectos',
+        filtersLabel: 'Filtrar proyectos por tecnología',
+    },
+} as const
+
+export default function Projects({ lang = 'en' }: { lang?: 'en' | 'es' }) {
+    const t = copy[lang] ?? copy.en
     const [projects, setProjects] = useState<ProjectWithTechnologies[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [techFilter, setTechFilter] = useState<string>('all')
     const [availableTechs, setAvailableTechs] = useState<{ name: string, count: number }[]>([])
+    const pickLang = (enValue?: string, esValue?: string, fallback?: string) =>
+        lang === 'es'
+            ? (esValue || enValue || fallback || '')
+            : (enValue || esValue || fallback || '')
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -44,7 +65,7 @@ export default function Projects() {
                 }))
                 setAvailableTechs(Array.from(counts.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)))
             } catch (err) {
-                setError('Failed to load projects')
+                setError(t.loadingError)
                 console.error('Error loading projects:', err)
             } finally {
                 setIsLoading(false)
@@ -52,12 +73,12 @@ export default function Projects() {
         }
 
         fetchProjects()
-    }, [])
+    }, [t])
 
     if (isLoading) {
         return (
             <section id="projects" className="container mx-auto px-4 py-16">
-                <h2 className="text-3xl font-bold mb-8 text-primary">Projects</h2>
+                <h2 className="text-3xl font-bold mb-8 text-primary">{t.heading}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[1, 2, 3].map((i) => (
                         <Card key={i} className="animate-pulse">
@@ -84,7 +105,7 @@ export default function Projects() {
     if (error) {
         return (
             <section id="projects" className="container mx-auto px-4 py-16">
-                <h2 className="text-3xl font-bold mb-8 text-primary">Projects</h2>
+                <h2 className="text-3xl font-bold mb-8 text-primary">{t.heading}</h2>
                 <div className="text-center text-red-500">{error}</div>
             </section>
         )
@@ -94,13 +115,13 @@ export default function Projects() {
 
     return (
         <section id="projects" className="container mx-auto px-4 py-16">
-            <h2 className="text-3xl font-bold mb-6 text-primary">Projects</h2>
-            <div className="flex flex-wrap gap-2 mb-6">
+            <h2 className="text-3xl font-bold mb-6 text-primary">{t.heading}</h2>
+            <div className="flex flex-wrap gap-2 mb-6" aria-label={t.filtersLabel}>
                 <button
                     onClick={() => setTechFilter('all')}
                     className={`px-3 py-2 rounded-full text-sm font-medium ${techFilter === 'all' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                 >
-                    All <span className="ml-1 text-xs opacity-70">{projects.length}</span>
+                    {t.all} <span className="ml-1 text-xs opacity-70">{projects.length}</span>
                 </button>
                 {availableTechs.map(t => (
                     <button
@@ -116,7 +137,7 @@ export default function Projects() {
                 {filteredProjects.map((project) => (
                     <Link
                         key={project._id.toString()}
-                        href={`/projects/${project.slug}`}
+                        href={`/${lang}/projects/${project.slug}`}
                         prefetch={true}
                         className="transition-transform hover:scale-105"
                     >
@@ -124,7 +145,7 @@ export default function Projects() {
                             <div className="relative aspect-video w-full">
                                 <Image
                                     src={project.thumbnail || '/images/projects/default-project.jpg'}
-                                    alt={`Thumbnail image for project ${project.title}`}
+                                    alt={`Thumbnail image for project ${pickLang(project.title_en || project.title, project.title_es || project.title, project.title)}`}
                                     fill
                                     className="object-cover rounded-t-lg"
                                     priority={false}
@@ -133,8 +154,24 @@ export default function Projects() {
                                 />
                             </div>
                             <CardHeader className="flex-grow">
-                                <CardTitle className="line-clamp-1">{project.title}</CardTitle>
-                                <p className="text-sm text-muted-foreground line-clamp-2">{project.subtitle}</p>
+                                <CardTitle className="line-clamp-1">
+                                    {pickLang(project.title_en || project.title, project.title_es || project.title, project.title)}
+                                </CardTitle>
+                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                    {pickLang(project.subtitle_en || project.subtitle, project.subtitle_es || project.subtitle, project.subtitle)}
+                                </p>
+                                {project.publicUrl && (
+                                    <a
+                                        href={project.publicUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="mt-2 inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                        {lang === 'es' ? 'Ver proyecto' : 'Visit project'}
+                                    </a>
+                                )}
                             </CardHeader>
                             <CardContent>
                                 <div className="flex flex-wrap gap-2">

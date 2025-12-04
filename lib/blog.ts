@@ -1,13 +1,39 @@
+import { cache } from 'react'
 import { connectToDatabase } from '@/lib/mongodb'
 import Blog from '@/models/Blog'
-import { cache } from 'react'
+import { slugify } from '@/lib/utils'
 
-export const getBlogBySlug = cache(async (slug: string) => {
+export const getBlogBySlug = async (slug: string) => {
     await connectToDatabase()
 
-    const blog = await Blog.findOne({ slug })
+    const normalizedSlug = slug?.toString().trim().toLowerCase()
+
+    let blog = await Blog.findOne({ slug: normalizedSlug })
         .lean()
         .exec()
+
+    if (!blog && normalizedSlug) {
+        const candidates = await Blog.find({
+            $or: [
+                { slug: { $regex: `^${normalizedSlug}$`, $options: 'i' } },
+                { title: { $exists: true } },
+                { title_en: { $exists: true } },
+                { title_es: { $exists: true } },
+            ],
+        }).lean().exec()
+
+        blog = candidates.find((b: any) => {
+            const slugs = [
+                b.slug,
+                slugify(b.title || ''),
+                slugify(b.title_en || ''),
+                slugify(b.title_es || ''),
+            ]
+                .filter(Boolean)
+                .map((s: string) => s.toLowerCase())
+            return slugs.includes(normalizedSlug)
+        }) || null
+    }
 
     if (!blog) return null
 
@@ -17,7 +43,7 @@ export const getBlogBySlug = cache(async (slug: string) => {
         createdAt: blog.createdAt.toISOString(),
         updatedAt: blog.updatedAt.toISOString()
     }
-})
+}
 
 export const getAllBlogs = cache(async () => {
     await connectToDatabase()

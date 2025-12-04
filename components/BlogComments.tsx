@@ -35,6 +35,7 @@ export default function BlogComments({ blogId }: { blogId: string }) {
   const isValid = useMemo(() => alias.trim().length >= 2 && content.trim().length >= 3, [alias, content])
 
   useEffect(() => {
+    if (!blogId) return
     const load = async () => {
       const res = await fetch(`/api/blogs/${blogId}/comments`)
       if (res.ok) {
@@ -50,6 +51,10 @@ export default function BlogComments({ blogId }: { blogId: string }) {
     if (!isValid) return
     setIsSubmitting(true)
     try {
+      if (!blogId) {
+        setError('Missing blog reference')
+        return
+      }
       const res = await fetch(`/api/blogs/${blogId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -73,6 +78,7 @@ export default function BlogComments({ blogId }: { blogId: string }) {
 
   const vote = async (id: string, dir: 'up' | 'down') => {
     try {
+      if (!blogId) return
       const res = await fetch(`/api/comments/${id}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

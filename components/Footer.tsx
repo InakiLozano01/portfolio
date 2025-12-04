@@ -5,8 +5,19 @@ import Link from 'next/link'
 import { FaLinkedin, FaGithub, FaEnvelope } from 'react-icons/fa'
 import type { ContactContent } from '@/models/Section'
 
-export default function Footer() {
-    const [contactData, setContactData] = useState<ContactContent | null>(null)
+interface FooterProps {
+    dictionary?: any;
+}
+
+export default function Footer({ dictionary = {} }: FooterProps) {
+    const [contactData, setContactData] = useState<ContactContent>({
+        email: 'inakilozano01@gmail.com',
+        city: 'San Miguel de Tucumán, Argentina',
+        social: {
+            github: 'https://github.com/InakiLozano01',
+            linkedin: 'https://www.linkedin.com/in/inaki-lozano'
+        }
+    })
     const currentYear = new Date().getFullYear()
 
     useEffect(() => {
@@ -15,16 +26,21 @@ export default function Footer() {
                 const response = await fetch('/api/sections/contact')
                 if (!response.ok) throw new Error('Failed to fetch contact data')
                 const data = await response.json()
-                setContactData(data.content)
+                if (data.content) {
+                    setContactData(data.content)
+                }
             } catch (error) {
                 console.error('Error fetching contact data:', error)
+                // Keep the fallback data
             }
         }
 
         fetchContactData()
     }, [])
 
-    if (!contactData) return null
+    const copyrightText = dictionary.copyright
+        ? dictionary.copyright.replace('{year}', currentYear)
+        : `© ${currentYear} Iñaki Fernando Lozano`
 
     return (
         <footer
@@ -46,7 +62,7 @@ export default function Footer() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:text-[#FD4345] transition-colors"
-                            aria-label="LinkedIn"
+                            aria-label={dictionary.linkedin || "LinkedIn"}
                         >
                             <span className="pointer-events-none">
                                 <FaLinkedin size={20} />
@@ -59,7 +75,7 @@ export default function Footer() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:text-[#FD4345] transition-colors"
-                            aria-label="GitHub"
+                            aria-label={dictionary.github || "GitHub"}
                         >
                             <span className="pointer-events-none">
                                 <FaGithub size={20} />
@@ -70,7 +86,7 @@ export default function Footer() {
                         <Link
                             href={`mailto:${contactData.email}`}
                             className="hover:text-[#FD4345] transition-colors"
-                            aria-label="Email"
+                            aria-label={dictionary.email || "Email"}
                         >
                             <span className="pointer-events-none">
                                 <FaEnvelope size={20} />
@@ -78,7 +94,7 @@ export default function Footer() {
                         </Link>
                     )}
                 </div>
-                <p className="text-sm text-gray-400">© {currentYear} Iñaki Fernando Lozano</p>
+                <p className="text-sm text-gray-400">{copyrightText}</p>
             </div>
         </footer>
     )

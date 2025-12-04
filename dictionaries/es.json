@@ -1,0 +1,49 @@
+{
+    "header": {
+        "skipToContent": "Saltar al contenido",
+        "home": "Inicio",
+        "openMenu": "Abrir menú",
+        "closeMenu": "Cerrar menú",
+        "mainNavigation": "Navegación principal",
+        "mobileNavigation": "Navegación móvil"
+    },
+    "footer": {
+        "linkedin": "LinkedIn",
+        "github": "GitHub",
+        "email": "Correo electrónico",
+        "copyright": "© {year} Iñaki Fernando Lozano"
+    },
+    "common": {
+        "loading": "Cargando...",
+        "error": "Error",
+        "back": "Atrás",
+        "next": "Siguiente",
+        "previous": "Anterior"
+    },
+    "blogSection": {
+        "heading": "Blog",
+        "description": "Compartiendo ideas y experiencias en desarrollo de software"
+    },
+    "skillsSection": {
+        "heading": "Habilidades y Tecnologías",
+        "description": "Conjunto integral de habilidades técnicas en diversos dominios"
+    },
+    "sections": {
+        "home": "Inicio",
+        "about": "Sobre mí",
+        "experience": "Experiencia",
+        "education": "Educación",
+        "skills": "Habilidades",
+        "projects": "Proyectos",
+        "blog": "Blog",
+        "contact": "Contacto"
+    },
+    "seo": {
+        "title": "Iñaki F. Lozano | Estudiante de Ingeniería en Computación y Desarrollador de Software",
+        "description": "Estudiante de Ingeniería en Computación enfocado en tecnología e innovación. Investigando flujos de trabajo de documentos seguros, construyendo backends escalables, y combinando habilidades de DevOps, IA y desarrollo full stack.",
+        "keywords": "Desarrollador de Software, Estudiante de Ingeniería en Computación, Desarrollo Backend, Firmas electrónicas avanzadas, DevOps, Tucumán, Argentina",
+        "location": "Tucumán, Argentina",
+        "jobTitle": "Estudiante de Ingeniería en Computación y Desarrollador de Software",
+        "organization": "Tribunal de Cuentas de Tucumán"
+    }
+}

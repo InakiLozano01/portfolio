@@ -6,10 +6,21 @@ import { FaEnvelope, FaGithub, FaLinkedin, FaMapMarkerAlt } from 'react-icons/fa
 import type { ContactContent } from '@/models/Section'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 
-export default function ContactSection() {
-  const [content, setContent] = useState<ContactContent | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+interface ContactSectionProps {
+  lang?: 'en' | 'es';
+}
+
+export default function ContactSection({ lang = 'en' }: ContactSectionProps) {
+  const [content, setContent] = useState<ContactContent>({
+    email: 'inakilozano01@gmail.com',
+    city: 'San Miguel de Tucumán, Argentina',
+    city_en: 'San Miguel de Tucumán, Argentina',
+    city_es: 'San Miguel de Tucumán, Argentina',
+    social: {
+      github: 'https://github.com/InakiLozano01',
+      linkedin: 'https://www.linkedin.com/in/inaki-lozano'
+    }
+  })
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,6 +33,24 @@ export default function ContactSection() {
   const statusRef = useRef<HTMLParagraphElement | null>(null)
   const reduceMotion = useReducedMotion()
 
+  // Labels
+  const labels = {
+    title: lang === 'en' ? 'Get in Touch' : 'Ponte en contacto',
+    contactInfo: lang === 'en' ? 'Contact Information' : 'Información de contacto',
+    sendMessage: lang === 'en' ? 'Send a Message' : 'Enviar mensaje',
+    name: lang === 'en' ? 'Name' : 'Nombre',
+    email: 'Email',
+    message: lang === 'en' ? 'Message' : 'Mensaje',
+    send: lang === 'en' ? 'Send Message' : 'Enviar mensaje',
+    sending: lang === 'en' ? 'Sending...' : 'Enviando...',
+    success: lang === 'en' ? 'Message sent successfully!' : '¡Mensaje enviado correctamente!',
+    errorMsg: lang === 'en' ? 'Failed to send message. Please try again.' : 'No se pudo enviar el mensaje. Inténtalo de nuevo.',
+    nameRequired: lang === 'en' ? 'Name is required' : 'El nombre es obligatorio',
+    emailRequired: lang === 'en' ? 'Email is required' : 'El email es obligatorio',
+    emailInvalid: lang === 'en' ? 'Please enter a valid email address' : 'Por favor, ingresa un email válido',
+    messageRequired: lang === 'en' ? 'Message is required' : 'El mensaje es obligatorio'
+  }
+
   useEffect(() => {
     const fetchContent = async () => {
       try {
@@ -30,11 +59,12 @@ export default function ContactSection() {
           throw new Error('Failed to fetch contact information')
         }
         const data = await response.json()
-        setContent(data.content)
+        if (data.content) {
+          setContent(data.content)
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
-      } finally {
-        setLoading(false)
+        console.error('Error fetching contact data:', err)
+        // Keep fallback data
       }
     }
 
@@ -44,15 +74,15 @@ export default function ContactSection() {
   const validateForm = () => {
     const errors: { [key: string]: string } = {}
     if (!formData.name.trim()) {
-      errors.name = 'Name is required'
+      errors.name = labels.nameRequired
     }
     if (!formData.email.trim()) {
-      errors.email = 'Email is required'
+      errors.email = labels.emailRequired
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address'
+      errors.email = labels.emailInvalid
     }
     if (!formData.message.trim()) {
-      errors.message = 'Message is required'
+      errors.message = labels.messageRequired
     }
     return errors
   }
@@ -104,13 +134,11 @@ export default function ContactSection() {
     setCounters(prev => ({ ...prev, [name]: value.length }))
   }
 
-  if (loading) return <LoadingSpinner />
-  if (error) return <div role="alert" className="text-center text-red-500">{error}</div>
-  if (!content) return null
+  const city = (lang === 'en' ? content.city_en : content.city_es) || content.city
 
   return (
     <div className="w-full pt-14 md:pt-0">
-      <h2 className="text-3xl font-bold mb-8 text-primary">Get in Touch</h2>
+      <h2 className="text-3xl font-bold mb-8 text-primary">{labels.title}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <motion.div
           className="bg-gray-50 rounded-lg p-6 shadow-sm"
@@ -118,7 +146,7 @@ export default function ContactSection() {
           animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
           transition={reduceMotion ? { duration: 0 } : { duration: 0.5 }}
         >
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Contact Information</h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">{labels.contactInfo}</h3>
           <div className="space-y-4">
             <div className="flex items-center">
               <FaEnvelope className="text-[#FD4345] w-5 h-5 mr-3" aria-hidden="true" />
@@ -132,7 +160,7 @@ export default function ContactSection() {
             </div>
             <div className="flex items-center">
               <FaMapMarkerAlt className="text-[#FD4345] w-5 h-5 mr-3" aria-hidden="true" />
-              <span className="text-gray-600">{content.city}</span>
+              <span className="text-gray-600">{city}</span>
             </div>
             <div className="flex items-center">
               <FaGithub className="text-[#FD4345] w-5 h-5 mr-3" aria-hidden="true" />
@@ -167,11 +195,11 @@ export default function ContactSection() {
           animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
           transition={reduceMotion ? { duration: 0 } : { duration: 0.5, delay: 0.2 }}
         >
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Send a Message</h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">{labels.sendMessage}</h3>
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Name <span className="text-red-500">*</span>
+                {labels.name} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -196,7 +224,7 @@ export default function ContactSection() {
             </div>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email <span className="text-red-500">*</span>
+                {labels.email} <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -221,7 +249,7 @@ export default function ContactSection() {
             </div>
             <div>
               <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                Message <span className="text-red-500">*</span>
+                {labels.message} <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="message"
@@ -250,7 +278,7 @@ export default function ContactSection() {
               aria-disabled={isSubmitting}
               className="w-full bg-[#FD4345] text-white px-6 py-3 rounded-md font-semibold hover:bg-[#E13D3F] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Sending...' : 'Send Message'}
+              {isSubmitting ? labels.sending : labels.send}
             </button>
             <p
               ref={statusRef}
@@ -259,7 +287,7 @@ export default function ContactSection() {
               role={submitStatus === 'error' ? 'alert' : 'status'}
               aria-live="polite"
             >
-              {submitStatus === 'success' ? 'Message sent successfully!' : submitStatus === 'error' ? 'Failed to send message. Please try again.' : ''}
+              {submitStatus === 'success' ? labels.success : submitStatus === 'error' ? labels.errorMsg : ''}
             </p>
           </form>
         </motion.div>
@@ -267,4 +295,5 @@ export default function ContactSection() {
     </div>
   )
 }
+
 

@@ -1,12 +1,8 @@
 'use server'
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Comment from '@/models/Comment'
-
-interface Params {
-  params: { id: string }
-}
 
 async function moderate(content: string): Promise<boolean> {
   // Basic local moderation fallback
@@ -37,10 +33,14 @@ async function moderate(content: string): Promise<boolean> {
   return true
 }
 
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params
+  if (!id || !id.trim() || !id.match(/^[a-fA-F0-9]{24}$/)) {
+    return NextResponse.json({ error: 'Invalid blog id' }, { status: 400 })
+  }
   try {
     await connectToDatabase()
-    const comments = await Comment.find({ blog: params.id, status: 'approved' }).sort({ createdAt: -1 }).lean()
+    const comments = await Comment.find({ blog: id, status: 'approved' }).sort({ createdAt: -1 }).lean()
     return NextResponse.json(comments)
   } catch (err) {
     console.error('Failed to fetch comments', err)
@@ -48,7 +48,11 @@ export async function GET(_req: Request, { params }: Params) {
   }
 }
 
-export async function POST(req: Request, { params }: Params) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params
+  if (!id || !id.trim() || !id.match(/^[a-fA-F0-9]{24}$/)) {
+    return NextResponse.json({ error: 'Invalid blog id' }, { status: 400 })
+  }
   try {
     const { alias, content, parentId } = await req.json()
     const ip = (req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown').split(',')[0].trim()
@@ -58,7 +62,7 @@ export async function POST(req: Request, { params }: Params) {
 
     await connectToDatabase()
 
-    const flood = await Comment.findOne({ blog: params.id, ip }).sort({ createdAt: -1 }).lean()
+    const flood = await Comment.findOne({ blog: id, ip }).sort({ createdAt: -1 }).lean()
     if (flood && Date.now() - new Date(flood.createdAt).getTime() < 60000) {
       return NextResponse.json({ error: 'Too many comments' }, { status: 429 })
     }
@@ -72,7 +76,7 @@ export async function POST(req: Request, { params }: Params) {
     const sanitizedContent = String(content).slice(0, 5000).replace(/[<>]/g, '')
     const parent = parentId ? parentId : null
 
-    const comment = await Comment.create({ blog: params.id, alias: sanitizedAlias, content: sanitizedContent, ip, parent })
+    const comment = await Comment.create({ blog: id, alias: sanitizedAlias, content: sanitizedContent, ip, parent })
     return NextResponse.json(comment)
   } catch (err) {
     console.error('Failed to create comment', err)

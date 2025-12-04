@@ -1,0 +1,100 @@
+import { getBlogBySlug } from '@/lib/blog'
+import { notFound } from 'next/navigation'
+// content rendering moved to client component
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
+import BackNavigationHandler from '@/components/BackNavigationHandler'
+import BlogComments from '@/components/BlogComments'
+import ShareActions from '@/components/ShareActions'
+import BlogArticle from '@/components/BlogArticle'
+import NewsletterSignup from '@/components/NewsletterSignup'
+import { PublishedInfo } from '@/components/PublishedInfo'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+
+interface BlogPageProps {
+    params: {
+        slug: string
+        lang: 'en' | 'es'
+    },
+    searchParams?: {
+        [key: string]: string | string[] | undefined
+    }
+}
+
+export default async function BlogPage({ params, searchParams }: BlogPageProps) {
+    const blog = await getBlogBySlug(params.slug)
+
+    if (!blog) {
+        notFound()
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+
+    const preferredLangParam = (() => {
+        const lang = searchParams?.lang
+        if (!lang) return undefined
+        if (Array.isArray(lang)) {
+            return lang[0]?.toLowerCase()
+        }
+        return lang.toLowerCase()
+    })()
+
+    const initialLang: 'en' | 'es' = (() => {
+        if (preferredLangParam === 'es') return 'es'
+        if (preferredLangParam === 'en') return 'en'
+        const blogHasEnglish = typeof blog.content_en === 'string' ? blog.content_en.trim().length > 0 : false
+        const blogHasSpanish = typeof blog.content_es === 'string' ? blog.content_es.trim().length > 0 : false
+        if (blogHasSpanish) return 'es'
+        if (blogHasEnglish) return 'en'
+        return 'en'
+    })()
+
+    return (
+        <div className="flex min-h-screen bg-[#263547]">
+            <BackNavigationHandler />
+
+            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
+
+            <div className="relative flex-1 overflow-x-hidden overflow-y-auto bg-white">
+                <div className="pointer-events-none absolute inset-0 -z-10">
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="blog-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E5E5E5" strokeWidth="1.5" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#blog-grid)" />
+                    </svg>
+                </div>
+
+                <article className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+                    <Link
+                        href={`/${params.lang}`}
+                        className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-6"
+                    >
+                        <ArrowLeft size={20} />
+                        Back to Home
+                    </Link>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-8">
+                        <PublishedInfo createdAt={blog.createdAt} updatedAt={blog.updatedAt} />
+                        <ShareActions url={`${baseUrl}/${params.lang}/blog/${blog.slug}`} title={blog.title} />
+                    </div>
+
+                    <BlogArticle blog={blog as any} initialLang={initialLang} />
+
+                    <div className="my-10">
+                        <NewsletterSignup compact lang={initialLang} />
+                    </div>
+
+                    <BlogComments blogId={blog._id} />
+                </article>
+            </div>
+
+            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
+        </div>
+    )
+}

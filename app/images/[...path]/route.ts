@@ -45,8 +45,12 @@ async function ensureReadable(filePath: string) {
   }
 }
 
-export async function GET(_request: NextRequest, { params }: { params: { path?: string[] } }) {
-  const sanitized = sanitizeSegments(params.path ?? [])
+export async function GET(
+  _request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
+  const { path: pathParam } = await context.params
+  const sanitized = sanitizeSegments(Array.isArray(pathParam) ? pathParam : [])
   if (!sanitized) {
     return NextResponse.json({ error: 'Invalid path' }, { status: 400 })
   }
@@ -74,7 +78,10 @@ export async function GET(_request: NextRequest, { params }: { params: { path?: 
   })
 }
 
-export async function HEAD(request: NextRequest, context: { params: { path?: string[] } }) {
+export async function HEAD(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
   const response = await GET(request, context)
   if (response.ok) {
     return new NextResponse(null, {

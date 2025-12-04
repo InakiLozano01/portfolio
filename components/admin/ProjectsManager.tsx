@@ -40,11 +40,17 @@ export default function ProjectsManager() {
   const [skills, setSkills] = useState<ISkill[]>([]);
   const [selectedProject, setSelectedProject] = useState<Partial<ProjectWithId> & { technologies: Types.ObjectId[] }>({
     title: '',
+    title_es: '',
+    subtitle_en: '',
     subtitle: '',
+    subtitle_es: '',
     description: '',
+    description_en: '',
+    description_es: '',
     technologies: [],
     thumbnail: '',
     githubUrl: '',
+    publicUrl: '',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -96,11 +102,17 @@ export default function ProjectsManager() {
         if (draft && typeof draft === 'object') {
           setSelectedProject({
             title: draft.title || '',
+            title_es: draft.title_es || '',
+            subtitle_en: draft.subtitle_en || draft.subtitle || '',
             subtitle: draft.subtitle || '',
+            subtitle_es: draft.subtitle_es || '',
+            description_en: draft.description_en || draft.description || '',
             description: draft.description || '',
+            description_es: draft.description_es || '',
             technologies: Array.isArray(draft.technologies) ? draft.technologies.map((id: string) => new Types.ObjectId(id)) : [],
             thumbnail: draft.thumbnail || '',
             githubUrl: draft.githubUrl || '',
+            publicUrl: draft.publicUrl || '',
             _id: draft._id ? new Types.ObjectId(draft._id) : undefined,
           });
         }
@@ -196,6 +208,16 @@ export default function ProjectsManager() {
   const handleSave = async () => {
     if (!validate()) return;
     try {
+      const normalized = {
+        ...selectedProject,
+        title_en: selectedProject.title || selectedProject.title_en || '',
+        title: selectedProject.title || selectedProject.title_en || '',
+        subtitle_en: selectedProject.subtitle_en || selectedProject.subtitle || '',
+        subtitle: selectedProject.subtitle || selectedProject.subtitle_en || '',
+        description_en: selectedProject.description_en || selectedProject.description || '',
+        description: selectedProject.description_en || selectedProject.description || '',
+        publicUrl: selectedProject.publicUrl || '',
+      };
       const method = selectedProject._id ? 'PUT' : 'POST';
       const url = selectedProject._id
         ? `/api/projects/${selectedProject._id}`
@@ -206,7 +228,7 @@ export default function ProjectsManager() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(selectedProject),
+        body: JSON.stringify(normalized),
       });
 
       if (!response.ok) throw new Error('Failed to save project');
@@ -231,6 +253,7 @@ export default function ProjectsManager() {
         technologies: [],
         thumbnail: '',
         githubUrl: '',
+        publicUrl: '',
       });
       setImageFile(null);
       setImagePreview(null);
@@ -253,6 +276,10 @@ export default function ProjectsManager() {
   };
 
   const handleDelete = async (id: string) => {
+    const userInput = prompt('Type DELETE to confirm project removal')
+    if (!userInput || userInput.trim().toUpperCase() !== 'DELETE') {
+      return
+    }
     try {
       const response = await fetch(`/api/projects/${id}`, {
         method: 'DELETE',
@@ -270,6 +297,7 @@ export default function ProjectsManager() {
           technologies: [],
           thumbnail: '',
           githubUrl: '',
+          publicUrl: '',
         });
       }
 
@@ -315,72 +343,168 @@ export default function ProjectsManager() {
   }
 
   return (
-    <div className="grid grid-cols-12 gap-6">
-      {/* New/Edit Project Form */}
-      <div className="col-span-12 lg:col-span-8">
-        <Card className="bg-white border border-gray-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-red-50 border-b border-gray-200">
-            <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
-              <Edit className="w-5 h-5 text-blue-600" />
-              {selectedProject._id ? 'Edit Project' : 'Create New Project'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 p-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
-                Project Title *
-              </label>
-              <Input
-                placeholder="Enter project title"
-                value={selectedProject.title || ''}
-                onChange={(e) =>
-                  setSelectedProject({ ...selectedProject, title: e.target.value })
-                }
-                className={errors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
-              />
-              {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
+    <div className="space-y-6">
+      {/* Horizontal project rail */}
+      <Card className="bg-gradient-to-r from-emerald-50 to-lime-50 border border-emerald-200 shadow-sm">
+        <CardContent className="py-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 pr-3 border-r border-emerald-200">
+              <Briefcase className="w-5 h-5 text-emerald-700" />
+              <span className="text-sm font-semibold text-emerald-800">Projects ({projects.length})</span>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
-                Project Subtitle *
-              </label>
-              <Input
-                placeholder="Brief description or tagline"
-                value={selectedProject.subtitle || ''}
-                onChange={(e) =>
-                  setSelectedProject({ ...selectedProject, subtitle: e.target.value })
-                }
-                className={errors.subtitle ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
-              />
-              {errors.subtitle && <p className="text-xs text-red-600">{errors.subtitle}</p>}
-            </div>
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-slate-700">
-                Thumbnail Image
-              </label>
-              <div className="space-y-4">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer"
-                />
-                {(imagePreview || selectedProject.thumbnail) && (
-                  <div className="relative aspect-video w-full max-w-md bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
-                    <Image
-                      src={imagePreview || selectedProject.thumbnail || ''}
-                      alt="Project thumbnail preview"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
+            <Input
+              placeholder="Search projects..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-64 max-w-full h-9 border-emerald-200 focus:ring-emerald-500 focus:border-emerald-500"
+            />
+            <div className="flex-1 overflow-x-auto">
+              <div className="flex gap-3 min-w-fit">
+                {projects
+                  .filter((p) =>
+                    (p.title || '').toLowerCase().includes(search.toLowerCase()) ||
+                    (p.subtitle || '').toLowerCase().includes(search.toLowerCase())
+                  )
+                  .map((project) => {
+                    const isSelected = selectedProject._id?.toString() === project._id.toString();
+                    return (
+                      <div
+                        key={project._id.toString()}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition shadow-sm ${isSelected
+                          ? 'bg-emerald-600 text-white border-emerald-700'
+                          : 'bg-white text-slate-800 border-emerald-100 hover:border-emerald-300'
+                          }`}
+                      >
+                        <button
+                          className="flex-1 text-left"
+                          onClick={() => {
+            setSelectedProject({
+              ...project,
+              title_es: project.title_es || '',
+              subtitle_en: project.subtitle_en || project.subtitle || '',
+              subtitle_es: project.subtitle_es || '',
+              description_en: project.description_en || project.description || '',
+              description_es: project.description_es || '',
+              publicUrl: project.publicUrl || '',
+              technologies: project.technologies.map((tech) => tech._id),
+            });
+            setImagePreview(null);
+          }}
+        >
+                          <div className="font-semibold line-clamp-1">{project.title}</div>
+                          <div className="text-xs opacity-80 line-clamp-1">{project.subtitle}</div>
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-8 w-8 ${isSelected ? 'text-white hover:bg-white/10' : 'text-emerald-700 hover:bg-emerald-50'}`}
+                          onClick={() => {
+                            handleDelete(project._id.toString());
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                {projects.length === 0 && (
+                  <span className="text-sm text-emerald-800">No projects yet</span>
                 )}
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Editing canvas */}
+      <Card className="bg-white border border-gray-200 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-red-50 border-b border-gray-200">
+          <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
+            <Edit className="w-5 h-5 text-blue-600" />
+            {selectedProject._id ? 'Edit Project' : 'Create New Project'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6 p-6">
+          {/* Two-column language fields */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 text-xs font-semibold bg-slate-100 rounded text-slate-700">English</span>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Project Title *</label>
+                <Input
+                  placeholder="Enter project title"
+                  value={selectedProject.title || ''}
+                  onChange={(e) =>
+                    setSelectedProject({ ...selectedProject, title: e.target.value })
+                  }
+                  className={errors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                />
+                {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Project Subtitle *</label>
+                <Input
+                  placeholder="Brief description or tagline"
+                  value={selectedProject.subtitle || ''}
+                  onChange={(e) =>
+                    setSelectedProject({ ...selectedProject, subtitle: e.target.value })
+                  }
+                  className={errors.subtitle ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                />
+                {errors.subtitle && <p className="text-xs text-red-600">{errors.subtitle}</p>}
+              </div>
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-slate-700">Description (EN)</label>
+                <TinyMCE
+                  value={selectedProject.description_en || selectedProject.description || ''}
+                  onChange={(content) =>
+                    setSelectedProject({ ...selectedProject, description_en: content, description: content })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 text-xs font-semibold bg-slate-100 rounded text-slate-700">Español</span>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Título (ES)</label>
+                <Input
+                  placeholder="Título del proyecto"
+                  value={selectedProject.title_es || ''}
+                  onChange={(e) =>
+                    setSelectedProject({ ...selectedProject, title_es: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Subtítulo (ES)</label>
+                <Input
+                  placeholder="Descripción breve"
+                  value={selectedProject.subtitle_es || ''}
+                  onChange={(e) =>
+                    setSelectedProject({ ...selectedProject, subtitle_es: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-slate-700">Descripción (ES)</label>
+                <TinyMCE
+                  value={selectedProject.description_es || ''}
+                  onChange={(content) =>
+                    setSelectedProject({ ...selectedProject, description_es: content })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
-                GitHub URL
-              </label>
+              <label className="text-sm font-medium text-slate-700">GitHub URL</label>
               <Input
                 placeholder="https://github.com/username/repository"
                 value={selectedProject.githubUrl || ''}
@@ -389,212 +513,115 @@ export default function ProjectsManager() {
                 }
               />
             </div>
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-slate-700">
-                Technologies Used
-              </label>
-              <p className="text-xs text-slate-500">
-                Select all technologies used in this project. Click to toggle selection.
-              </p>
-              <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-lg border border-slate-200 max-h-40 overflow-y-auto">
-                {skills.length === 0 ? (
-                  <p className="text-sm text-slate-500 italic">
-                    No skills available. Please add skills first.
-                  </p>
-                ) : (
-                  skills.map((skill) => {
-                    const isSelected = selectedProject.technologies.some(
-                      (id) => id.toString() === skill._id.toString()
-                    );
-                    return (
-                      <Badge
-                        key={skill._id.toString()}
-                        className={`cursor-pointer transition-all duration-200 hover:scale-105 border ${isSelected
-                          ? 'bg-red-600 hover:bg-red-700 text-white border-red-600'
-                          : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 hover:border-blue-400'
-                          }`}
-                        onClick={() => handleTechnologyToggle(skill._id.toString())}
-                      >
-                        {skill.name}
-                        {isSelected && <span className="ml-1">✓</span>}
-                      </Badge>
-                    );
-                  })
-                )}
-              </div>
-              {selectedProject.technologies.length > 0 && (
-                <p className="text-xs text-blue-600">
-                  {selectedProject.technologies.length} technology(ies) selected
-                </p>
-              )}
-            </div>
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-slate-700">
-                Project Description *
-              </label>
-              <p className="text-xs text-slate-500">
-                Provide a detailed description of the project, its features, and your role.
-              </p>
-              <div className="bg-white border border-slate-300 rounded-lg overflow-hidden">
-                <TinyMCE
-                  value={selectedProject.description || ''}
-                  onChange={(content) =>
-                    setSelectedProject({ ...selectedProject, description: content })
-                  }
-                />
-              </div>
-            </div>
-            <div className="sticky bottom-0 bg-white border-t border-slate-200 pt-4 mt-6 z-10 flex flex-col sm:flex-row justify-between gap-3">
-              <Button
-                onClick={() => {
-                  setSelectedProject({
-                    title: '',
-                    subtitle: '',
-                    description: '',
-                    technologies: [],
-                    thumbnail: '',
-                    githubUrl: '',
-                  });
-                  setImageFile(null);
-                  setImagePreview(null);
-                }}
-                variant="outline"
-                className="flex items-center gap-2 border-slate-300 text-slate-700 hover:bg-slate-50"
-              >
-                <Trash2 className="w-4 h-4" />
-                Clear Form
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={!selectedProject.title || !selectedProject.subtitle || !selectedProject.description}
-                className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                {selectedProject._id ? 'Update Project' : 'Create Project'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Projects List */}
-      <div className="col-span-12 lg:col-span-4">
-        <Card className="bg-white border border-gray-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-red-50 border-b border-gray-200">
-            <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
-              <Briefcase className="w-5 h-5 text-blue-600" />
-              Projects ({projects.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 p-4 max-h-[600px] overflow-y-auto">
-            <div className="mb-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Public URL (optional)</label>
               <Input
-                placeholder="Search projects..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border-slate-300"
+                placeholder="https://your-live-site.com"
+                value={selectedProject.publicUrl || ''}
+                onChange={(e) =>
+                  setSelectedProject({ ...selectedProject, publicUrl: e.target.value })
+                }
               />
             </div>
-            {projects.length === 0 ? (
-              <div className="text-center py-8">
-                <Briefcase className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <p className="text-slate-600">No projects yet</p>
-                <p className="text-sm text-slate-500">Create your first project to get started</p>
-              </div>
-            ) : (
-              projects
-                .filter((p) =>
-                  (p.title || '').toLowerCase().includes(search.toLowerCase()) ||
-                  (p.subtitle || '').toLowerCase().includes(search.toLowerCase())
-                )
-                .map((project) => {
-                  const isSelected = selectedProject._id?.toString() === project._id.toString();
-                  return (
-                    <Card
-                      key={project._id.toString()}
-                      className={`cursor-pointer transition-all duration-200 hover:shadow-md ${isSelected
-                        ? 'ring-2 ring-blue-500 bg-blue-50'
-                        : 'hover:bg-slate-50'
-                        }`}
-                      onClick={() => {
-                        setSelectedProject({
-                          ...project,
-                          technologies: project.technologies.map((tech) => tech._id),
-                        });
-                        setImagePreview(null);
-                      }}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex-1">
-                            <h3 className="font-medium text-slate-900 line-clamp-1">
-                              {project.title}
-                            </h3>
-                            <p className="text-sm text-slate-600 line-clamp-2 mt-1">
-                              {project.subtitle}
-                            </p>
-                          </div>
-                          <div className="flex gap-1 ml-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedProject({
-                                  ...project,
-                                  technologies: project.technologies.map((tech) => tech._id),
-                                });
-                                setImagePreview(null);
-                              }}
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm('Are you sure you want to delete this project?')) {
-                                  handleDelete(project._id.toString());
-                                }
-                              }}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
+          </div>
 
-                        {project.technologies.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {project.technologies.slice(0, 3).map((tech) => {
-                              const techObj = tech as { _id: Types.ObjectId; name: string };
-                              return (
-                                <Badge
-                                  key={techObj._id.toString()}
-                                  variant="outline"
-                                  className="text-xs px-2 py-0.5 bg-blue-50 text-blue-800 border-blue-200"
-                                >
-                                  {techObj.name}
-                                </Badge>
-                              );
-                            })}
-                            {project.technologies.length > 3 && (
-                              <Badge variant="outline" className="text-xs px-2 py-0.5 bg-slate-50">
-                                +{project.technologies.length - 3} more
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+          <div className="max-w-4xl mx-auto space-y-3">
+            <label className="text-sm font-medium text-slate-700">Thumbnail Image</label>
+            <div className="space-y-3">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer"
+              />
+              {(imagePreview || selectedProject.thumbnail) && (
+                <div className="relative aspect-video w-full bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                  <Image
+                    src={imagePreview || selectedProject.thumbnail || ''}
+                    alt="Project thumbnail preview"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-slate-700">Technologies Used</label>
+            <p className="text-xs text-slate-500">
+              Select all technologies used in this project. Click to toggle selection.
+            </p>
+            <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-lg border border-slate-200 max-h-40 overflow-y-auto">
+              {skills.length === 0 ? (
+                <p className="text-sm text-slate-500 italic">
+                  No skills available. Please add skills first.
+                </p>
+              ) : (
+                skills.map((skill) => {
+                  const isSelected = selectedProject.technologies.some(
+                    (id) => id.toString() === skill._id.toString()
+                  );
+                  return (
+                    <Badge
+                      key={skill._id.toString()}
+                      className={`cursor-pointer transition-all duration-200 hover:scale-105 border ${isSelected
+                        ? 'bg-red-600 hover:bg-red-700 text-white border-red-600'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 hover:border-blue-400'
+                        }`}
+                      onClick={() => handleTechnologyToggle(skill._id.toString())}
+                    >
+                      {skill.name}
+                      {isSelected && <span className="ml-1">✓</span>}
+                    </Badge>
                   );
                 })
+              )}
+            </div>
+            {selectedProject.technologies.length > 0 && (
+              <p className="text-xs text-blue-600">
+                {selectedProject.technologies.length} technology(ies) selected
+              </p>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+
+          <div className="sticky bottom-0 bg-white border-t border-slate-200 pt-4 mt-6 z-10 flex flex-col sm:flex-row justify-between gap-3">
+            <Button
+              onClick={() => {
+                setSelectedProject({
+                  title: '',
+                  title_es: '',
+                  subtitle_en: '',
+                  subtitle: '',
+                  subtitle_es: '',
+              description: '',
+              description_en: '',
+              description_es: '',
+              technologies: [],
+              thumbnail: '',
+              githubUrl: '',
+              publicUrl: '',
+            });
+            setImageFile(null);
+            setImagePreview(null);
+          }}
+              variant="outline"
+              className="flex items-center gap-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear Form
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={!selectedProject.title || !selectedProject.subtitle || !selectedProject.description_en}
+              className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {selectedProject._id ? 'Update Project' : 'Create Project'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

@@ -1,23 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface NewsletterSignupProps {
   compact?: boolean
   className?: string
+  lang?: 'en' | 'es'
 }
 
-export default function NewsletterSignup({ compact = false, className = '' }: NewsletterSignupProps) {
+export default function NewsletterSignup({ compact = false, className = '', lang = 'en' }: NewsletterSignupProps) {
   const [email, setEmail] = useState('')
-  const [lang, setLang] = useState<'en' | 'es'>('en')
+  const [selectedLang, setSelectedLang] = useState<'en' | 'es'>(lang)
   const [status, setStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
   const [msg, setMsg] = useState('')
+
+  // Keep selected language in sync with current page language
+  useEffect(() => {
+    setSelectedLang(lang)
+  }, [lang])
 
   const submit = async () => {
     if (!email || status === 'loading') return
     setStatus('loading'); setMsg('')
     try {
-      const res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, language: lang }) })
+      const res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, language: selectedLang }) })
       if (res.ok) {
         setStatus('ok')
         setMsg('Subscribed! You will receive new blogs via email.')
@@ -49,8 +55,8 @@ export default function NewsletterSignup({ compact = false, className = '' }: Ne
         <div>
           <label className="block text-sm mb-1">Language</label>
           <select
-            value={lang}
-            onChange={e => setLang(e.target.value as any)}
+            value={selectedLang}
+            onChange={e => setSelectedLang(e.target.value as any)}
             className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           >
             <option value="en">English</option>
@@ -70,4 +76,3 @@ export default function NewsletterSignup({ compact = false, className = '' }: Ne
     </div>
   )
 }
-

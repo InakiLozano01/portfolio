@@ -1,17 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Contact from '@/models/Contact';
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   try {
     const body = await request.json();
     await connectToDatabase();
     
     const contact = await Contact.findByIdAndUpdate(
-      params.id,
+      id,
       { $set: { read: body.read } },
       { new: true }
     );
@@ -33,13 +34,14 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   try {
     await connectToDatabase();
     
-    const contact = await Contact.findByIdAndDelete(params.id);
+    const contact = await Contact.findByIdAndDelete(id);
 
     if (!contact) {
       return NextResponse.json(

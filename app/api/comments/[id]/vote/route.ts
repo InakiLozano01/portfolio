@@ -1,12 +1,11 @@
 'use server'
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Comment from '@/models/Comment'
 
-interface Params { params: { id: string } }
-
-export async function POST(req: Request, { params }: Params) {
+export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params
   try {
     const { direction } = await req.json() as { direction: 'up' | 'down' | 'clear' }
     const ip = (req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown').split(',')[0].trim()
@@ -15,7 +14,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     await connectToDatabase()
-    const comment = await Comment.findById(params.id)
+    const comment = await Comment.findById(id)
     if (!comment) {
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
     }
@@ -44,4 +43,3 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: 'Failed to vote comment' }, { status: 500 })
   }
 }
-

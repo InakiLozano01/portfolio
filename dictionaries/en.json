@@ -1,0 +1,41 @@
+{
+    "header": {
+        "skipToContent": "Skip to content",
+        "home": "Home",
+        "openMenu": "Open menu",
+        "closeMenu": "Close menu",
+        "mainNavigation": "Main navigation",
+        "mobileNavigation": "Mobile navigation"
+    },
+    "footer": {
+        "linkedin": "LinkedIn",
+        "github": "GitHub",
+        "email": "Email",
+        "copyright": "© {year} Iñaki Fernando Lozano"
+    },
+    "common": {
+        "loading": "Loading...",
+        "error": "Error",
+        "back": "Back",
+        "next": "Next",
+        "previous": "Previous"
+    },
+    "blogSection": {
+        "heading": "Blog",
+        "description": "Sharing insights and experiences in software development"
+    },
+    "skillsSection": {
+        "heading": "Skills & Technologies",
+        "description": "A comprehensive set of technical skills across various domains"
+    },
+    "sections": {
+        "home": "Home",
+        "about": "About",
+        "experience": "Experience",
+        "education": "Education",
+        "skills": "Skills",
+        "projects": "Projects",
+        "blog": "Blog",
+        "contact": "Contact"
+    }
+}

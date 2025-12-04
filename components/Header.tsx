@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 import Image from 'next/image'
+import LanguageSwitcher from './LanguageSwitcher'
 
 interface StaticSection {
   id: string;
@@ -15,12 +16,16 @@ interface HeaderProps {
   staticSections?: StaticSection[];
   currentIndex?: number;
   onSectionChange?: (index: number) => void;
+  dictionary?: any;
+  lang?: string;
 }
 
 export default function Header({
   staticSections = [],
   currentIndex = 0,
-  onSectionChange = () => { }
+  onSectionChange = () => { },
+  dictionary = {},
+  lang = 'en'
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
@@ -105,11 +110,11 @@ export default function Header({
         href="#content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:bg-white focus:text-black focus:px-3 focus:py-1 focus:rounded focus:z-50"
       >
-        Skip to content
+        {dictionary.skipToContent || 'Skip to content'}
       </a>
       <nav className="h-full container mx-auto px-4">
         <div className="h-full flex justify-between items-center">
-          <Link href="/" className="text-lg md:text-xl font-bold text-white truncate max-w-[200px] md:max-w-none flex items-center gap-2" aria-label="Home">
+          <Link href={`/${lang}`} className="text-lg md:text-xl font-bold text-white truncate max-w-[200px] md:max-w-none flex items-center gap-2" aria-label={dictionary.home || 'Home'}>
             <Image
               src="/inakilozanodotcomlogo.png"
               alt="Logo"
@@ -120,34 +125,40 @@ export default function Header({
             Iñaki F. Lozano
           </Link>
 
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden text-white hover:text-[#FF5456] transition-colors"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={isMenuOpen}
-            aria-controls="mobile-menu"
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="flex items-center gap-4">
+            {/* Desktop navigation */}
+            <div className="hidden md:flex space-x-6" aria-label={dictionary.mainNavigation || 'Main navigation'}>
+              {staticSections.map((section, index) => {
+                const isActive = index === currentIndex
+                return (
+                  <a
+                    key={section.id}
+                    href={section.id === 'home' ? `/${lang}` : `/${lang}#${section.id}`}
+                    onClick={(e) => handleSectionClick(e, section.id)}
+                    className={`hover:text-[#FF5456] transition-colors cursor-pointer ${isActive ? 'text-[#FF5456]' : 'text-white'
+                      }`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    {section.label}
+                  </a>
+                )
+              })}
+            </div>
 
-          {/* Desktop navigation */}
-          <div className="hidden md:flex space-x-6" aria-label="Main navigation">
-            {staticSections.map((section, index) => {
-              const isActive = index === currentIndex
-              return (
-                <a
-                  key={section.id}
-                  href={section.id === 'home' ? '/' : `/#${section.id}`}
-                  onClick={(e) => handleSectionClick(e, section.id)}
-                  className={`hover:text-[#FF5456] transition-colors cursor-pointer ${isActive ? 'text-[#FF5456]' : 'text-white'
-                    }`}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  {section.label}
-                </a>
-              )
-            })}
+            <div className="hidden md:block">
+              <LanguageSwitcher lang={lang} />
+            </div>
+
+            {/* Mobile menu button */}
+            <button
+              className="md:hidden text-white hover:text-[#FF5456] transition-colors"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label={isMenuOpen ? (dictionary.closeMenu || 'Close menu') : (dictionary.openMenu || 'Open menu')}
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-menu"
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
 
           {/* Mobile menu */}
@@ -164,14 +175,14 @@ export default function Header({
                 ref={menuRef}
                 id="mobile-menu"
                 className="absolute top-[48px] left-0 right-0 bg-[#1a2433] p-4 md:hidden shadow-lg z-50"
-                aria-label="Mobile navigation"
+                aria-label={dictionary.mobileNavigation || 'Mobile navigation'}
               >
                 {staticSections.map((section, index) => {
                   const isActive = index === currentIndex
                   return (
                     <a
                       key={section.id}
-                      href={section.id === 'home' ? '/' : `/#${section.id}`}
+                      href={section.id === 'home' ? `/${lang}` : `/${lang}#${section.id}`}
                       onClick={(e) => {
                         handleSectionClick(e, section.id)
                         setIsMenuOpen(false)
@@ -184,6 +195,9 @@ export default function Header({
                     </a>
                   )
                 })}
+                <div className="py-4 border-t border-gray-700 mt-2">
+                  <LanguageSwitcher lang={lang} />
+                </div>
               </nav>
             </>
           )}

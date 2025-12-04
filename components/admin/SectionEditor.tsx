@@ -23,16 +23,21 @@ interface Section {
 interface Education {
   institution: string;
   degree: string;
+  degree_es?: string;
   period: string;
   description: string;
+  description_es?: string;
 }
 
 interface Experience {
   title: string;
+  title_es?: string;
   company: string;
   period: string;
   description: string;
+  description_es?: string;
   responsibilities: string[];
+  responsibilities_es?: string[];
 }
 
 interface SectionEditorProps {
@@ -69,14 +74,34 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
         break;
       case 'projects':
         initialContent = {
+          title: initialContent.title || section.title || 'Projects',
+          title_en: initialContent.title_en || initialContent.title || section.title || 'Projects',
+          title_es: initialContent.title_es || initialContent.title || section.title || 'Proyectos',
           description: initialContent.description || '',
+          description_en: initialContent.description_en || initialContent.description || '',
+          description_es: initialContent.description_es || '',
           featured: initialContent.featured || false
         };
         break;
       case 'blog':
         initialContent = {
+          title: initialContent.title || section.title || 'Blog',
+          title_en: initialContent.title_en || initialContent.title || section.title || 'Blog',
+          title_es: initialContent.title_es || initialContent.title || section.title || 'Blog',
           description: initialContent.description || '',
+          description_en: initialContent.description_en || initialContent.description || '',
+          description_es: initialContent.description_es || '',
           featured: initialContent.featured || false
+        };
+        break;
+      case 'skills':
+        initialContent = {
+          title: initialContent.title || section.title || 'Skills',
+          title_en: initialContent.title_en || initialContent.title || section.title || 'Skills',
+          title_es: initialContent.title_es || initialContent.title || section.title || 'Habilidades',
+          description: initialContent.description || '',
+          description_en: initialContent.description_en || initialContent.description || '',
+          description_es: initialContent.description_es || '',
         };
         break;
       case 'contact':
@@ -95,6 +120,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
       content: initialContent
     };
   });
+  const [language, setLanguage] = useState<'en' | 'es'>('en');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contentError, setContentError] = useState<string | null>(null);
   const [jsonEditorOpen, setJsonEditorOpen] = useState(false);
@@ -102,6 +128,8 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
   const [editedContent, setEditedContent] = useState(
     JSON.stringify(section.content, null, 2)
   );
+
+  const getFieldName = (base: string) => language === 'en' ? base : `${base}_es`;
 
   // Handle order changes outside of render
   const handleOrderChange = (value: string) => {
@@ -206,12 +234,13 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
   };
 
   const handleResponsibilityChange = (expIndex: number, respIndex: number, value: string) => {
+    const respField = language === 'en' ? 'responsibilities' : 'responsibilities_es';
     handleContentChange(JSON.stringify({
       ...editedSection.content,
       experiences: editedSection.content.experiences?.map((item: Experience, i: number) =>
         i === expIndex ? {
           ...item,
-          responsibilities: (item.responsibilities || []).map((r: string, rIndex: number) =>
+          [respField]: ((item as any)[respField] || []).map((r: string, rIndex: number) =>
             rIndex === respIndex ? value : r
           )
         } : item
@@ -220,24 +249,26 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
   };
 
   const addResponsibility = (expIndex: number) => {
+    const respField = language === 'en' ? 'responsibilities' : 'responsibilities_es';
     handleContentChange(JSON.stringify({
       ...editedSection.content,
       experiences: editedSection.content.experiences?.map((item: Experience, i: number) =>
         i === expIndex ? {
           ...item,
-          responsibilities: [...(item.responsibilities || []), '']
+          [respField]: [...((item as any)[respField] || []), '']
         } : item
       )
     }));
   };
 
   const removeResponsibility = (expIndex: number, respIndex: number) => {
+    const respField = language === 'en' ? 'responsibilities' : 'responsibilities_es';
     handleContentChange(JSON.stringify({
       ...editedSection.content,
       experiences: editedSection.content.experiences?.map((item: Experience, i: number) =>
         i === expIndex ? {
           ...item,
-          responsibilities: (item.responsibilities || []).filter((_, index) => index !== respIndex)
+          [respField]: ((item as any)[respField] || []).filter((_: any, index: number) => index !== respIndex)
         } : item
       )
     }));
@@ -292,26 +323,26 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
         return (
           <>
             <div className="space-y-2">
-              <Label className="text-slate-700 font-semibold">Headline</Label>
+              <Label className="text-slate-700 font-semibold">Headline ({language.toUpperCase()})</Label>
               <Input
-                value={editedSection.content.headline || ''}
+                value={editedSection.content[getFieldName('headline')] || ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
-                  headline: e.target.value
+                  [getFieldName('headline')]: e.target.value
                 }))}
-                placeholder="Enter a catchy headline"
+                placeholder={`Enter a catchy headline (${language})`}
                 className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-slate-700 font-semibold">Description</Label>
+              <Label className="text-slate-700 font-semibold">Description ({language.toUpperCase()})</Label>
               <Textarea
-                value={editedSection.content.description || ''}
+                value={editedSection.content[getFieldName('description')] || ''}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
-                  description: e.target.value
+                  [getFieldName('description')]: e.target.value
                 }))}
-                placeholder="Describe yourself and your work"
+                placeholder={`Describe yourself and your work (${language})`}
                 className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
               />
             </div>
@@ -322,35 +353,35 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
         return (
           <>
             <div className="space-y-2">
-              <Label className="text-slate-700 font-semibold">Description</Label>
+              <Label className="text-slate-700 font-semibold">Description ({language.toUpperCase()})</Label>
               <Textarea
-                value={editedSection.content.description || ''}
+                value={editedSection.content[getFieldName('description')] || ''}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
-                  description: e.target.value
+                  [getFieldName('description')]: e.target.value
                 }))}
-                placeholder="Tell your story"
+                placeholder={`Tell your story (${language})`}
                 className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-slate-700 font-semibold">Highlights (one per line)</Label>
+              <Label className="text-slate-700 font-semibold">Highlights (one per line) ({language.toUpperCase()})</Label>
               <Textarea
-                value={(editedSection.content.highlights || []).join('\n')}
+                value={(editedSection.content[getFieldName('highlights')] || []).join('\n')}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
-                  highlights: e.target.value.split('\n')
+                  [getFieldName('highlights')]: e.target.value.split('\n')
                 }))}
                 onBlur={(e: React.FocusEvent<HTMLTextAreaElement>) => {
                   handleContentChange(JSON.stringify({
                     ...editedSection.content,
-                    highlights: e.target.value
+                    [getFieldName('highlights')]: e.target.value
                       .split('\n')
                       .map((item) => item.trim())
                       .filter(Boolean)
                   }))
                 }}
-                placeholder="List your key achievements or highlights"
+                placeholder={`List your key achievements or highlights (${language})`}
                 className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
               />
             </div>
@@ -393,11 +424,11 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     />
                   </div>
                   <div>
-                    <Label className="text-gray-900">Degree</Label>
+                    <Label className="text-gray-900">Degree ({language.toUpperCase()})</Label>
                     <Input
-                      value={edu.degree}
-                      onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
-                      placeholder="Enter degree name"
+                      value={language === 'en' ? edu.degree : (edu.degree_es || '')}
+                      onChange={(e) => handleEducationChange(index, language === 'en' ? 'degree' : 'degree_es' as keyof Education, e.target.value)}
+                      placeholder={`Enter degree name (${language})`}
                       className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
@@ -411,11 +442,11 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     />
                   </div>
                   <div>
-                    <Label className="text-gray-900">Description</Label>
+                    <Label className="text-gray-900">Description ({language.toUpperCase()})</Label>
                     <Textarea
-                      value={edu.description}
-                      onChange={(e) => handleEducationChange(index, 'description', e.target.value)}
-                      placeholder="Describe your studies and achievements"
+                      value={language === 'en' ? edu.description : (edu.description_es || '')}
+                      onChange={(e) => handleEducationChange(index, language === 'en' ? 'description' : 'description_es' as keyof Education, e.target.value)}
+                      placeholder={`Describe your studies and achievements (${language})`}
                       className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
@@ -452,11 +483,11 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     </Button>
                   </div>
                   <div>
-                    <Label className="text-gray-900">Title</Label>
+                    <Label className="text-gray-900">Title ({language.toUpperCase()})</Label>
                     <Input
-                      value={exp.title}
-                      onChange={(e) => handleExperienceChange(index, 'title', e.target.value)}
-                      placeholder="Enter job title"
+                      value={language === 'en' ? exp.title : (exp.title_es || '')}
+                      onChange={(e) => handleExperienceChange(index, language === 'en' ? 'title' : 'title_es' as keyof Experience, e.target.value)}
+                      placeholder={`Enter job title (${language})`}
                       className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
@@ -479,17 +510,17 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     />
                   </div>
                   <div>
-                    <Label className="text-gray-900">Description</Label>
+                    <Label className="text-gray-900">Description ({language.toUpperCase()})</Label>
                     <Textarea
-                      value={exp.description}
-                      onChange={(e) => handleExperienceChange(index, 'description', e.target.value)}
-                      placeholder="Brief overview of your role"
+                      value={language === 'en' ? exp.description : (exp.description_es || '')}
+                      onChange={(e) => handleExperienceChange(index, language === 'en' ? 'description' : 'description_es' as keyof Experience, e.target.value)}
+                      placeholder={`Brief overview of your role (${language})`}
                       className="bg-white text-black placeholder:text-gray-500"
                     />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label className="text-gray-900">Responsibilities (one per line)</Label>
+                      <Label className="text-gray-900">Responsibilities (one per line) ({language.toUpperCase()})</Label>
                       <Button
                         type="button"
                         variant="ghost"
@@ -501,12 +532,12 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                         Add Responsibility
                       </Button>
                     </div>
-                    {exp.responsibilities?.map((responsibility, respIndex) => (
+                    {(language === 'en' ? exp.responsibilities : (exp.responsibilities_es || []))?.map((responsibility, respIndex) => (
                       <div key={respIndex} className="flex gap-2 mb-2">
                         <Input
                           value={responsibility}
                           onChange={(e) => handleResponsibilityChange(index, respIndex, e.target.value)}
-                          placeholder={`Responsibility ${respIndex + 1}`}
+                          placeholder={`Responsibility ${respIndex + 1} (${language})`}
                           className="bg-white text-black placeholder:text-gray-500"
                         />
                         <Button
@@ -543,14 +574,14 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-gray-900">City</Label>
+              <Label className="text-gray-900">City ({language.toUpperCase()})</Label>
               <Input
-                value={editedSection.content.city || ''}
+                value={editedSection.content[getFieldName('city')] || ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
-                  city: e.target.value
+                  [getFieldName('city')]: e.target.value
                 }))}
-                placeholder="Enter your city"
+                placeholder={`Enter your city (${language})`}
                 className="bg-white text-black placeholder:text-gray-500"
               />
             </div>
@@ -589,8 +620,109 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
 
       case 'blog':
         return (
-          <div className="p-4 text-center">
-            <p className="text-muted-foreground">Blog management is available in the Blog tab.</p>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-slate-700 font-semibold">Title (EN)</Label>
+                <Input
+                  value={editedSection.content.title_en || ''}
+                  onChange={(e) => handleContentChange(JSON.stringify({
+                    ...editedSection.content,
+                    title_en: e.target.value
+                  }))}
+                  placeholder="Blog"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-slate-700 font-semibold">Título (ES)</Label>
+                <Input
+                  value={editedSection.content.title_es || ''}
+                  onChange={(e) => handleContentChange(JSON.stringify({
+                    ...editedSection.content,
+                    title_es: e.target.value
+                  }))}
+                  placeholder="Blog"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-slate-700 font-semibold">Description (EN)</Label>
+                <Textarea
+                  value={editedSection.content.description_en || editedSection.content.description || ''}
+                  onChange={(e) => handleContentChange(JSON.stringify({
+                    ...editedSection.content,
+                    description_en: e.target.value
+                  }))}
+                  placeholder="Sharing insights and experiences in software development"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-slate-700 font-semibold">Descripción (ES)</Label>
+                <Textarea
+                  value={editedSection.content.description_es || ''}
+                  onChange={(e) => handleContentChange(JSON.stringify({
+                    ...editedSection.content,
+                    description_es: e.target.value
+                  }))}
+                  placeholder="Compartiendo ideas y experiencias de desarrollo"
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'skills':
+        return (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-slate-700 font-semibold">Title (EN)</Label>
+                <Input
+                  value={editedSection.content.title_en || ''}
+                  onChange={(e) => handleContentChange(JSON.stringify({
+                    ...editedSection.content,
+                    title_en: e.target.value
+                  }))}
+                  placeholder="Skills & Technologies"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-slate-700 font-semibold">Título (ES)</Label>
+                <Input
+                  value={editedSection.content.title_es || ''}
+                  onChange={(e) => handleContentChange(JSON.stringify({
+                    ...editedSection.content,
+                    title_es: e.target.value
+                  }))}
+                  placeholder="Habilidades y Tecnologías"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-slate-700 font-semibold">Description (EN)</Label>
+                <Textarea
+                  value={editedSection.content.description_en || editedSection.content.description || ''}
+                  onChange={(e) => handleContentChange(JSON.stringify({
+                    ...editedSection.content,
+                    description_en: e.target.value
+                  }))}
+                  placeholder="A comprehensive set of technical skills across various domains"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-slate-700 font-semibold">Descripción (ES)</Label>
+                <Textarea
+                  value={editedSection.content.description_es || ''}
+                  onChange={(e) => handleContentChange(JSON.stringify({
+                    ...editedSection.content,
+                    description_es: e.target.value
+                  }))}
+                  placeholder="Conjunto integral de habilidades técnicas en varios dominios"
+                />
+              </div>
+            </div>
           </div>
         );
 
@@ -622,6 +754,23 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                 onChange={(e) => handleOrderChange(e.target.value)}
                 className="w-20 border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
               />
+            </div>
+            <div className="flex items-center border rounded-md overflow-hidden border-slate-300">
+              <button
+                type="button"
+                onClick={() => setLanguage('en')}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${language === 'en' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+              >
+                English
+              </button>
+              <div className="w-px bg-slate-300 h-full"></div>
+              <button
+                type="button"
+                onClick={() => setLanguage('es')}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${language === 'es' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+              >
+                Español
+              </button>
             </div>
           </div>
           <Button

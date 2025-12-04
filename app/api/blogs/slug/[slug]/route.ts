@@ -1,19 +1,16 @@
 'use server';
 
-import { NextResponse } from 'next/server';
-import BlogModel from '@/models/Blog';
-import { connectToDatabase } from '@/lib/mongodb';
+import { NextRequest, NextResponse } from 'next/server';
+import { getBlogBySlug } from '@/lib/blog';
 
-interface RouteParams {
-    params: {
-        slug: string;
-    };
-}
+export async function GET(
+    _request: NextRequest,
+    context: { params: Promise<{ slug: string }> }
+) {
+    const { slug } = await context.params;
 
-export async function GET(request: Request, { params }: RouteParams) {
     try {
-        await connectToDatabase();
-        const blog = await BlogModel.findOne({ slug: params.slug }).lean();
+        const blog = await getBlogBySlug(slug);
 
         if (!blog) {
             return NextResponse.json({ error: 'Blog not found' }, { status: 404 });

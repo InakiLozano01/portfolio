@@ -23,3 +23,4 @@ Host: https://inakilozano.com
 
 # Sitemaps
 Sitemap: https://inakilozano.com/sitemap.xml
+Sitemap: https://inakilozano.dev/sitemap.xml

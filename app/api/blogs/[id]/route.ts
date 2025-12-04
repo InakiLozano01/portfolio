@@ -1,18 +1,25 @@
 'use server';
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import BlogModel from '@/models/Blog';
 import { normalizeBlogPayload } from '@/lib/blog-normalize';
 import { notifyBlogSubscribers } from '@/lib/server/blog-newsletter';
 
 export async function GET(
-    request: Request,
-    { params }: { params: { id: string } }
+    _request: NextRequest,
+    context: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await context.params;
+    if (!id || !id.trim() || !id.match(/^[a-fA-F0-9]{24}$/)) {
+        return NextResponse.json(
+            { error: 'Invalid blog id' },
+            { status: 400 }
+        );
+    }
     try {
         await connectToDatabase();
-        const blog = await BlogModel.findById(params.id);
+        const blog = await BlogModel.findById(id);
 
         if (!blog) {
             return NextResponse.json(
@@ -32,17 +39,24 @@ export async function GET(
 }
 
 export async function PUT(
-    request: Request,
-    { params }: { params: { id: string } }
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await context.params;
+    if (!id || !id.trim() || !id.match(/^[a-fA-F0-9]{24}$/)) {
+        return NextResponse.json(
+            { error: 'Invalid blog id' },
+            { status: 400 }
+        );
+    }
     try {
         const raw = await request.json();
         const body = normalizeBlogPayload(raw);
 
         await connectToDatabase();
-        const previous = await BlogModel.findById(params.id).lean();
+        const previous = await BlogModel.findById(id).lean();
         const blog = await BlogModel.findByIdAndUpdate(
-            params.id,
+            id,
             body,
             { new: true }
         );
@@ -70,12 +84,19 @@ export async function PUT(
 }
 
 export async function DELETE(
-    request: Request,
-    { params }: { params: { id: string } }
+    _request: NextRequest,
+    context: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await context.params;
+    if (!id || !id.trim() || !id.match(/^[a-fA-F0-9]{24}$/)) {
+        return NextResponse.json(
+            { error: 'Invalid blog id' },
+            { status: 400 }
+        );
+    }
     try {
         await connectToDatabase();
-        const blog = await BlogModel.findByIdAndDelete(params.id);
+        const blog = await BlogModel.findByIdAndDelete(id);
 
         if (!blog) {
             return NextResponse.json(

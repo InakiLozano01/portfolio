@@ -16,7 +16,7 @@ export async function GET() {
 
   try {
     // Check if request is from admin page
-    const headersList = headers();
+    const headersList = await headers();
     const referer = headersList.get('referer') || '';
     const isAdminRequest = referer.includes('/admin');
 

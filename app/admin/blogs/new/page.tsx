@@ -34,6 +34,11 @@ export default function NewBlogPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const handleBack = () => {
+        router.push('/admin#blog');
+        router.refresh();
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -156,15 +161,18 @@ export default function NewBlogPage() {
         setPendingTag(last);
     }, [pendingTag, commitPendingTag]);
 
-    const handleBack = () => {
-        router.push('/#blog');
-        router.refresh();
-    };
-
     return (
         <Card className="max-w-5xl mx-auto">
-            <CardHeader>
-                <CardTitle>New Blog</CardTitle>
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <CardTitle className="text-2xl font-semibold">New Blog</CardTitle>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleBack}
+                    className="text-slate-700"
+                >
+                    ← Back to Admin
+                </Button>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">

@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/mongodb'
-import Project from '@/models/Project'
-import '@/models/Skill'
+import { getProjectBySlug } from '@/lib/projects'
 
-interface Params {
-    params: {
-        slug: string
-    }
-}
-
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(
+    _request: NextRequest,
+    context: { params: Promise<{ slug: string }> }
+) {
+    const { slug } = await context.params
     try {
-        await connectToDatabase()
-        const project = await Project.findOne({ slug: params.slug })
-            .populate('technologies')
-            .lean()
+        const project = await getProjectBySlug(slug)
 
         if (!project) {
             return NextResponse.json(

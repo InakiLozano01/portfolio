@@ -1,7 +1,8 @@
+import { cache } from 'react'
 import { connectToDatabase } from '@/lib/mongodb'
 import Project, { IProject } from '@/models/Project'
-import { cache } from 'react'
 import { Types } from 'mongoose'
+import { slugify } from '@/lib/utils'
 
 interface Skill {
     _id: Types.ObjectId;
@@ -19,15 +20,49 @@ interface PopulatedProject extends Omit<IProject, 'technologies'> {
     technologies: Skill[];
 }
 
-export const getProjectBySlug = cache(async (slug: string) => {
+export const getProjectBySlug = async (slug: string) => {
     await connectToDatabase()
 
-    const project = await Project.findOne({ slug })
+    const normalizedSlug = slug?.toString().trim().toLowerCase()
+
+    let project = await Project.findOne({ slug: normalizedSlug })
         .populate('technologies')
         .lean()
         .exec() as PopulatedProject | null
 
-    if (!project) return null
+    if (!project && normalizedSlug) {
+        // Fallback: try to match by slug case-insensitively or by slugified titles
+        const candidates = await Project.find({
+            $or: [
+                { slug: { $regex: `^${normalizedSlug}$`, $options: 'i' } },
+                { title: { $exists: true } },
+                { title_en: { $exists: true } },
+                { title_es: { $exists: true } },
+                { slug: { $regex: normalizedSlug, $options: 'i' } },
+            ],
+        })
+            .populate('technologies')
+            .lean()
+            .exec()
+            .then((rows) => rows as unknown as PopulatedProject[])
+
+        project = candidates.find((p: PopulatedProject) => {
+            const slugs = [
+                p.slug,
+                slugify(p.title || ''),
+                slugify((p as any).title_en || ''),
+                slugify((p as any).title_es || ''),
+            ]
+                .filter(Boolean)
+                .map((s) => s.toLowerCase())
+            return slugs.includes(normalizedSlug)
+        }) || null
+    }
+
+    if (!project) {
+        console.warn('[projects] not found for slug', normalizedSlug)
+        return null
+    }
 
     return {
         ...project,
@@ -37,7 +72,7 @@ export const getProjectBySlug = cache(async (slug: string) => {
             _id: tech._id.toString()
         }))
     }
-})
+}
 
 export const getAllProjects = cache(async () => {
     await connectToDatabase()

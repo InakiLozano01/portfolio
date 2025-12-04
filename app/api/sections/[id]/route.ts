@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { getCachedSections, clearSectionsCache } from '@/lib/cache';
 import { SectionModel } from '@/models/Section';
@@ -11,9 +11,10 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   // During build time, return empty data
   if (process.env.SKIP_DB_DURING_BUILD === 'true') {
     console.log('[MongoDB] Skipping connection during build');
@@ -22,16 +23,16 @@ export async function GET(
 
   try {
     // Check if request is from admin page
-    const headersList = headers();
+    const headersList = await headers();
     const referer = headersList.get('referer') || '';
     const isAdminRequest = referer.includes('/admin');
 
     // Try to find section by title first
-    const title = params.id.charAt(0).toUpperCase() + params.id.slice(1).toLowerCase();
+    const title = id.charAt(0).toUpperCase() + id.slice(1).toLowerCase();
     console.log('[Sections API] Looking for section with title:', title);
 
     // Try to get from cache first
-    const cachedSections = await getCachedSections(params.id);
+    const cachedSections = await getCachedSections(id);
     const sections = Array.isArray(cachedSections)
       ? cachedSections
       : cachedSections
@@ -45,8 +46,8 @@ export async function GET(
         }
 
         const sectionTitle = typeof section.title === 'string' ? section.title.toLowerCase() : '';
-        const matchesTitle = sectionTitle === params.id.toLowerCase();
-        const matchesId = typeof section._id === 'string' && section._id === params.id;
+        const matchesTitle = sectionTitle === id.toLowerCase();
+        const matchesId = typeof section._id === 'string' && section._id === id;
 
         return matchesTitle || matchesId;
       }) ?? sections[0];
@@ -90,10 +91,10 @@ export async function GET(
     }
 
     // If not found by title and the ID looks like a MongoDB ObjectId, try finding by ID
-    if (mongoose.Types.ObjectId.isValid(params.id)) {
-      console.log('[Sections API] Looking for section with ID:', params.id);
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      console.log('[Sections API] Looking for section with ID:', id);
       const sectionById = await SectionModel.findOne({
-        _id: params.id,
+        _id: id,
         ...visibilityQuery
       });
       if (sectionById) {
@@ -117,15 +118,16 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   try {
     const body = await request.json();
     await connectToDatabase();
 
     // Try to update by title first
-    const title = params.id.charAt(0).toUpperCase() + params.id.slice(1).toLowerCase();
+    const title = id.charAt(0).toUpperCase() + id.slice(1).toLowerCase();
     const sectionByTitle = await SectionModel.findOneAndUpdate(
       { title },
       { $set: body },
@@ -139,9 +141,9 @@ export async function PUT(
     }
 
     // If not found by title and the ID looks like a MongoDB ObjectId, try updating by ID
-    if (mongoose.Types.ObjectId.isValid(params.id)) {
+    if (mongoose.Types.ObjectId.isValid(id)) {
       const sectionById = await SectionModel.findByIdAndUpdate(
-        params.id,
+        id,
         body,
         { new: true }
       );
@@ -167,21 +169,22 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   try {
     await connectToDatabase();
 
     // Only allow deletion by valid ObjectId
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: 'Invalid section ID' },
         { status: 400 }
       );
     }
 
-    const section = await SectionModel.findByIdAndDelete(params.id);
+    const section = await SectionModel.findByIdAndDelete(id);
 
     if (!section) {
       return NextResponse.json(

@@ -141,6 +141,10 @@ export default function BlogManager() {
     }
 
     const handleDelete = async (id: string) => {
+        const userInput = prompt('Type DELETE to confirm removing this blog post')
+        if (!userInput || userInput.trim().toUpperCase() !== 'DELETE') {
+            return
+        }
         try {
             const response = await fetch(`/api/blogs/${id}`, {
                 method: 'DELETE',
@@ -401,9 +405,7 @@ export default function BlogManager() {
                                                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                             onClick={() => {
                                                                 if (blog._id) {
-                                                                    if (confirm('Are you sure you want to delete this blog post?')) {
-                                                                        handleDelete(blog._id);
-                                                                    }
+                                                                    handleDelete(blog._id);
                                                                 } else {
                                                                     toast({
                                                                         title: "Error",

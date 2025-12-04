@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import BlogModel from '@/models/Blog'
 import Subscriber from '@/models/Subscriber'
@@ -6,9 +6,11 @@ import { sendNewsletterEmail } from '@/lib/email'
 import { buildNewsletterEmail } from '@/lib/newsletter-template'
 
 export async function POST(
-    request: Request,
-    { params }: { params: { id: string } }
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await context.params
+
     try {
         const { subscriberIds } = await request.json() as { subscriberIds: string[] }
         if (!Array.isArray(subscriberIds) || subscriberIds.length === 0) {
@@ -17,7 +19,7 @@ export async function POST(
 
         await connectToDatabase()
 
-        const blog = await BlogModel.findById(params.id).lean()
+        const blog = await BlogModel.findById(id).lean()
         if (!blog) {
             return NextResponse.json({ error: 'Blog not found' }, { status: 404 })
         }
@@ -44,4 +46,3 @@ export async function POST(
         return NextResponse.json({ error: 'Failed to send newsletter' }, { status: 500 })
     }
 }
-

@@ -4,12 +4,20 @@ import { z } from 'zod';
 // Content schemas for each section type (for reference/documentation)
 export const HomeContent = z.object({
   headline: z.string(),
-  description: z.string()
+  description: z.string(),
+  headline_en: z.string().optional(),
+  headline_es: z.string().optional(),
+  description_en: z.string().optional(),
+  description_es: z.string().optional()
 });
 
 export const AboutContent = z.object({
   description: z.string(),
-  highlights: z.array(z.string())
+  highlights: z.array(z.string()),
+  description_en: z.string().optional(),
+  description_es: z.string().optional(),
+  highlights_en: z.array(z.string()).optional(),
+  highlights_es: z.array(z.string()).optional()
 });
 
 export const ExperienceEntry = z.object({
@@ -17,7 +25,13 @@ export const ExperienceEntry = z.object({
   company: z.string(),
   period: z.string(),
   description: z.string().optional(),
-  responsibilities: z.array(z.string())
+  responsibilities: z.array(z.string()),
+  title_en: z.string().optional(),
+  title_es: z.string().optional(),
+  description_en: z.string().optional(),
+  description_es: z.string().optional(),
+  responsibilities_en: z.array(z.string()).optional(),
+  responsibilities_es: z.array(z.string()).optional()
 });
 
 export const ExperienceContent = z.object({
@@ -28,7 +42,11 @@ export const EducationEntry = z.object({
   institution: z.string(),
   degree: z.string(),
   period: z.string(),
-  description: z.string()
+  description: z.string(),
+  degree_en: z.string().optional(),
+  degree_es: z.string().optional(),
+  description_en: z.string().optional(),
+  description_es: z.string().optional()
 });
 
 export const EducationContent = z.object({
@@ -36,17 +54,29 @@ export const EducationContent = z.object({
 });
 
 export const SkillsContent = z.object({
-  description: z.string()
+  title: z.string().optional(),
+  title_en: z.string().optional(),
+  title_es: z.string().optional(),
+  description: z.string(),
+  description_en: z.string().optional(),
+  description_es: z.string().optional()
 });
 
 export const BlogContent = z.object({
+  title: z.string().optional(),
+  title_en: z.string().optional(),
+  title_es: z.string().optional(),
   description: z.string(),
-  featured: z.boolean().optional()
+  featured: z.boolean().optional(),
+  description_en: z.string().optional(),
+  description_es: z.string().optional()
 });
 
 export const ContactContent = z.object({
   email: z.string(),
   city: z.string(),
+  city_en: z.string().optional(),
+  city_es: z.string().optional(),
   social: z.object({
     github: z.string().url(),
     linkedin: z.string().url()

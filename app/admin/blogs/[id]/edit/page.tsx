@@ -213,7 +213,7 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
     };
 
     const handleBack = () => {
-        router.push('/#blog');
+        router.push('/admin#blog');
         router.refresh();
     };
 
@@ -229,8 +229,18 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
 
     return (
         <Card className="max-w-5xl mx-auto">
-            <CardHeader>
-                <CardTitle>Edit Blog</CardTitle>
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <CardTitle className="text-2xl font-semibold">Edit Blog</CardTitle>
+                <div className="flex gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleBack}
+                        className="text-slate-700"
+                    >
+                        ← Back to Admin
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">

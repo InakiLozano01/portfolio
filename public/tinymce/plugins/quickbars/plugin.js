@@ -1,1 +1,447 @@
-!function(){"use strict";var e=tinymce.util.Tools.resolve("tinymce.PluginManager");let t=(e,t,o)=>{var r;return!!o(e,t.prototype)||(null===(r=e.constructor)||void 0===r?void 0:r.name)===t.name},o=e=>{let o=typeof e;return null===e?"null":"object"===o&&Array.isArray(e)?"array":"object"===o&&t(e,String,(e,t)=>t.isPrototypeOf(e))?"string":o},r=e=>t=>typeof t===e,i=e=>"string"===o(e),n=r("boolean"),a=e=>null==e,l=e=>!a(e),s=r("function"),u=e=>t=>t.options.get(e),c=e=>{let t=e.options.register,o=e=>t=>{let o=n(t)||i(t);return o?n(t)?{value:t?e:"",valid:o}:{value:t.trim(),valid:o}:{valid:!1,message:"Must be a boolean or string."}},r="bold italic | quicklink h2 h3 blockquote";t("quickbars_selection_toolbar",{processor:o(r),default:r});let a="quickimage quicktable";t("quickbars_insert_toolbar",{processor:o(a),default:a});let l="alignleft aligncenter alignright";t("quickbars_image_toolbar",{processor:o(l),default:l})},d=u("quickbars_selection_toolbar"),m=u("quickbars_insert_toolbar"),h=u("quickbars_image_toolbar"),g=0,f=e=>{let t=new Date().getTime();return e+"_"+Math.floor(1e9*Math.random())+ ++g+String(t)},b=(e,t,o)=>{e.execCommand("mceInsertTable",!1,{rows:o,columns:t})},p=(e,t,o)=>{let r=e.editorUpload.blobCache,i=r.create(f("mceu"),o,t);r.add(i),e.insertContent(e.dom.createHTML("img",{src:i.blobUri()}))},v=e=>new Promise(t=>{let o=new FileReader;o.onloadend=()=>{t(o.result.split(",")[1])},o.readAsDataURL(e)});var y=tinymce.util.Tools.resolve("tinymce.util.Delay");let k=e=>new Promise(t=>{let o=!1,r=document.createElement("input");r.type="file",r.accept="image/*",r.style.position="fixed",r.style.left="0",r.style.top="0",r.style.opacity="0.001",document.body.appendChild(r);let i=e=>{var i;o||(null===(i=r.parentNode)||void 0===i||i.removeChild(r),o=!0,t(e))},n=e=>{i(Array.prototype.slice.call(e.target.files))};r.addEventListener("input",n),r.addEventListener("change",n);let a=t=>{let r=()=>{i([])};o||("focusin"===t.type?y.setEditorTimeout(e,r,1e3):r()),e.off("focusin remove",a)};e.on("focusin remove",a),r.click()}),w=e=>{e.ui.registry.addButton("quickimage",{icon:"image",tooltip:"Insert image",onAction:()=>{k(e).then(t=>{if(t.length>0){let o=t[0];v(o).then(t=>{p(e,t,o)})}})}}),e.ui.registry.addButton("quicktable",{icon:"table",tooltip:"Insert table",onAction:()=>{b(e,2,2)}})},T=()=>!1;class N{constructor(e,t){this.tag=e,this.value=t}static some(e){return new N(!0,e)}static none(){return N.singletonNone}fold(e,t){return this.tag?t(this.value):e()}isSome(){return this.tag}isNone(){return!this.tag}map(e){return this.tag?N.some(e(this.value)):N.none()}bind(e){return this.tag?e(this.value):N.none()}exists(e){return this.tag&&e(this.value)}forall(e){return!this.tag||e(this.value)}filter(e){return!this.tag||e(this.value)?this:N.none()}getOr(e){return this.tag?this.value:e}or(e){return this.tag?this:e}getOrThunk(e){return this.tag?this.value:e()}orThunk(e){return this.tag?this:e()}getOrDie(e){if(this.tag)return this.value;throw Error(null!=e?e:"Called getOrDie on None")}static from(e){return l(e)?N.some(e):N.none()}getOrNull(){return this.tag?this.value:null}getOrUndefined(){return this.value}each(e){this.tag&&e(this.value)}toArray(){return this.tag?[this.value]:[]}toString(){return this.tag?`some(${this.value})`:"none()"}}N.singletonNone=new N(!1),"undefined"!=typeof window?window:Function("return this;")();let E=e=>e.dom.nodeName.toLowerCase(),q=(e,t)=>{let o=e.dom;return!!o&&!!o.hasAttribute&&o.hasAttribute(t)};var M=(e,t,o,r,i)=>e(o,r)?N.some(o):s(i)&&i(o)?N.none():t(o,r,i);let _=e=>{if(null==e)throw Error("Node cannot be null or undefined");return{dom:e}},C={fromHtml:(e,t)=>{let o=(t||document).createElement("div");if(o.innerHTML=e,!o.hasChildNodes()||o.childNodes.length>1){let t="HTML does not have a single root node";throw console.error(t,e),Error(t)}return _(o.childNodes[0])},fromTag:(e,t)=>_((t||document).createElement(e)),fromText:(e,t)=>_((t||document).createTextNode(e)),fromDom:_,fromPoint:(e,t,o)=>N.from(e.dom.elementFromPoint(t,o)).map(_)},S=(e,t)=>{let o=e.dom;if(1!==o.nodeType)return!1;if(void 0!==o.matches)return o.matches(t);if(void 0!==o.msMatchesSelector)return o.msMatchesSelector(t);if(void 0!==o.webkitMatchesSelector)return o.webkitMatchesSelector(t);if(void 0!==o.mozMatchesSelector)return o.mozMatchesSelector(t);throw Error("Browser lacks native selectors")},x=(e,t,o)=>{let r=e.dom,i=s(o)?o:T;for(;r.parentNode;){r=r.parentNode;let e=C.fromDom(r);if(t(e))return N.some(e);if(i(e))break}return N.none()},A=(e,t,o)=>M((e,t)=>t(e),x,e,t,o),L=(e,t,o)=>A(e,t,o).isSome(),D=(e,t,o)=>x(e,e=>S(e,t),o),O=(e,t,o)=>M((e,t)=>S(e,t),D,e,t,o),P=e=>{let t=m(e);t.length>0&&e.ui.registry.addContextToolbar("quickblock",{predicate:t=>{let o=C.fromDom(t),r=e.schema.getTextBlockElements(),i=t=>t.dom===e.getBody();return!q(o,"data-mce-bogus")&&O(o,'table,[data-mce-bogus="all"]',i).fold(()=>L(o,t=>E(t) in r&&e.dom.isEmpty(t.dom),i),T)},items:t,position:"line",scope:"editor"})},B=e=>void 0!==e.dom.classList,I=(e,t)=>B(e)&&e.dom.classList.contains(t),U=e=>{let t=t=>e.dom.isEditable(t),o=e=>t(e.parentElement),r=e=>{let t="FIGURE"===e.nodeName&&/image/i.test(e.className),r="IMG"===e.nodeName||t,i=I(C.fromDom(e),"mce-pagebreak");return r&&o(e)&&!i},i=h(e);i.length>0&&e.ui.registry.addContextToolbar("imageselection",{predicate:r,items:i,position:"node"});let n=d(e);n.length>0&&e.ui.registry.addContextToolbar("textselection",{predicate:o=>!r(o)&&!e.selection.isCollapsed()&&t(o),items:n,position:"selection",scope:"editor"})};e.add("quickbars",e=>{c(e),w(e),P(e),U(e)})}();
+/**
+ * TinyMCE version 6.8.2 (2023-12-11)
+ */
+
+(function () {
+    'use strict';
+
+    var global$1 = tinymce.util.Tools.resolve('tinymce.PluginManager');
+
+    const hasProto = (v, constructor, predicate) => {
+      var _a;
+      if (predicate(v, constructor.prototype)) {
+        return true;
+      } else {
+        return ((_a = v.constructor) === null || _a === void 0 ? void 0 : _a.name) === constructor.name;
+      }
+    };
+    const typeOf = x => {
+      const t = typeof x;
+      if (x === null) {
+        return 'null';
+      } else if (t === 'object' && Array.isArray(x)) {
+        return 'array';
+      } else if (t === 'object' && hasProto(x, String, (o, proto) => proto.isPrototypeOf(o))) {
+        return 'string';
+      } else {
+        return t;
+      }
+    };
+    const isType = type => value => typeOf(value) === type;
+    const isSimpleType = type => value => typeof value === type;
+    const isString = isType('string');
+    const isBoolean = isSimpleType('boolean');
+    const isNullable = a => a === null || a === undefined;
+    const isNonNullable = a => !isNullable(a);
+    const isFunction = isSimpleType('function');
+
+    const option = name => editor => editor.options.get(name);
+    const register = editor => {
+      const registerOption = editor.options.register;
+      const toolbarProcessor = defaultValue => value => {
+        const valid = isBoolean(value) || isString(value);
+        if (valid) {
+          if (isBoolean(value)) {
+            return {
+              value: value ? defaultValue : '',
+              valid
+            };
+          } else {
+            return {
+              value: value.trim(),
+              valid
+            };
+          }
+        } else {
+          return {
+            valid: false,
+            message: 'Must be a boolean or string.'
+          };
+        }
+      };
+      const defaultSelectionToolbar = 'bold italic | quicklink h2 h3 blockquote';
+      registerOption('quickbars_selection_toolbar', {
+        processor: toolbarProcessor(defaultSelectionToolbar),
+        default: defaultSelectionToolbar
+      });
+      const defaultInsertToolbar = 'quickimage quicktable';
+      registerOption('quickbars_insert_toolbar', {
+        processor: toolbarProcessor(defaultInsertToolbar),
+        default: defaultInsertToolbar
+      });
+      const defaultImageToolbar = 'alignleft aligncenter alignright';
+      registerOption('quickbars_image_toolbar', {
+        processor: toolbarProcessor(defaultImageToolbar),
+        default: defaultImageToolbar
+      });
+    };
+    const getTextSelectionToolbarItems = option('quickbars_selection_toolbar');
+    const getInsertToolbarItems = option('quickbars_insert_toolbar');
+    const getImageToolbarItems = option('quickbars_image_toolbar');
+
+    let unique = 0;
+    const generate = prefix => {
+      const date = new Date();
+      const time = date.getTime();
+      const random = Math.floor(Math.random() * 1000000000);
+      unique++;
+      return prefix + '_' + random + unique + String(time);
+    };
+
+    const insertTable = (editor, columns, rows) => {
+      editor.execCommand('mceInsertTable', false, {
+        rows,
+        columns
+      });
+    };
+    const insertBlob = (editor, base64, blob) => {
+      const blobCache = editor.editorUpload.blobCache;
+      const blobInfo = blobCache.create(generate('mceu'), blob, base64);
+      blobCache.add(blobInfo);
+      editor.insertContent(editor.dom.createHTML('img', { src: blobInfo.blobUri() }));
+    };
+
+    const blobToBase64 = blob => {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result.split(',')[1]);
+        };
+        reader.readAsDataURL(blob);
+      });
+    };
+
+    var global = tinymce.util.Tools.resolve('tinymce.util.Delay');
+
+    const pickFile = editor => new Promise(resolve => {
+      let resolved = false;
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.style.position = 'fixed';
+      fileInput.style.left = '0';
+      fileInput.style.top = '0';
+      fileInput.style.opacity = '0.001';
+      document.body.appendChild(fileInput);
+      const resolveFileInput = value => {
+        var _a;
+        if (!resolved) {
+          (_a = fileInput.parentNode) === null || _a === void 0 ? void 0 : _a.removeChild(fileInput);
+          resolved = true;
+          resolve(value);
+        }
+      };
+      const changeHandler = e => {
+        resolveFileInput(Array.prototype.slice.call(e.target.files));
+      };
+      fileInput.addEventListener('input', changeHandler);
+      fileInput.addEventListener('change', changeHandler);
+      const cancelHandler = e => {
+        const cleanup = () => {
+          resolveFileInput([]);
+        };
+        if (!resolved) {
+          if (e.type === 'focusin') {
+            global.setEditorTimeout(editor, cleanup, 1000);
+          } else {
+            cleanup();
+          }
+        }
+        editor.off('focusin remove', cancelHandler);
+      };
+      editor.on('focusin remove', cancelHandler);
+      fileInput.click();
+    });
+
+    const setupButtons = editor => {
+      editor.ui.registry.addButton('quickimage', {
+        icon: 'image',
+        tooltip: 'Insert image',
+        onAction: () => {
+          pickFile(editor).then(files => {
+            if (files.length > 0) {
+              const blob = files[0];
+              blobToBase64(blob).then(base64 => {
+                insertBlob(editor, base64, blob);
+              });
+            }
+          });
+        }
+      });
+      editor.ui.registry.addButton('quicktable', {
+        icon: 'table',
+        tooltip: 'Insert table',
+        onAction: () => {
+          insertTable(editor, 2, 2);
+        }
+      });
+    };
+
+    const constant = value => {
+      return () => {
+        return value;
+      };
+    };
+    const never = constant(false);
+
+    class Optional {
+      constructor(tag, value) {
+        this.tag = tag;
+        this.value = value;
+      }
+      static some(value) {
+        return new Optional(true, value);
+      }
+      static none() {
+        return Optional.singletonNone;
+      }
+      fold(onNone, onSome) {
+        if (this.tag) {
+          return onSome(this.value);
+        } else {
+          return onNone();
+        }
+      }
+      isSome() {
+        return this.tag;
+      }
+      isNone() {
+        return !this.tag;
+      }
+      map(mapper) {
+        if (this.tag) {
+          return Optional.some(mapper(this.value));
+        } else {
+          return Optional.none();
+        }
+      }
+      bind(binder) {
+        if (this.tag) {
+          return binder(this.value);
+        } else {
+          return Optional.none();
+        }
+      }
+      exists(predicate) {
+        return this.tag && predicate(this.value);
+      }
+      forall(predicate) {
+        return !this.tag || predicate(this.value);
+      }
+      filter(predicate) {
+        if (!this.tag || predicate(this.value)) {
+          return this;
+        } else {
+          return Optional.none();
+        }
+      }
+      getOr(replacement) {
+        return this.tag ? this.value : replacement;
+      }
+      or(replacement) {
+        return this.tag ? this : replacement;
+      }
+      getOrThunk(thunk) {
+        return this.tag ? this.value : thunk();
+      }
+      orThunk(thunk) {
+        return this.tag ? this : thunk();
+      }
+      getOrDie(message) {
+        if (!this.tag) {
+          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+        } else {
+          return this.value;
+        }
+      }
+      static from(value) {
+        return isNonNullable(value) ? Optional.some(value) : Optional.none();
+      }
+      getOrNull() {
+        return this.tag ? this.value : null;
+      }
+      getOrUndefined() {
+        return this.value;
+      }
+      each(worker) {
+        if (this.tag) {
+          worker(this.value);
+        }
+      }
+      toArray() {
+        return this.tag ? [this.value] : [];
+      }
+      toString() {
+        return this.tag ? `some(${ this.value })` : 'none()';
+      }
+    }
+    Optional.singletonNone = new Optional(false);
+
+    typeof window !== 'undefined' ? window : Function('return this;')();
+
+    const ELEMENT = 1;
+
+    const name = element => {
+      const r = element.dom.nodeName;
+      return r.toLowerCase();
+    };
+
+    const has$1 = (element, key) => {
+      const dom = element.dom;
+      return dom && dom.hasAttribute ? dom.hasAttribute(key) : false;
+    };
+
+    var ClosestOrAncestor = (is, ancestor, scope, a, isRoot) => {
+      if (is(scope, a)) {
+        return Optional.some(scope);
+      } else if (isFunction(isRoot) && isRoot(scope)) {
+        return Optional.none();
+      } else {
+        return ancestor(scope, a, isRoot);
+      }
+    };
+
+    const fromHtml = (html, scope) => {
+      const doc = scope || document;
+      const div = doc.createElement('div');
+      div.innerHTML = html;
+      if (!div.hasChildNodes() || div.childNodes.length > 1) {
+        const message = 'HTML does not have a single root node';
+        console.error(message, html);
+        throw new Error(message);
+      }
+      return fromDom(div.childNodes[0]);
+    };
+    const fromTag = (tag, scope) => {
+      const doc = scope || document;
+      const node = doc.createElement(tag);
+      return fromDom(node);
+    };
+    const fromText = (text, scope) => {
+      const doc = scope || document;
+      const node = doc.createTextNode(text);
+      return fromDom(node);
+    };
+    const fromDom = node => {
+      if (node === null || node === undefined) {
+        throw new Error('Node cannot be null or undefined');
+      }
+      return { dom: node };
+    };
+    const fromPoint = (docElm, x, y) => Optional.from(docElm.dom.elementFromPoint(x, y)).map(fromDom);
+    const SugarElement = {
+      fromHtml,
+      fromTag,
+      fromText,
+      fromDom,
+      fromPoint
+    };
+
+    const is = (element, selector) => {
+      const dom = element.dom;
+      if (dom.nodeType !== ELEMENT) {
+        return false;
+      } else {
+        const elem = dom;
+        if (elem.matches !== undefined) {
+          return elem.matches(selector);
+        } else if (elem.msMatchesSelector !== undefined) {
+          return elem.msMatchesSelector(selector);
+        } else if (elem.webkitMatchesSelector !== undefined) {
+          return elem.webkitMatchesSelector(selector);
+        } else if (elem.mozMatchesSelector !== undefined) {
+          return elem.mozMatchesSelector(selector);
+        } else {
+          throw new Error('Browser lacks native selectors');
+        }
+      }
+    };
+
+    const ancestor$1 = (scope, predicate, isRoot) => {
+      let element = scope.dom;
+      const stop = isFunction(isRoot) ? isRoot : never;
+      while (element.parentNode) {
+        element = element.parentNode;
+        const el = SugarElement.fromDom(element);
+        if (predicate(el)) {
+          return Optional.some(el);
+        } else if (stop(el)) {
+          break;
+        }
+      }
+      return Optional.none();
+    };
+    const closest$2 = (scope, predicate, isRoot) => {
+      const is = (s, test) => test(s);
+      return ClosestOrAncestor(is, ancestor$1, scope, predicate, isRoot);
+    };
+
+    const closest$1 = (scope, predicate, isRoot) => closest$2(scope, predicate, isRoot).isSome();
+
+    const ancestor = (scope, selector, isRoot) => ancestor$1(scope, e => is(e, selector), isRoot);
+    const closest = (scope, selector, isRoot) => {
+      const is$1 = (element, selector) => is(element, selector);
+      return ClosestOrAncestor(is$1, ancestor, scope, selector, isRoot);
+    };
+
+    const addToEditor$1 = editor => {
+      const insertToolbarItems = getInsertToolbarItems(editor);
+      if (insertToolbarItems.length > 0) {
+        editor.ui.registry.addContextToolbar('quickblock', {
+          predicate: node => {
+            const sugarNode = SugarElement.fromDom(node);
+            const textBlockElementsMap = editor.schema.getTextBlockElements();
+            const isRoot = elem => elem.dom === editor.getBody();
+            return !has$1(sugarNode, 'data-mce-bogus') && closest(sugarNode, 'table,[data-mce-bogus="all"]', isRoot).fold(() => closest$1(sugarNode, elem => name(elem) in textBlockElementsMap && editor.dom.isEmpty(elem.dom), isRoot), never);
+          },
+          items: insertToolbarItems,
+          position: 'line',
+          scope: 'editor'
+        });
+      }
+    };
+
+    const supports = element => element.dom.classList !== undefined;
+
+    const has = (element, clazz) => supports(element) && element.dom.classList.contains(clazz);
+
+    const addToEditor = editor => {
+      const isEditable = node => editor.dom.isEditable(node);
+      const isInEditableContext = el => isEditable(el.parentElement);
+      const isImage = node => {
+        const isImageFigure = node.nodeName === 'FIGURE' && /image/i.test(node.className);
+        const isImage = node.nodeName === 'IMG' || isImageFigure;
+        const isPagebreak = has(SugarElement.fromDom(node), 'mce-pagebreak');
+        return isImage && isInEditableContext(node) && !isPagebreak;
+      };
+      const imageToolbarItems = getImageToolbarItems(editor);
+      if (imageToolbarItems.length > 0) {
+        editor.ui.registry.addContextToolbar('imageselection', {
+          predicate: isImage,
+          items: imageToolbarItems,
+          position: 'node'
+        });
+      }
+      const textToolbarItems = getTextSelectionToolbarItems(editor);
+      if (textToolbarItems.length > 0) {
+        editor.ui.registry.addContextToolbar('textselection', {
+          predicate: node => !isImage(node) && !editor.selection.isCollapsed() && isEditable(node),
+          items: textToolbarItems,
+          position: 'selection',
+          scope: 'editor'
+        });
+      }
+    };
+
+    var Plugin = () => {
+      global$1.add('quickbars', editor => {
+        register(editor);
+        setupButtons(editor);
+        addToEditor$1(editor);
+        addToEditor(editor);
+      });
+    };
+
+    Plugin();
+
+})();

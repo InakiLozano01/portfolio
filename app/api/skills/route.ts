@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
-  const headersList = headers();
+  const headersList = await headers();
   console.log('[Skills API] Received GET request from:', headersList.get('user-agent'));
   console.log('[Skills API] Environment:', {
     SKIP_DB_DURING_BUILD: process.env.SKIP_DB_DURING_BUILD,

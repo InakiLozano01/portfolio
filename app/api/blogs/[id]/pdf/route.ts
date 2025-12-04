@@ -1,6 +1,6 @@
 'use server'
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import path from 'path'
@@ -8,10 +8,9 @@ import fs from 'fs/promises'
 import { connectToDatabase } from '@/lib/mongodb'
 import Blog from '@/models/Blog'
 
-interface Params { params: { id: string } }
-
-export async function POST(req: Request, { params }: Params) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await ctx.params
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -28,7 +27,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     await connectToDatabase()
-    const blog = await Blog.findById(params.id)
+    const blog = await Blog.findById(id)
     if (!blog) return NextResponse.json({ error: 'Blog not found' }, { status: 404 })
 
     const bytes = await file.arrayBuffer()
@@ -51,4 +50,3 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: 'Failed to upload PDF' }, { status: 500 })
   }
 }
-

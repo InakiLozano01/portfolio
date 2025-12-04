@@ -35,24 +35,24 @@ export async function POST(request: NextRequest) {
             case 'projects':
                 await invalidateCache('projects')
                 revalidatePath('/projects')
-                revalidateTag('projects')
+                revalidateTag('projects', 'max')
                 break
 
             case 'sections':
                 await clearSectionsCache()
                 revalidatePath('/', 'layout')
-                revalidateTag('sections')
+                revalidateTag('sections', 'max')
                 break
 
             case 'skills':
                 await invalidateCache('skills')
-                revalidateTag('skills')
+                revalidateTag('skills', 'max')
                 break
 
             case 'blogs':
                 await invalidateCache('blogs')
                 revalidatePath('/blog')
-                revalidateTag('blogs')
+                revalidateTag('blogs', 'max')
                 break
 
             default:

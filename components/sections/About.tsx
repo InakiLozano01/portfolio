@@ -6,7 +6,11 @@ import { useEffect, useState } from 'react'
 import type { AboutContent } from '@/models/Section'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 
-export default function About() {
+interface AboutProps {
+  lang?: 'en' | 'es';
+}
+
+export default function About({ lang = 'en' }: AboutProps) {
   const [content, setContent] = useState<AboutContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -35,6 +39,18 @@ export default function About() {
   if (error) return <div role="alert" className="text-center text-red-500">{error}</div>
   if (!content) return null
 
+  // Get localized content
+  const description = (lang === 'en' ? content.description_en : content.description_es) || content.description
+  const highlights = (lang === 'en' ? content.highlights_en : content.highlights_es) || content.highlights
+
+  // Labels
+  const labels = {
+    aboutMe: lang === 'en' ? 'About Me' : 'Sobre mí',
+    hobbies: lang === 'en' ? 'Hobbies & Interests' : 'Hobbies e Intereses',
+    downloadCV: lang === 'en' ? 'Download CV' : 'Descargar CV',
+    viewCV: lang === 'en' ? 'View CV' : 'Ver CV'
+  }
+
   return (
     <div className="w-full pt-8 pb-8 md:py-0">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
@@ -61,16 +77,16 @@ export default function About() {
           transition={reduceMotion ? { duration: 0 } : { duration: 0.5, delay: 0.2 }}
           className="text-center md:text-left"
         >
-          <h2 className="text-3xl font-bold mb-4 text-primary">About Me</h2>
+          <h2 className="text-3xl font-bold mb-4 text-primary">{labels.aboutMe}</h2>
           <p className="text-gray-600 mb-4 text-justify leading-relaxed">
-            {content.description}
+            {description}
           </p>
-          <h3 className="text-xl font-semibold mb-2 text-primary">Hobbies & Interests</h3>
+          <h3 className="text-xl font-semibold mb-2 text-primary">{labels.hobbies}</h3>
           <ul
             className="list-disc list-inside text-gray-600 mb-6 space-y-1"
-            aria-label="Hobbies and interests"
+            aria-label={labels.hobbies}
           >
-            {content.highlights.map((highlight: string, index: number) => (
+            {highlights.map((highlight: string, index: number) => (
               <li key={index} className="text-left">{highlight}</li>
             ))}
           </ul>
@@ -78,9 +94,9 @@ export default function About() {
             href="/CV.pdf"
             download
             className="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-full font-semibold hover:bg-accent transition-colors duration-200"
-            aria-label="Download CV (PDF)"
+            aria-label={`${labels.downloadCV} (PDF)`}
           >
-            <span>Download CV</span>
+            <span>{labels.downloadCV}</span>
           </a>
           <a
             href="/CV.pdf"
@@ -88,11 +104,12 @@ export default function About() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 ml-3 px-6 py-3 rounded-full font-semibold border border-primary text-primary hover:bg-primary/10 transition-colors duration-200"
           >
-            View CV
+            {labels.viewCV}
           </a>
         </motion.div>
       </div>
     </div>
   )
 }
+
 

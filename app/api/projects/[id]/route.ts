@@ -4,16 +4,14 @@ import Project from '@/models/Project'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
-interface Params {
-    params: {
-        id: string
-    }
-}
-
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(
+    _request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+) {
+    const { id } = await context.params
     try {
         await connectToDatabase()
-        const project = await Project.findById(params.id)
+        const project = await Project.findById(id)
             .populate('technologies')
             .lean()
 
@@ -34,7 +32,11 @@ export async function GET(request: NextRequest, { params }: Params) {
     }
 }
 
-export async function PUT(request: NextRequest, { params }: Params) {
+export async function PUT(
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+) {
+    const { id } = await context.params
     try {
         const session = await getServerSession(authOptions)
         if (!session?.user?.email) {
@@ -48,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
         const data = await request.json()
 
         const project = await Project.findByIdAndUpdate(
-            params.id,
+            id,
             { $set: data },
             { new: true }
         ).populate('technologies')
@@ -70,7 +72,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
     }
 }
 
-export async function DELETE(request: NextRequest, { params }: Params) {
+export async function DELETE(
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+) {
+    const { id } = await context.params
     try {
         const session = await getServerSession(authOptions)
         if (!session?.user?.email) {
@@ -81,7 +87,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         }
 
         await connectToDatabase()
-        const project = await Project.findByIdAndDelete(params.id)
+        const project = await Project.findByIdAndDelete(id)
 
         if (!project) {
             return NextResponse.json(
