@@ -45,16 +45,16 @@ export default function IconPicker({ value, onChange, placeholder = 'Select icon
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between"
+                    className="w-full justify-between border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                 >
                     <span className="flex items-center gap-2">
                         {value ? (
                             isCustomIconPath(value) ? (
                                 <Image src={value.startsWith('/') ? value : `/${value}`} alt="icon" width={18} height={18} className="w-4 h-4 object-contain" />
                             ) : Icon ? (
-                                <Icon className="w-4 h-4" />
+                                <Icon className="w-4 h-4 text-[#FD4345]" />
                             ) : (
-                                <VscCode className="w-4 h-4" />
+                                <VscCode className="w-4 h-4 text-[#FD4345]" />
                             )
                         ) : null}
                         {value || placeholder}
@@ -62,11 +62,11 @@ export default function IconPicker({ value, onChange, placeholder = 'Select icon
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[360px] p-0 bg-white shadow-lg border">
+            <PopoverContent className="w-[360px] p-0 bg-white shadow-lg border border-slate-200" align="start">
                 <Command className="bg-white text-slate-900">
-                    <CommandInput placeholder="Search icons or enter a path…" value={query} onValueChange={setQuery} />
-                    <CommandList>
-                        <CommandEmpty>No results found.</CommandEmpty>
+                    <CommandInput placeholder="Search icons or enter a path…" value={query} onValueChange={setQuery} className="border-b border-slate-100" />
+                    <CommandList className="max-h-[300px] p-1">
+                        <CommandEmpty className="py-4 text-center text-sm text-slate-500">No icons found.</CommandEmpty>
                         <CommandGroup heading="Icons">
                             {Object.keys(iconMap)
                                 .filter(k => k.toLowerCase().includes(query.toLowerCase()))
@@ -75,28 +75,33 @@ export default function IconPicker({ value, onChange, placeholder = 'Select icon
                                     const ItemIcon = iconMap[name]
                                     const selected = value === name
                                     return (
-                                        <CommandItem key={name} value={name} onSelect={() => handleSelect(name)} className="flex items-center gap-2">
-                                            <ItemIcon className="w-4 h-4" />
+                                        <CommandItem 
+                                            key={name} 
+                                            value={name} 
+                                            onSelect={() => handleSelect(name)} 
+                                            className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 aria-selected:bg-slate-100"
+                                        >
+                                            <ItemIcon className="w-4 h-4 text-slate-600" />
                                             <span className="flex-1">{name}</span>
-                                            <Check className={cn('h-4 w-4', selected ? 'opacity-100' : 'opacity-0')} />
+                                            {selected && <Check className="h-4 w-4 text-[#FD4345]" />}
                                         </CommandItem>
                                     )
                                 })}
                         </CommandGroup>
                         <CommandGroup heading="Custom path">
-                            <div className="px-2 py-2">
+                            <div className="px-2 py-2 bg-slate-50 rounded-md mt-2 mx-2 border border-slate-100">
                                 <div className="flex items-center gap-2">
                                     <input
                                         value={custom}
                                         onChange={(e) => setCustom(e.target.value)}
-                                        placeholder="images/skills/my-logo.png or https://…"
-                                        className="flex-1 h-9 rounded-md border border-slate-300 bg-white px-3 py-1 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
+                                        placeholder="images/skills/logo.png"
+                                        className="flex-1 h-8 rounded-md border border-slate-300 bg-white px-3 py-1 text-xs text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FD4345]"
                                     />
-                                    <Button type="button" size="sm" onClick={submitCustom}>
+                                    <Button type="button" size="sm" onClick={submitCustom} className="h-8 px-3 bg-[#263547] text-white hover:bg-[#1e293b]">
                                         Use
                                     </Button>
                                 </div>
-                                <p className="text-xs text-slate-500 mt-2">Files should be inside <code>/public</code> or an absolute URL. Example: <code>images/skills/custom.png</code>.</p>
+                                <p className="text-[10px] text-slate-500 mt-1.5">Relative to /public or absolute URL.</p>
                             </div>
                         </CommandGroup>
                     </CommandList>
@@ -105,5 +110,3 @@ export default function IconPicker({ value, onChange, placeholder = 'Select icon
         </Popover>
     )
 }
-
-

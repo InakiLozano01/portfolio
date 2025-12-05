@@ -1,9 +1,7 @@
-import { Inter } from 'next/font/google'
 import '../globals.css'
-import { Providers } from '../providers'
+import { AdminProviders } from './providers'
 import { Metadata } from 'next'
-
-const inter = Inter({ subsets: ['latin'] })
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard',
@@ -20,14 +18,25 @@ export default function AdminRootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
-        <Providers>
-          <div className="min-h-screen bg-slate-50">
+    <>
+        <Script id="admin-force-light" strategy="beforeInteractive">
+          {`
+            try {
+              const root = document.documentElement;
+              root.classList.remove('dark');
+              root.classList.add('light');
+              root.style.colorScheme = 'light';
+              localStorage.setItem('theme', 'light');
+            } catch (error) {
+              console.warn('Unable to force admin light mode', error);
+            }
+          `}
+        </Script>
+        <AdminProviders>
+          <div className="h-screen overflow-hidden bg-slate-50">
             {children}
           </div>
-        </Providers>
-      </body>
-    </html>
+        </AdminProviders>
+    </>
   )
-} 
+}

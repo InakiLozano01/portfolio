@@ -25,20 +25,21 @@ interface ISkill {
 }
 
 interface ProjectPageProps {
-    params: {
+    params: Promise<{
         slug: string
         lang: 'en' | 'es'
-    }
+    }>
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
+    const { slug, lang } = await params
     const apiBase = process.env.NEXT_PUBLIC_APP_URL
         || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
     const project =
-        await getProjectBySlug(params.slug) ||
+        await getProjectBySlug(slug) ||
         (await (async () => {
             try {
-                const res = await fetch(`${apiBase}/api/projects/slug/${encodeURIComponent(params.slug)}`, {
+                const res = await fetch(`${apiBase}/api/projects/slug/${encodeURIComponent(slug)}`, {
                     cache: 'no-store',
                 })
                 if (!res.ok) return null
@@ -50,19 +51,19 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         })())
 
     if (!project) {
-        redirect(`/${params.lang}#projects`)
+        redirect(`/${lang}#projects`)
     }
 
     const title =
-        params.lang === 'es'
+        lang === 'es'
             ? project.title_es || project.title_en || project.title
             : project.title_en || project.title_es || project.title
     const subtitle =
-        params.lang === 'es'
+        lang === 'es'
             ? project.subtitle_es || project.subtitle_en || project.subtitle
             : project.subtitle_en || project.subtitle_es || project.subtitle
     const description =
-        params.lang === 'es'
+        lang === 'es'
             ? project.description_es || project.description_en || project.description
             : project.description_en || project.description_es || project.description
 
@@ -86,7 +87,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
                 <article className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
                     <Link
-                        href={`/${params.lang}`}
+                        href={`/${lang}`}
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-6"
                     >
                         <ArrowLeft size={20} />
@@ -98,7 +99,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                     </h1>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
                         <p className="text-xl text-muted-foreground">{subtitle}</p>
-                        <ShareActions url={`${process.env.NEXT_PUBLIC_APP_URL || ''}/${params.lang}/projects/${project.slug}`} title={title} />
+                        <ShareActions url={`${process.env.NEXT_PUBLIC_APP_URL || ''}/${lang}/projects/${project.slug}`} title={title} />
                     </div>
 
                     {project.thumbnail && (

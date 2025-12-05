@@ -3,7 +3,27 @@ import path from 'path'
 import fs from 'fs/promises'
 import { constants as fsConstants } from 'fs'
 
-const IMAGES_ROOT = path.resolve(process.cwd(), 'public', 'images')
+// In standalone mode, check multiple possible locations for images
+const POSSIBLE_ROOTS = [
+  '/app/public/images',                          // Docker container path
+  path.resolve(process.cwd(), 'public', 'images'), // Standard Next.js path
+  path.resolve(process.cwd(), '..', 'public', 'images'), // Standalone relative
+]
+
+async function findImagesRoot(): Promise<string> {
+  for (const root of POSSIBLE_ROOTS) {
+    try {
+      await fs.access(root, fsConstants.R_OK)
+      return root
+    } catch {
+      continue
+    }
+  }
+  // Fallback to the standard path
+  return path.resolve(process.cwd(), 'public', 'images')
+}
+
+let IMAGES_ROOT: string | null = null
 
 const MIME_TYPES: Record<string, string> = {
   png: 'image/png',
@@ -55,6 +75,11 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid path' }, { status: 400 })
   }
 
+  // Initialize IMAGES_ROOT lazily
+  if (!IMAGES_ROOT) {
+    IMAGES_ROOT = await findImagesRoot()
+  }
+
   const absolutePath = path.join(IMAGES_ROOT, ...sanitized)
   const relative = path.relative(IMAGES_ROOT, absolutePath)
   if (relative.startsWith('..') || path.isAbsolute(relative)) {
@@ -63,7 +88,9 @@ export async function GET(
 
   const exists = await ensureReadable(absolutePath)
   if (!exists) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    // Log for debugging
+    console.error(`[Images API] File not found: ${absolutePath}, IMAGES_ROOT: ${IMAGES_ROOT}`)
+    return NextResponse.json({ error: 'Not found', path: absolutePath }, { status: 404 })
   }
 
   const file = await fs.readFile(absolutePath)

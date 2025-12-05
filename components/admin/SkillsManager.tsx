@@ -8,12 +8,13 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Select } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PlusCircle, Trash2, Plus } from 'lucide-react'
 import { VscCode } from 'react-icons/vsc'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import IconPicker from '@/components/admin/IconPicker'
+import { iconMap, type IconProps, isCustomIconPath } from '@/components/skills/icon-registry'
 
 interface Skill {
   _id: string;
@@ -23,8 +24,6 @@ interface Skill {
   yearsOfExperience: number;
   icon: string;
 }
-
-import { iconMap, type IconProps, isCustomIconPath } from '@/components/skills/icon-registry'
 
 interface Props {
   skills: Skill[];
@@ -104,16 +103,16 @@ export default function SkillsManager({ skills, onSave }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="p-6 bg-white rounded-lg shadow-md border-l-4 border-red-600">
+      <div className="p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Skills Management</h2>
-            <p className="text-slate-600 text-sm mt-1">Add and organize your technical skills</p>
+            <p className="text-slate-500 text-sm mt-1">Add and organize your technical skills</p>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <Button
               onClick={() => setIsAddingSkill(true)}
-              className="bg-red-600 hover:bg-red-700 text-white shadow-sm"
+              className="bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-sm"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Skill
@@ -123,12 +122,12 @@ export default function SkillsManager({ skills, onSave }: Props) {
                 value={newCategory}
                 onChange={e => setNewCategory(e.target.value)}
                 placeholder="New category name"
-                className="w-48 border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1 bg-white"
+                className="w-48 border-slate-300 focus-visible:ring-[#FD4345] bg-white"
               />
               <Button
                 onClick={handleAddCategory}
                 variant="outline"
-                className="flex items-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50"
+                className="flex items-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#FD4345] hover:border-[#FD4345]"
               >
                 <PlusCircle className="w-4 h-4" />
                 Add Category
@@ -139,39 +138,42 @@ export default function SkillsManager({ skills, onSave }: Props) {
       </div>
 
       {isAddingSkill && (
-        <Card className="bg-white shadow-md border-0">
-          <CardHeader className="bg-gradient-to-r from-blue-600 to-red-600 text-white">
-            <CardTitle>Add New Skill</CardTitle>
+        <Card className="bg-white shadow-md border-0 overflow-hidden">
+          <CardHeader className="bg-[#263547] text-white py-4">
+            <CardTitle className="text-lg font-medium">Add New Skill</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-slate-700 font-semibold">Name</Label>
+                  <Label className="text-slate-700 font-medium mb-1.5 block">Name</Label>
                   <Input
                     value={newSkill.name}
                     onChange={e => setNewSkill(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Skill name"
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                    className="border-slate-300 focus-visible:ring-[#FD4345]"
                   />
                 </div>
                 <div>
-                  <Label className="text-slate-700 font-semibold">Category</Label>
+                  <Label className="text-slate-700 font-medium mb-1.5 block">Category</Label>
                   <Select
                     value={newSkill.category}
-                    onChange={e => setNewSkill(prev => ({ ...prev, category: e.target.value }))}
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                    onValueChange={val => setNewSkill(prev => ({ ...prev, category: val }))}
                   >
-                    <option value="">Select category</option>
-                    {categories.map(category => (
-                      <option key={category} value={category}>
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                      </option>
-                    ))}
+                    <SelectTrigger className="border-slate-300 focus:ring-[#FD4345]">
+                       <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map(category => (
+                        <SelectItem key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-slate-700 font-semibold">Proficiency (%)</Label>
+                  <Label className="text-slate-700 font-medium mb-1.5 block">Proficiency (%)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -179,26 +181,26 @@ export default function SkillsManager({ skills, onSave }: Props) {
                     value={newSkill.proficiency || ''}
                     onChange={(e) => handleNumberChange(e, 'proficiency', setNewSkill)}
                     placeholder="Proficiency percentage"
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                    className="border-slate-300 focus-visible:ring-[#FD4345]"
                   />
                 </div>
                 <div>
-                  <Label className="text-slate-700 font-semibold">Years of Experience</Label>
+                  <Label className="text-slate-700 font-medium mb-1.5 block">Years of Experience</Label>
                   <Input
                     type="number"
                     min="0"
                     value={newSkill.yearsOfExperience || ''}
                     onChange={(e) => handleNumberChange(e, 'yearsOfExperience', setNewSkill)}
                     placeholder="Years of experience"
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                    className="border-slate-300 focus-visible:ring-[#FD4345]"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <Label className="text-slate-700 font-semibold">Icon</Label>
+                  <Label className="text-slate-700 font-medium mb-1.5 block">Icon</Label>
                   <IconPicker value={newSkill.icon} onChange={(val) => setNewSkill(prev => ({ ...prev, icon: val }))} />
                 </div>
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-4">
                 <Button
                   variant="outline"
                   onClick={() => setIsAddingSkill(false)}
@@ -208,7 +210,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                 </Button>
                 <Button
                   onClick={handleAddSkill}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-[#FD4345] hover:bg-[#ff5456] text-white"
                 >
                   Add Skill
                 </Button>
@@ -219,31 +221,35 @@ export default function SkillsManager({ skills, onSave }: Props) {
       )}
 
       <div className="flex items-center justify-between">
-        <div className="w-64">
+        <div className="w-72">
           <Input
             placeholder="Search skills..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border-slate-300"
+            className="border-slate-300 focus-visible:ring-[#FD4345]"
           />
         </div>
       </div>
-      <ScrollArea className="h-[calc(100vh-26rem)] mt-4">
-        <div className="space-y-6">
+      
+      <ScrollArea className="h-[calc(100vh-28rem)] pr-4">
+        <div className="space-y-6 pb-10">
           {categories.map(category => (
-            <Card key={category} className="bg-white shadow-md border-0">
-              <CardHeader className="bg-gradient-to-r from-red-600 to-blue-600 text-white">
-                <CardTitle className="capitalize">{category}</CardTitle>
+            <Card key={category} className="bg-white shadow-sm border border-slate-200 overflow-hidden">
+              <CardHeader className="bg-slate-50 border-b border-slate-200 py-3 px-4">
+                <CardTitle className="capitalize text-slate-700 text-base font-semibold flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-[#FD4345]" />
+                  {category}
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50 border-b border-slate-200">
-                      <TableHead className="text-slate-700 font-semibold">Icon</TableHead>
-                      <TableHead className="text-slate-700 font-semibold">Name</TableHead>
-                      <TableHead className="text-slate-700 font-semibold">Proficiency</TableHead>
-                      <TableHead className="text-slate-700 font-semibold">Years</TableHead>
-                      <TableHead className="text-slate-700 font-semibold">Actions</TableHead>
+                    <TableRow className="bg-slate-50/50 border-b border-slate-200 hover:bg-slate-50/50">
+                      <TableHead className="w-16 text-slate-500 font-medium text-xs uppercase tracking-wider">Icon</TableHead>
+                      <TableHead className="text-slate-500 font-medium text-xs uppercase tracking-wider">Name</TableHead>
+                      <TableHead className="text-slate-500 font-medium text-xs uppercase tracking-wider">Proficiency</TableHead>
+                      <TableHead className="text-slate-500 font-medium text-xs uppercase tracking-wider">Years</TableHead>
+                      <TableHead className="text-right text-slate-500 font-medium text-xs uppercase tracking-wider">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -254,88 +260,69 @@ export default function SkillsManager({ skills, onSave }: Props) {
                         (skill.category || '').toLowerCase().includes(search.toLowerCase())
                       )
                       .map(skill => (
-                        <TableRow key={skill._id} className="hover:bg-slate-50 transition-colors">
-                          <TableCell className="w-12">
+                        <TableRow key={skill._id} className="hover:bg-slate-50 transition-colors border-slate-100">
+                          <TableCell>
                             {skill.icon && (
                               isCustomIconPath(skill.icon) ? (
                                 <Image src={skill.icon.startsWith('/') ? skill.icon : `/${skill.icon}`} alt={skill.name || 'Icon'} width={24} height={24} className="w-6 h-6 object-contain" />
                               ) : (
-                                iconMap[skill.icon] ? React.createElement(iconMap[skill.icon], { className: 'w-6 h-6 text-blue-600' }) : <VscCode className="w-6 h-6 text-blue-600" />
+                                iconMap[skill.icon] ? React.createElement(iconMap[skill.icon], { className: 'w-6 h-6 text-slate-600' }) : <VscCode className="w-6 h-6 text-slate-600" />
                               )
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="font-medium text-slate-900">
                             {editingSkill?._id === skill._id ? (
-                              <div className="space-y-2">
                                 <Input
                                   value={editingSkill.name}
                                   onChange={e => setEditingSkill({ ...editingSkill, name: e.target.value })}
-                                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                                  className="h-8"
                                 />
-                                <Select
-                                  value={editingSkill.category}
-                                  onChange={e => setEditingSkill({ ...editingSkill, category: e.target.value })}
-                                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
-                                >
-                                  {categories.map(category => (
-                                    <option key={category} value={category}>
-                                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                                    </option>
-                                  ))}
-                                </Select>
-                                <IconPicker value={editingSkill.icon} onChange={(val) => setEditingSkill({ ...editingSkill, icon: val })} />
-                              </div>
-                            ) : (
-                              <div>
-                                <div className="font-medium text-slate-900">{skill.name}</div>
-                                <div className="text-sm text-slate-500">
-                                  Category: {skill.category}
-                                </div>
-                              </div>
-                            )}
+                            ) : skill.name}
                           </TableCell>
                           <TableCell>
                             {editingSkill?._id === skill._id ? (
                               <Input
                                 type="number"
-                                min="0"
-                                max="100"
                                 value={editingSkill.proficiency || ''}
                                 onChange={(e) => handleNumberChange(e, 'proficiency', setEditingSkill)}
-                                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                                className="h-8 w-20"
                               />
                             ) : (
-                              <span className="font-medium text-slate-900">{skill.proficiency}%</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className="h-full bg-[#FD4345]" style={{ width: `${skill.proficiency}%` }} />
+                                </div>
+                                <span className="text-sm text-slate-600">{skill.proficiency}%</span>
+                              </div>
                             )}
                           </TableCell>
-                          <TableCell>
-                            {editingSkill?._id === skill._id ? (
+                          <TableCell className="text-slate-600">
+                             {editingSkill?._id === skill._id ? (
                               <Input
                                 type="number"
-                                min="0"
                                 value={editingSkill.yearsOfExperience || ''}
                                 onChange={(e) => handleNumberChange(e, 'yearsOfExperience', setEditingSkill)}
-                                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                                className="h-8 w-20"
                               />
                             ) : (
-                              <span className="font-medium text-slate-900">{skill.yearsOfExperience} years</span>
+                              <span className="text-sm">{skill.yearsOfExperience}y</span>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-right">
                             {editingSkill?._id === skill._id ? (
-                              <div className="flex gap-2">
+                              <div className="flex justify-end gap-2">
                                 <Button
                                   size="sm"
                                   onClick={() => handleSave(editingSkill)}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                                  className="h-8 bg-[#FD4345] hover:bg-[#ff5456] text-white"
                                 >
                                   Save
                                 </Button>
                                 <Button
                                   size="sm"
-                                  variant="outline"
+                                  variant="ghost"
                                   onClick={() => setEditingSkill(null)}
-                                  className="border-slate-300 text-slate-600 hover:bg-slate-50"
+                                  className="h-8"
                                 >
                                   Cancel
                                 </Button>
@@ -345,7 +332,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => setEditingSkill(skill)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="h-8 text-slate-400 hover:text-[#FD4345] hover:bg-[#FD4345]/10"
                               >
                                 Edit
                               </Button>
@@ -362,4 +349,4 @@ export default function SkillsManager({ skills, onSave }: Props) {
       </ScrollArea>
     </div>
   );
-} 
+}

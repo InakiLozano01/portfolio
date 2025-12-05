@@ -11,6 +11,8 @@ import { BlogSchema } from '@/models/BlogClient';
 import { slugify } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ZodError } from 'zod';
+import { ArrowLeft, Save, FileText, Globe, Check } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const requiredField = (value: string) => value.trim();
 
@@ -162,171 +164,236 @@ export default function NewBlogPage() {
     }, [pendingTag, commitPendingTag]);
 
     return (
-        <Card className="max-w-5xl mx-auto">
-            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <CardTitle className="text-2xl font-semibold">New Blog</CardTitle>
+        <Card className="max-w-7xl mx-auto border-slate-200 shadow-sm bg-white">
+            <CardHeader className="bg-[#263547] py-4 px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-2 text-white">
+                    <FileText className="w-6 h-6 text-[#FD4345]" />
+                    <CardTitle className="text-xl font-semibold">Create New Blog Post</CardTitle>
+                </div>
                 <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     onClick={handleBack}
-                    className="text-slate-700"
+                    className="text-slate-300 hover:text-white hover:bg-white/10"
                 >
-                    ← Back to Admin
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Admin
                 </Button>
             </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 className="font-semibold mb-2">English</h3>
-                            <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="title-en">Title (EN)</Label>
-                                <Input
-                                    id="title-en"
-                                    value={titleEn}
-                                    onChange={(e) => setTitleEn(e.target.value)}
-                                    placeholder="Enter English title"
-                                    required
-                                />
+            <CardContent className="p-6">
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        {/* English Section */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                                <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-0 uppercase tracking-wider font-bold px-2.5">English</Badge>
+                                <Globe className="w-4 h-4 text-slate-400" />
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="subtitle-en">Subtitle (EN)</Label>
-                                <Input
-                                    id="subtitle-en"
-                                    value={subtitleEn}
-                                    onChange={(e) => setSubtitleEn(e.target.value)}
-                                    placeholder="Enter English subtitle"
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-900">Content (EN)</Label>
-                                <TinyMCE value={contentEn} onChange={setContentEn} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="footer-en">Footer (EN)</Label>
-                                <Input
-                                    id="footer-en"
-                                    value={footerEn}
-                                    onChange={(e) => setFooterEn(e.target.value)}
-                                    placeholder="Optional English footer"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="bibliography-en">Bibliography (EN)</Label>
-                                <Input
-                                    id="bibliography-en"
-                                    value={bibliographyEn}
-                                    onChange={(e) => setBibliographyEn(e.target.value)}
-                                    placeholder="Optional English bibliography"
-                                />
+                            
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold" htmlFor="title-en">Title <span className="text-red-500">*</span></Label>
+                                    <Input
+                                        id="title-en"
+                                        value={titleEn}
+                                        onChange={(e) => setTitleEn(e.target.value)}
+                                        placeholder="Enter English title"
+                                        className="focus-visible:ring-[#FD4345]"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold" htmlFor="subtitle-en">Subtitle <span className="text-red-500">*</span></Label>
+                                    <Input
+                                        id="subtitle-en"
+                                        value={subtitleEn}
+                                        onChange={(e) => setSubtitleEn(e.target.value)}
+                                        placeholder="Enter English subtitle"
+                                        className="focus-visible:ring-[#FD4345]"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold">Content</Label>
+                                    <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
+                                        <TinyMCE value={contentEn} onChange={setContentEn} />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold" htmlFor="footer-en">Footer</Label>
+                                    <Input
+                                        id="footer-en"
+                                        value={footerEn}
+                                        onChange={(e) => setFooterEn(e.target.value)}
+                                        placeholder="Optional English footer"
+                                        className="focus-visible:ring-[#FD4345]"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold" htmlFor="bibliography-en">Bibliography</Label>
+                                    <Input
+                                        id="bibliography-en"
+                                        value={bibliographyEn}
+                                        onChange={(e) => setBibliographyEn(e.target.value)}
+                                        placeholder="Optional English bibliography"
+                                        className="focus-visible:ring-[#FD4345]"
+                                    />
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <h3 className="font-semibold mb-2">Español</h3>
-                            <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="title-es">Título (ES)</Label>
-                                <Input
-                                    id="title-es"
-                                    value={titleEs}
-                                    onChange={(e) => setTitleEs(e.target.value)}
-                                    placeholder="Introduce el título en español"
-                                    required
-                                />
+
+                        {/* Spanish Section */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                                <Badge className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-0 uppercase tracking-wider font-bold px-2.5">Español</Badge>
+                                <Globe className="w-4 h-4 text-slate-400" />
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="subtitle-es">Subtítulo (ES)</Label>
-                                <Input
-                                    id="subtitle-es"
-                                    value={subtitleEs}
-                                    onChange={(e) => setSubtitleEs(e.target.value)}
-                                    placeholder="Introduce el subtítulo en español"
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-900">Contenido (ES)</Label>
-                                <TinyMCE value={contentEs} onChange={setContentEs} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="footer-es">Pie (ES)</Label>
-                                <Input
-                                    id="footer-es"
-                                    value={footerEs}
-                                    onChange={(e) => setFooterEs(e.target.value)}
-                                    placeholder="Pie de página opcional"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="bibliography-es">Bibliografía (ES)</Label>
-                                <Input
-                                    id="bibliography-es"
-                                    value={bibliographyEs}
-                                    onChange={(e) => setBibliographyEs(e.target.value)}
-                                    placeholder="Bibliografía opcional"
-                                />
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold" htmlFor="title-es">Título <span className="text-red-500">*</span></Label>
+                                    <Input
+                                        id="title-es"
+                                        value={titleEs}
+                                        onChange={(e) => setTitleEs(e.target.value)}
+                                        placeholder="Introduce el título en español"
+                                        className="focus-visible:ring-[#FD4345]"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold" htmlFor="subtitle-es">Subtítulo <span className="text-red-500">*</span></Label>
+                                    <Input
+                                        id="subtitle-es"
+                                        value={subtitleEs}
+                                        onChange={(e) => setSubtitleEs(e.target.value)}
+                                        placeholder="Introduce el subtítulo en español"
+                                        className="focus-visible:ring-[#FD4345]"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold">Contenido</Label>
+                                    <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
+                                        <TinyMCE value={contentEs} onChange={setContentEs} />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold" htmlFor="footer-es">Pie</Label>
+                                    <Input
+                                        id="footer-es"
+                                        value={footerEs}
+                                        onChange={(e) => setFooterEs(e.target.value)}
+                                        placeholder="Pie de página opcional"
+                                        className="focus-visible:ring-[#FD4345]"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-slate-700 font-semibold" htmlFor="bibliography-es">Bibliografía</Label>
+                                    <Input
+                                        id="bibliography-es"
+                                        value={bibliographyEs}
+                                        onChange={(e) => setBibliographyEs(e.target.value)}
+                                        placeholder="Bibliografía opcional"
+                                        className="focus-visible:ring-[#FD4345]"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label className="text-gray-900" htmlFor="tags">Tags (comma-separated)</Label>
-                        <div className="rounded-md border border-gray-300 bg-white px-2 py-2">
-                            <div className="flex flex-wrap gap-2">
-                                {tags.map((tag) => (
-                                    <button
-                                        key={tag}
-                                        type="button"
-                                        onClick={() => removeTag(tag)}
-                                        className="flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-200"
-                                    >
-                                        {tag}
-                                        <span className="ml-1 text-gray-500">×</span>
-                                    </button>
-                                ))}
-                                <input
-                                    id="tags"
-                                    ref={tagsInputRef}
-                                    value={pendingTag}
-                                    onChange={handleTagInputChange}
-                                    onBlur={() => commitPendingTag()}
-                                    onKeyDown={handleTagInputKeyDown}
-                                    placeholder={tags.length ? '' : 'ai, llms, machine-learning'}
-                                    className="min-w-[120px] flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-100">
+                        <div className="space-y-2">
+                            <Label className="text-slate-700 font-semibold" htmlFor="tags">Tags</Label>
+                            <div className="rounded-md border border-slate-200 bg-white p-2 focus-within:ring-2 focus-within:ring-[#FD4345] focus-within:ring-offset-2 transition-all">
+                                <div className="flex flex-wrap gap-2">
+                                    {tags.map((tag) => (
+                                        <Badge
+                                            key={tag}
+                                            variant="secondary"
+                                            className="flex items-center gap-1 bg-slate-100 text-slate-700 hover:bg-slate-200 pl-2 pr-1 py-1"
+                                        >
+                                            {tag}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeTag(tag)}
+                                                className="ml-1 rounded-full hover:bg-slate-300 p-0.5 transition-colors"
+                                            >
+                                                <span className="sr-only">Remove</span>
+                                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </Badge>
+                                    ))}
+                                    <input
+                                        id="tags"
+                                        ref={tagsInputRef}
+                                        value={pendingTag}
+                                        onChange={handleTagInputChange}
+                                        onBlur={() => commitPendingTag()}
+                                        onKeyDown={handleTagInputKeyDown}
+                                        placeholder={tags.length ? '' : 'Add tags (press Enter)...'}
+                                        className="flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none min-w-[120px]"
+                                    />
+                                </div>
+                            </div>
+                            <p className="text-xs text-slate-500">
+                                Separate with commas or press enter to add.
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-slate-700 font-semibold mb-2 block">Status</Label>
+                            <div className="flex items-center space-x-3 p-3 rounded-md border border-slate-200 bg-slate-50">
+                                <Switch
+                                    checked={published}
+                                    onCheckedChange={setPublished}
+                                    id="published"
+                                    className="data-[state=checked]:bg-[#FD4345]"
                                 />
+                                <div className="flex flex-col">
+                                    <Label htmlFor="published" className="font-medium text-slate-900 cursor-pointer">
+                                        {published ? 'Published' : 'Draft'}
+                                    </Label>
+                                    <span className="text-xs text-slate-500">
+                                        {published ? 'Visible to all visitors' : 'Only visible to admins'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                            Separate with commas or press enter to add. Click a tag to remove.
-                        </p>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                        <Switch
-                            checked={published}
-                            onCheckedChange={setPublished}
-                            id="published"
-                        />
-                        <Label htmlFor="published" className="text-gray-900">Published</Label>
                     </div>
 
                     {error && (
-                        <p className="text-sm text-red-500">{error}</p>
+                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center gap-2 text-sm">
+                            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {error}
+                        </div>
                     )}
 
-                    <div className="flex justify-end space-x-2">
+                    <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={handleBack}
+                            className="border-slate-200 text-slate-700 hover:bg-slate-50"
                         >
                             Cancel
                         </Button>
                         <Button
                             type="submit"
                             disabled={isSubmitting}
+                            className="bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-md transition-all"
                         >
-                            {isSubmitting ? 'Saving...' : 'Save Blog'}
+                            {isSubmitting ? (
+                                <>Saving...</>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4 mr-2" />
+                                    Create Post
+                                </>
+                            )}
                         </Button>
                     </div>
                 </form>

@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { IProject } from '@/models/Project';
 import Skill from '@/models/Skill';
-import { Plus, Trash2, Save, Edit, Briefcase } from 'lucide-react';
+import { Plus, Trash2, Save, Edit, Briefcase, Search, X } from 'lucide-react';
 import { Types } from 'mongoose';
 import Image from 'next/image';
 import { slugify } from '@/lib/utils';
@@ -343,23 +343,26 @@ export default function ProjectsManager() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full flex flex-col p-6 gap-6">
       {/* Horizontal project rail */}
-      <Card className="bg-gradient-to-r from-emerald-50 to-lime-50 border border-emerald-200 shadow-sm">
+      <Card className="bg-white border border-slate-200 shadow-sm">
         <CardContent className="py-4">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 pr-3 border-r border-emerald-200">
-              <Briefcase className="w-5 h-5 text-emerald-700" />
-              <span className="text-sm font-semibold text-emerald-800">Projects ({projects.length})</span>
+            <div className="flex items-center gap-2 pr-3 border-r border-slate-200">
+              <Briefcase className="w-5 h-5 text-slate-700" />
+              <span className="text-sm font-semibold text-slate-800">Projects ({projects.length})</span>
             </div>
-            <Input
-              placeholder="Search projects..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-64 max-w-full h-9 border-emerald-200 focus:ring-emerald-500 focus:border-emerald-500"
-            />
-            <div className="flex-1 overflow-x-auto">
-              <div className="flex gap-3 min-w-fit">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search projects..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-64 pl-9 max-w-full h-9 border-slate-200 focus-visible:ring-[#FD4345]"
+              />
+            </div>
+            <div className="flex-1 overflow-x-auto pb-2 lg:pb-0">
+              <div className="flex gap-3 min-w-fit px-1">
                 {projects
                   .filter((p) =>
                     (p.title || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -370,45 +373,44 @@ export default function ProjectsManager() {
                     return (
                       <div
                         key={project._id.toString()}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition shadow-sm ${isSelected
-                          ? 'bg-emerald-600 text-white border-emerald-700'
-                          : 'bg-white text-slate-800 border-emerald-100 hover:border-emerald-300'
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-all duration-200 shadow-sm group cursor-pointer ${isSelected
+                          ? 'bg-[#263547] text-white border-[#263547]'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-[#FD4345]/50 hover:text-slate-900'
                           }`}
+                        onClick={() => {
+                           setSelectedProject({
+                             ...project,
+                             title_es: project.title_es || '',
+                             subtitle_en: project.subtitle_en || project.subtitle || '',
+                             subtitle: project.subtitle || '',
+                             subtitle_es: project.subtitle_es || '',
+                             description_en: project.description_en || project.description || '',
+                             description_es: project.description_es || '',
+                             publicUrl: project.publicUrl || '',
+                             technologies: project.technologies.map((tech) => tech._id),
+                           });
+                           setImagePreview(null);
+                        }}
                       >
-                        <button
-                          className="flex-1 text-left"
-                          onClick={() => {
-            setSelectedProject({
-              ...project,
-              title_es: project.title_es || '',
-              subtitle_en: project.subtitle_en || project.subtitle || '',
-              subtitle_es: project.subtitle_es || '',
-              description_en: project.description_en || project.description || '',
-              description_es: project.description_es || '',
-              publicUrl: project.publicUrl || '',
-              technologies: project.technologies.map((tech) => tech._id),
-            });
-            setImagePreview(null);
-          }}
-        >
-                          <div className="font-semibold line-clamp-1">{project.title}</div>
-                          <div className="text-xs opacity-80 line-clamp-1">{project.subtitle}</div>
-                        </button>
+                        <div className="flex flex-col">
+                            <div className="font-semibold line-clamp-1 max-w-[120px]">{project.title}</div>
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className={`h-8 w-8 ${isSelected ? 'text-white hover:bg-white/10' : 'text-emerald-700 hover:bg-emerald-50'}`}
-                          onClick={() => {
+                          className={`h-6 w-6 ml-1 rounded-full ${isSelected ? 'text-white hover:bg-white/20' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
                             handleDelete(project._id.toString());
                           }}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
                     );
                   })}
                 {projects.length === 0 && (
-                  <span className="text-sm text-emerald-800">No projects yet</span>
+                  <span className="text-sm text-slate-500 italic px-2">No projects found</span>
                 )}
               </div>
             </div>
@@ -417,92 +419,139 @@ export default function ProjectsManager() {
       </Card>
 
       {/* Editing canvas */}
-      <Card className="bg-white border border-gray-200 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-red-50 border-b border-gray-200">
-          <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
-            <Edit className="w-5 h-5 text-blue-600" />
-            {selectedProject._id ? 'Edit Project' : 'Create New Project'}
-          </CardTitle>
+      <Card className="bg-white border border-slate-200 shadow-md flex-1 flex flex-col overflow-hidden min-h-0">
+        <CardHeader className="bg-[#263547] py-4 px-6 border-b border-slate-700">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg text-white">
+                {selectedProject._id ? (
+                    <>
+                        <Edit className="w-5 h-5 text-[#FD4345]" />
+                        Edit Project
+                    </>
+                ) : (
+                    <>
+                        <Plus className="w-5 h-5 text-[#FD4345]" />
+                        Create New Project
+                    </>
+                )}
+            </CardTitle>
+            {selectedProject._id && (
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-slate-300 hover:text-white hover:bg-white/10"
+                    onClick={() => {
+                        setSelectedProject({
+                            title: '',
+                            title_es: '',
+                            subtitle_en: '',
+                            subtitle: '',
+                            subtitle_es: '',
+                            description: '',
+                            description_en: '',
+                            description_es: '',
+                            technologies: [],
+                            thumbnail: '',
+                            githubUrl: '',
+                            publicUrl: '',
+                        });
+                        setImageFile(null);
+                        setImagePreview(null);
+                    }}
+                >
+                    <Plus className="w-4 h-4 mr-2" /> New
+                </Button>
+            )}
+          </div>
         </CardHeader>
-        <CardContent className="space-y-6 p-6">
+        <CardContent className="space-y-6 p-6 overflow-y-auto flex-1">
           {/* Two-column language fields */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-1 text-xs font-semibold bg-slate-100 rounded text-slate-700">English</span>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {/* English Column */}
+            <div className="space-y-5">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                <span className="px-2.5 py-0.5 text-xs font-bold bg-blue-50 text-blue-700 rounded-full uppercase tracking-wide">English</span>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Project Title *</label>
+                <label className="text-sm font-medium text-slate-700">Project Title <span className="text-red-500">*</span></label>
                 <Input
                   placeholder="Enter project title"
                   value={selectedProject.title || ''}
                   onChange={(e) =>
                     setSelectedProject({ ...selectedProject, title: e.target.value })
                   }
-                  className={errors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                  className={errors.title ? 'border-red-500 focus-visible:ring-red-500' : 'focus-visible:ring-[#FD4345]'}
                 />
                 {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Project Subtitle *</label>
+                <label className="text-sm font-medium text-slate-700">Subtitle <span className="text-red-500">*</span></label>
                 <Input
                   placeholder="Brief description or tagline"
                   value={selectedProject.subtitle || ''}
                   onChange={(e) =>
                     setSelectedProject({ ...selectedProject, subtitle: e.target.value })
                   }
-                  className={errors.subtitle ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                  className={errors.subtitle ? 'border-red-500 focus-visible:ring-red-500' : 'focus-visible:ring-[#FD4345]'}
                 />
                 {errors.subtitle && <p className="text-xs text-red-600">{errors.subtitle}</p>}
               </div>
               <div className="space-y-3">
-                <label className="text-sm font-medium text-slate-700">Description (EN)</label>
-                <TinyMCE
-                  value={selectedProject.description_en || selectedProject.description || ''}
-                  onChange={(content) =>
-                    setSelectedProject({ ...selectedProject, description_en: content, description: content })
-                  }
-                />
+                <label className="text-sm font-medium text-slate-700">Description</label>
+                <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
+                    <TinyMCE
+                    value={selectedProject.description_en || selectedProject.description || ''}
+                    onChange={(content) =>
+                        setSelectedProject({ ...selectedProject, description_en: content, description: content })
+                    }
+                    />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-1 text-xs font-semibold bg-slate-100 rounded text-slate-700">Español</span>
+            {/* Spanish Column */}
+            <div className="space-y-5">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                <span className="px-2.5 py-0.5 text-xs font-bold bg-yellow-50 text-yellow-700 rounded-full uppercase tracking-wide">Español</span>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Título (ES)</label>
+                <label className="text-sm font-medium text-slate-700">Título</label>
                 <Input
                   placeholder="Título del proyecto"
                   value={selectedProject.title_es || ''}
                   onChange={(e) =>
                     setSelectedProject({ ...selectedProject, title_es: e.target.value })
                   }
+                  className="focus-visible:ring-[#FD4345]"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Subtítulo (ES)</label>
+                <label className="text-sm font-medium text-slate-700">Subtítulo</label>
                 <Input
                   placeholder="Descripción breve"
                   value={selectedProject.subtitle_es || ''}
                   onChange={(e) =>
                     setSelectedProject({ ...selectedProject, subtitle_es: e.target.value })
                   }
+                  className="focus-visible:ring-[#FD4345]"
                 />
               </div>
               <div className="space-y-3">
-                <label className="text-sm font-medium text-slate-700">Descripción (ES)</label>
-                <TinyMCE
-                  value={selectedProject.description_es || ''}
-                  onChange={(content) =>
-                    setSelectedProject({ ...selectedProject, description_es: content })
-                  }
-                />
+                <label className="text-sm font-medium text-slate-700">Descripción</label>
+                 <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
+                    <TinyMCE
+                    value={selectedProject.description_es || ''}
+                    onChange={(content) =>
+                        setSelectedProject({ ...selectedProject, description_es: content })
+                    }
+                    />
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Common Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-100">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">GitHub URL</label>
               <Input
@@ -511,6 +560,7 @@ export default function ProjectsManager() {
                 onChange={(e) =>
                   setSelectedProject({ ...selectedProject, githubUrl: e.target.value })
                 }
+                className="focus-visible:ring-[#FD4345]"
               />
             </div>
             <div className="space-y-2">
@@ -521,21 +571,25 @@ export default function ProjectsManager() {
                 onChange={(e) =>
                   setSelectedProject({ ...selectedProject, publicUrl: e.target.value })
                 }
+                className="focus-visible:ring-[#FD4345]"
               />
             </div>
           </div>
 
-          <div className="max-w-4xl mx-auto space-y-3">
+          <div className="space-y-3">
             <label className="text-sm font-medium text-slate-700">Thumbnail Image</label>
-            <div className="space-y-3">
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer"
-              />
+            <div className="flex gap-6 items-start">
+                <div className="flex-1">
+                    <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="h-auto py-2.5 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#263547] file:text-white hover:file:bg-[#1e293b] file:cursor-pointer focus-visible:ring-[#FD4345]"
+                    />
+                    <p className="text-xs text-slate-500 mt-2">Supported formats: JPG, PNG, WebP, GIF</p>
+                </div>
               {(imagePreview || selectedProject.thumbnail) && (
-                <div className="relative aspect-video w-full bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                <div className="relative w-40 aspect-video bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
                   <Image
                     src={imagePreview || selectedProject.thumbnail || ''}
                     alt="Project thumbnail preview"
@@ -548,10 +602,14 @@ export default function ProjectsManager() {
           </div>
 
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-slate-700">Technologies Used</label>
-            <p className="text-xs text-slate-500">
-              Select all technologies used in this project. Click to toggle selection.
-            </p>
+            <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-slate-700">Technologies Used</label>
+                {selectedProject.technologies.length > 0 && (
+                <span className="text-xs font-medium text-[#FD4345]">
+                    {selectedProject.technologies.length} selected
+                </span>
+                )}
+            </div>
             <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-lg border border-slate-200 max-h-40 overflow-y-auto">
               {skills.length === 0 ? (
                 <p className="text-sm text-slate-500 italic">
@@ -565,9 +623,9 @@ export default function ProjectsManager() {
                   return (
                     <Badge
                       key={skill._id.toString()}
-                      className={`cursor-pointer transition-all duration-200 hover:scale-105 border ${isSelected
-                        ? 'bg-red-600 hover:bg-red-700 text-white border-red-600'
-                        : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 hover:border-blue-400'
+                      className={`cursor-pointer transition-all duration-200 hover:scale-105 border px-3 py-1 ${isSelected
+                        ? 'bg-[#FD4345] hover:bg-[#ff5456] text-white border-[#FD4345]'
+                        : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'
                         }`}
                       onClick={() => handleTechnologyToggle(skill._id.toString())}
                     >
@@ -578,14 +636,9 @@ export default function ProjectsManager() {
                 })
               )}
             </div>
-            {selectedProject.technologies.length > 0 && (
-              <p className="text-xs text-blue-600">
-                {selectedProject.technologies.length} technology(ies) selected
-              </p>
-            )}
           </div>
 
-          <div className="sticky bottom-0 bg-white border-t border-slate-200 pt-4 mt-6 z-10 flex flex-col sm:flex-row justify-between gap-3">
+          <div className="sticky bottom-0 bg-white border-t border-slate-200 py-4 mt-6 z-10 flex flex-col sm:flex-row justify-end gap-3">
             <Button
               onClick={() => {
                 setSelectedProject({
@@ -594,27 +647,26 @@ export default function ProjectsManager() {
                   subtitle_en: '',
                   subtitle: '',
                   subtitle_es: '',
-              description: '',
-              description_en: '',
-              description_es: '',
-              technologies: [],
-              thumbnail: '',
-              githubUrl: '',
-              publicUrl: '',
-            });
-            setImageFile(null);
-            setImagePreview(null);
-          }}
-              variant="outline"
-              className="flex items-center gap-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+                  description: '',
+                  description_en: '',
+                  description_es: '',
+                  technologies: [],
+                  thumbnail: '',
+                  githubUrl: '',
+                  publicUrl: '',
+                });
+                setImageFile(null);
+                setImagePreview(null);
+              }}
+              variant="ghost"
+              className="text-slate-500 hover:text-slate-700"
             >
-              <Trash2 className="w-4 h-4" />
               Clear Form
             </Button>
             <Button
               onClick={handleSave}
-              disabled={!selectedProject.title || !selectedProject.subtitle || !selectedProject.description_en}
-              className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+              disabled={!selectedProject.title || !selectedProject.subtitle}
+              className="bg-[#FD4345] hover:bg-[#ff5456] text-white disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed flex items-center gap-2 px-8"
             >
               <Save className="w-4 h-4" />
               {selectedProject._id ? 'Update Project' : 'Create Project'}

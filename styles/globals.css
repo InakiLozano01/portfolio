@@ -270,3 +270,10 @@ body {
 .tinymce-readonly iframe {
   @apply w-full;
 }
+
+/* TinyMCE overflow fix for admin */
+.tox.tox-tinymce {
+  max-height: 100% !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.375rem !important;
+}

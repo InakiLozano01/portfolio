@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
-import { PlusCircle, Trash2, Code } from 'lucide-react'
+import { PlusCircle, Trash2, Code, Check, Save, X } from 'lucide-react'
 import JsonEditor from './JsonEditor'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { TinyMCE } from '@/components/ui/tinymce'
@@ -331,7 +331,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   [getFieldName('headline')]: e.target.value
                 }))}
                 placeholder={`Enter a catchy headline (${language})`}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
               />
             </div>
             <div className="space-y-2">
@@ -343,7 +343,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   [getFieldName('description')]: e.target.value
                 }))}
                 placeholder={`Describe yourself and your work (${language})`}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
               />
             </div>
           </>
@@ -361,7 +361,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   [getFieldName('description')]: e.target.value
                 }))}
                 placeholder={`Tell your story (${language})`}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
               />
             </div>
             <div className="space-y-2">
@@ -382,7 +382,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   }))
                 }}
                 placeholder={`List your key achievements or highlights (${language})`}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
               />
             </div>
           </>
@@ -394,7 +394,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             <Button
               type="button"
               onClick={addEducationEntry}
-              className="flex items-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50"
+              className="flex items-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#FD4345] hover:border-[#FD4345]"
               variant="outline"
             >
               <PlusCircle className="w-4 h-4" />
@@ -408,7 +408,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-slate-400 hover:text-red-700 hover:bg-red-50"
                       onClick={() => removeEducationEntry(index)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -420,7 +420,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       value={edu.institution}
                       onChange={(e) => handleEducationChange(index, 'institution', e.target.value)}
                       placeholder="Enter institution name"
-                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                      className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
                     />
                   </div>
                   <div>
@@ -429,7 +429,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       value={language === 'en' ? edu.degree : (edu.degree_es || '')}
                       onChange={(e) => handleEducationChange(index, language === 'en' ? 'degree' : 'degree_es' as keyof Education, e.target.value)}
                       placeholder={`Enter degree name (${language})`}
-                      className="bg-white text-black placeholder:text-gray-500"
+                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
                     />
                   </div>
                   <div>
@@ -438,7 +438,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       value={edu.period}
                       onChange={(e) => handleEducationChange(index, 'period', e.target.value)}
                       placeholder="e.g., 2018 - 2022"
-                      className="bg-white text-black placeholder:text-gray-500"
+                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
                     />
                   </div>
                   <div>
@@ -447,7 +447,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       value={language === 'en' ? edu.description : (edu.description_es || '')}
                       onChange={(e) => handleEducationChange(index, language === 'en' ? 'description' : 'description_es' as keyof Education, e.target.value)}
                       placeholder={`Describe your studies and achievements (${language})`}
-                      className="bg-white text-black placeholder:text-gray-500"
+                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
                     />
                   </div>
                 </CardContent>
@@ -462,7 +462,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             <Button
               type="button"
               onClick={addExperienceEntry}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#FD4345] hover:border-[#FD4345]"
               variant="outline"
             >
               <PlusCircle className="w-4 h-4" />
@@ -476,7 +476,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-100"
+                      className="text-slate-400 hover:text-red-700 hover:bg-red-50"
                       onClick={() => removeExperienceEntry(index)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -488,7 +488,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       value={language === 'en' ? exp.title : (exp.title_es || '')}
                       onChange={(e) => handleExperienceChange(index, language === 'en' ? 'title' : 'title_es' as keyof Experience, e.target.value)}
                       placeholder={`Enter job title (${language})`}
-                      className="bg-white text-black placeholder:text-gray-500"
+                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
                     />
                   </div>
                   <div>
@@ -497,7 +497,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       value={exp.company}
                       onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
                       placeholder="Enter company name"
-                      className="bg-white text-black placeholder:text-gray-500"
+                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
                     />
                   </div>
                   <div>
@@ -506,7 +506,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       value={exp.period}
                       onChange={(e) => handleExperienceChange(index, 'period', e.target.value)}
                       placeholder="e.g., Jan 2020 - Present"
-                      className="bg-white text-black placeholder:text-gray-500"
+                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
                     />
                   </div>
                   <div>
@@ -515,7 +515,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       value={language === 'en' ? exp.description : (exp.description_es || '')}
                       onChange={(e) => handleExperienceChange(index, language === 'en' ? 'description' : 'description_es' as keyof Experience, e.target.value)}
                       placeholder={`Brief overview of your role (${language})`}
-                      className="bg-white text-black placeholder:text-gray-500"
+                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
                     />
                   </div>
                   <div>
@@ -538,13 +538,13 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                           value={responsibility}
                           onChange={(e) => handleResponsibilityChange(index, respIndex, e.target.value)}
                           placeholder={`Responsibility ${respIndex + 1} (${language})`}
-                          className="bg-white text-black placeholder:text-gray-500"
+                          className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-100 shrink-0"
+                          className="text-slate-400 hover:text-red-700 hover:bg-red-50 shrink-0"
                           onClick={() => removeResponsibility(index, respIndex)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -570,7 +570,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   email: e.target.value
                 }))}
                 placeholder="Enter your email address"
-                className="bg-white text-black placeholder:text-gray-500"
+                className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
               />
             </div>
             <div className="space-y-2">
@@ -582,7 +582,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   [getFieldName('city')]: e.target.value
                 }))}
                 placeholder={`Enter your city (${language})`}
-                className="bg-white text-black placeholder:text-gray-500"
+                className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
               />
             </div>
             <div className="space-y-2">
@@ -597,7 +597,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   }
                 }))}
                 placeholder="Enter your GitHub profile URL"
-                className="bg-white text-black placeholder:text-gray-500"
+                className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
               />
             </div>
             <div className="space-y-2">
@@ -612,7 +612,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   }
                 }))}
                 placeholder="Enter your LinkedIn profile URL"
-                className="bg-white text-black placeholder:text-gray-500"
+                className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
               />
             </div>
           </>
@@ -631,6 +631,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     title_en: e.target.value
                   }))}
                   placeholder="Blog"
+                  className="focus-visible:ring-[#FD4345]"
                 />
               </div>
               <div className="space-y-1">
@@ -642,6 +643,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     title_es: e.target.value
                   }))}
                   placeholder="Blog"
+                  className="focus-visible:ring-[#FD4345]"
                 />
               </div>
             </div>
@@ -655,6 +657,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     description_en: e.target.value
                   }))}
                   placeholder="Sharing insights and experiences in software development"
+                  className="focus-visible:ring-[#FD4345]"
                 />
               </div>
               <div className="space-y-1">
@@ -666,6 +669,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     description_es: e.target.value
                   }))}
                   placeholder="Compartiendo ideas y experiencias de desarrollo"
+                  className="focus-visible:ring-[#FD4345]"
                 />
               </div>
             </div>
@@ -685,6 +689,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     title_en: e.target.value
                   }))}
                   placeholder="Skills & Technologies"
+                  className="focus-visible:ring-[#FD4345]"
                 />
               </div>
               <div className="space-y-1">
@@ -696,6 +701,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     title_es: e.target.value
                   }))}
                   placeholder="Habilidades y Tecnologías"
+                  className="focus-visible:ring-[#FD4345]"
                 />
               </div>
             </div>
@@ -709,6 +715,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     description_en: e.target.value
                   }))}
                   placeholder="A comprehensive set of technical skills across various domains"
+                  className="focus-visible:ring-[#FD4345]"
                 />
               </div>
               <div className="space-y-1">
@@ -720,6 +727,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                     description_es: e.target.value
                   }))}
                   placeholder="Conjunto integral de habilidades técnicas en varios dominios"
+                  className="focus-visible:ring-[#FD4345]"
                 />
               </div>
             </div>
@@ -734,7 +742,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
               value={JSON.stringify(editedSection.content, null, 2)}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(e.target.value)}
               placeholder="Enter content in JSON format"
-              className="min-h-[200px] bg-white text-gray-900 placeholder:text-gray-500"
+              className="min-h-[200px] bg-white text-gray-900 placeholder:text-gray-500 font-mono text-xs"
             />
           </div>
         );
@@ -752,14 +760,14 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                 type="number"
                 value={editedSection.order || 0}
                 onChange={(e) => handleOrderChange(e.target.value)}
-                className="w-20 border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                className="w-20 border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
               />
             </div>
             <div className="flex items-center border rounded-md overflow-hidden border-slate-300">
               <button
                 type="button"
                 onClick={() => setLanguage('en')}
-                className={`px-3 py-2 text-sm font-medium transition-colors ${language === 'en' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${language === 'en' ? 'bg-[#263547] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
               >
                 English
               </button>
@@ -767,7 +775,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
               <button
                 type="button"
                 onClick={() => setLanguage('es')}
-                className={`px-3 py-2 text-sm font-medium transition-colors ${language === 'es' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${language === 'es' ? 'bg-[#263547] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
               >
                 Español
               </button>
@@ -779,7 +787,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             size="icon"
             onClick={() => setJsonEditorOpen(true)}
             title="Edit JSON"
-            className="border-slate-300 text-slate-600 hover:bg-slate-50"
+            className="border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#FD4345] hover:border-[#FD4345]"
           >
             <Code className="h-4 w-4" />
           </Button>
@@ -788,7 +796,8 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
         <div className="space-y-6">
           {renderContentEditor()}
           {contentError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+              <X className="w-4 h-4 text-red-600" />
               <p className="text-sm text-red-600">{contentError}</p>
             </div>
           )}
@@ -798,9 +807,14 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
           <Button
             type="submit"
             disabled={isSubmitting || !!contentError}
-            className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-slate-400"
+            className="bg-[#FD4345] hover:bg-[#ff5456] text-white disabled:bg-slate-400 shadow-md"
           >
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {isSubmitting ? 'Saving...' : (
+                <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                </>
+            )}
           </Button>
         </div>
       </div>
@@ -835,7 +849,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             </Button>
             <Button
               onClick={handleSave}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-[#FD4345] hover:bg-[#ff5456] text-white"
             >
               Save Changes
             </Button>
@@ -844,4 +858,4 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
       </Dialog>
     </form>
   );
-} 
+}

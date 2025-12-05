@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/use-toast'
+import { Lock, Eye, EyeOff, Shield } from 'lucide-react'
 
 export default function ChangePassword() {
   const { toast } = useToast()
@@ -13,6 +14,7 @@ export default function ChangePassword() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const validate = (): string | null => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -65,25 +67,70 @@ export default function ChangePassword() {
   }
 
   return (
-    <Card className="max-w-xl">
-      <CardHeader>
-        <CardTitle>Change Password</CardTitle>
+    <Card className="border-slate-200 shadow-sm overflow-hidden">
+      <CardHeader className="bg-slate-50 border-b border-slate-100 pb-4">
+        <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-50 rounded-lg border border-amber-100">
+                <Lock className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+                <CardTitle className="text-lg font-bold text-slate-900">Change Password</CardTitle>
+                <CardDescription className="text-xs mt-0.5">Secure your account with a strong password</CardDescription>
+            </div>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label>Current password</Label>
-            <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required className="bg-white text-slate-900 placeholder:text-slate-500 border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1" />
+            <Label htmlFor="current-password">Current password</Label>
+            <Input 
+                id="current-password"
+                type="password" 
+                value={currentPassword} 
+                onChange={(e) => setCurrentPassword(e.target.value)} 
+                required 
+                className="bg-white text-slate-900 focus-visible:ring-[#FD4345]" 
+            />
           </div>
+          
           <div className="space-y-2">
-            <Label>New password</Label>
-            <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required className="bg-white text-slate-900 placeholder:text-slate-500 border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1" />
+            <Label htmlFor="new-password">New password</Label>
+            <div className="relative">
+                <Input 
+                    id="new-password"
+                    type={showPassword ? "text" : "password"} 
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)} 
+                    required 
+                    className="bg-white text-slate-900 pr-10 focus-visible:ring-[#FD4345]" 
+                />
+                <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors"
+                    tabIndex={-1}
+                >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+            </div>
+            <p className="text-xs text-slate-500">
+                At least 12 chars, including upper, lower, number & symbol.
+            </p>
           </div>
+
           <div className="space-y-2">
-            <Label>Confirm new password</Label>
-            <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="bg-white text-slate-900 placeholder:text-slate-500 border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1" />
+            <Label htmlFor="confirm-password">Confirm new password</Label>
+            <Input 
+                id="confirm-password"
+                type="password" 
+                value={confirmPassword} 
+                onChange={(e) => setConfirmPassword(e.target.value)} 
+                required 
+                className="bg-white text-slate-900 focus-visible:ring-[#FD4345]" 
+            />
           </div>
-          <Button type="submit" disabled={isSubmitting}>
+
+          <Button type="submit" disabled={isSubmitting} className="w-full bg-[#FD4345] hover:bg-[#ff5456] text-white mt-2">
             {isSubmitting ? 'Updating...' : 'Update Password'}
           </Button>
         </form>
@@ -91,5 +138,3 @@ export default function ChangePassword() {
     </Card>
   )
 }
-
-

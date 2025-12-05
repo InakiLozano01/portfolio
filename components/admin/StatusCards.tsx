@@ -18,23 +18,10 @@ export default function StatusCards() {
     useEffect(() => {
         const load = async () => {
             try {
-                const [messagesRes, projectsRes, skillsRes, blogsRes] = await Promise.all([
-                    fetch('/api/messages'),
-                    fetch('/api/projects'),
-                    fetch('/api/skills'),
-                    fetch('/api/blogs')
-                ])
-                const [messages, projects, skills, blogs] = await Promise.all([
-                    messagesRes.json(), projectsRes.json(), skillsRes.json(), blogsRes.json()
-                ])
-                const unread = Array.isArray(messages) ? messages.filter((m: any) => !m.read).length : 0
-                setCounts({
-                    messages: Array.isArray(messages) ? messages.length : 0,
-                    unread,
-                    projects: Array.isArray(projects) ? projects.length : 0,
-                    skills: Array.isArray(skills) ? skills.length : 0,
-                    blogs: Array.isArray(blogs) ? blogs.length : 0,
-                })
+                const res = await fetch('/api/stats')
+                if (!res.ok) throw new Error('Failed to fetch stats')
+                const data = await res.json()
+                setCounts(data)
             } catch {
                 setCounts({ messages: 0, unread: 0, projects: 0, skills: 0, blogs: 0 })
             }
@@ -42,46 +29,69 @@ export default function StatusCards() {
         load()
     }, [])
 
-    if (!counts) return null
+    if (!counts) return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+             {[1, 2, 3, 4].map((i) => (
+                 <div key={i} className="h-32 bg-slate-100 animate-pulse rounded-xl"></div>
+             ))}
+        </div>
+    )
+
+    const cards = [
+        {
+            label: 'Messages',
+            value: counts.messages,
+            icon: MessageSquare,
+            subtext: `${counts.unread} unread`,
+            subtextClass: counts.unread > 0 ? 'text-[#FD4345] font-semibold' : 'text-slate-400',
+            color: 'bg-blue-50 text-blue-600'
+        },
+        {
+            label: 'Projects',
+            value: counts.projects,
+            icon: Briefcase,
+            subtext: 'Portfolio Items',
+            subtextClass: 'text-slate-400',
+            color: 'bg-indigo-50 text-indigo-600'
+        },
+        {
+            label: 'Skills',
+            value: counts.skills,
+            icon: Wrench,
+            subtext: 'Technical Capabilities',
+            subtextClass: 'text-slate-400',
+            color: 'bg-emerald-50 text-emerald-600'
+        },
+        {
+            label: 'Blog Posts',
+            value: counts.blogs,
+            icon: FileText,
+            subtext: 'Published Articles',
+            subtextClass: 'text-slate-400',
+            color: 'bg-[#FD4345]/10 text-[#FD4345]'
+        }
+    ]
 
     return (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="border-blue-200">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-blue-700">
-                        <MessageSquare className="w-5 h-5" /> Messages
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="text-3xl font-bold text-blue-900">{counts.messages}
-                    <span className="ml-2 text-sm text-blue-600 font-medium">{counts.unread} unread</span>
-                </CardContent>
-            </Card>
-            <Card className="border-red-200">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-red-700">
-                        <Briefcase className="w-5 h-5" /> Projects
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="text-3xl font-bold text-red-900">{counts.projects}</CardContent>
-            </Card>
-            <Card className="border-blue-200">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-blue-700">
-                        <Wrench className="w-5 h-5" /> Skills
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="text-3xl font-bold text-blue-900">{counts.skills}</CardContent>
-            </Card>
-            <Card className="border-red-200">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-red-700">
-                        <FileText className="w-5 h-5" /> Blogs
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="text-3xl font-bold text-red-900">{counts.blogs}</CardContent>
-            </Card>
+            {cards.map((card, index) => (
+                <Card key={index} className="border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-600">
+                            {card.label}
+                        </CardTitle>
+                        <div className={`p-2 rounded-md ${card.color}`}>
+                            <card.icon className="h-4 w-4" />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-slate-900">{card.value}</div>
+                        <p className={`text-xs mt-1 ${card.subtextClass}`}>
+                            {card.subtext}
+                        </p>
+                    </CardContent>
+                </Card>
+            ))}
         </div>
     )
 }
-
-

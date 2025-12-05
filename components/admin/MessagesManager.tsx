@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { formatDistanceToNow } from 'date-fns'
 import { useToast } from '@/components/ui/use-toast'
-import { MessageSquare } from 'lucide-react'
+import { MessageSquare, CheckCircle, Clock, Inbox, Mail, Search } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 
 type FilterType = 'priority' | 'read' | 'all'
 
@@ -25,6 +25,7 @@ export default function MessagesManager() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [filter, setFilter] = useState<FilterType>('priority');
   const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState('');
   const messagesPerPage = 10;
 
   useEffect(() => {
@@ -73,21 +74,32 @@ export default function MessagesManager() {
   };
 
   const getFilteredMessages = () => {
+    let filtered = messages;
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
+    if (search) {
+      const query = search.toLowerCase();
+      filtered = filtered.filter(
+        (msg) =>
+          msg.name.toLowerCase().includes(query) ||
+          msg.email.toLowerCase().includes(query) ||
+          msg.message.toLowerCase().includes(query)
+      );
+    }
+
     switch (filter) {
       case 'priority':
-        return messages.filter(
+        return filtered.filter(
           (msg) =>
             !msg.read ||
             new Date(msg.createdAt) >= oneWeekAgo
         );
       case 'read':
-        return messages.filter((msg) => msg.read);
+        return filtered.filter((msg) => msg.read);
       case 'all':
       default:
-        return messages;
+        return filtered;
     }
   };
 
@@ -100,96 +112,133 @@ export default function MessagesManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 p-6 bg-white rounded-lg shadow-md border-l-4 border-blue-600">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Messages</h2>
-          <p className="text-slate-600 text-sm mt-1">Handle visitor inquiries and communications</p>
+      <div className="flex flex-col space-y-4 p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Messages</h2>
+            <p className="text-slate-500 text-sm mt-1">Handle visitor inquiries and communications</p>
+          </div>
+          <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
+            <Button
+              onClick={() => setFilter('priority')}
+              variant="ghost"
+              size="sm"
+              className={`rounded-md transition-all ${filter === 'priority' ? 'bg-white text-[#FD4345] shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+            >
+              Priority
+            </Button>
+            <Button
+              onClick={() => setFilter('read')}
+              variant="ghost"
+              size="sm"
+              className={`rounded-md transition-all ${filter === 'read' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+            >
+              Read
+            </Button>
+            <Button
+              onClick={() => setFilter('all')}
+              variant="ghost"
+              size="sm"
+              className={`rounded-md transition-all ${filter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+            >
+              All
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setFilter('priority')}
-            variant={filter === 'priority' ? 'default' : 'outline'}
-            className={filter === 'priority' ? 'bg-red-600 hover:bg-red-700 text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}
-          >
-            Priority
-          </Button>
-          <Button
-            onClick={() => setFilter('read')}
-            variant={filter === 'read' ? 'default' : 'outline'}
-            className={filter === 'read' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}
-          >
-            Read
-          </Button>
-          <Button
-            onClick={() => setFilter('all')}
-            variant={filter === 'all' ? 'default' : 'outline'}
-            className={filter === 'all' ? 'bg-slate-600 hover:bg-slate-700 text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}
-          >
-            All
-          </Button>
+        
+        <div className="relative max-w-md w-full">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Input 
+                placeholder="Search messages..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 bg-white focus-visible:ring-[#FD4345]"
+            />
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="p-4 space-y-3">
+      <div className="space-y-4">
           {currentMessages.length === 0 ? (
-            <div className="text-center py-12">
-              <MessageSquare className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-500 text-lg">No messages found</p>
-              <p className="text-slate-400 text-sm">Messages from visitors will appear here</p>
+            <div className="text-center py-16 bg-white rounded-lg border border-dashed border-slate-200 shadow-sm">
+              <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Inbox className="w-8 h-8 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-medium text-slate-900">No messages found</h3>
+              <p className="text-slate-500 text-sm mt-1">
+                  {filter === 'priority' ? 'You have no unread or recent messages.' : 
+                   filter === 'read' ? 'No read messages found.' : 
+                   'Messages from visitors will appear here.'}
+              </p>
             </div>
           ) : (
-            currentMessages.map((message) => (
-              <Card key={message._id} className="hover:shadow-md transition-all duration-200 border border-slate-200 hover:border-slate-300">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-semibold text-slate-900 text-lg">{message.name}</h3>
-                        <Badge
-                          className={!message.read ?
-                            "bg-red-100 text-red-800 border border-red-200 hover:bg-red-200" :
-                            "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200"
-                          }
+            <div className="grid gap-4">
+                {currentMessages.map((message) => (
+                <Card key={message._id} className={`group transition-all duration-200 border hover:border-[#FD4345]/30 bg-white ${!message.read ? 'shadow-md border-l-4 border-l-[#FD4345]' : 'shadow-sm border-slate-200 opacity-90 hover:opacity-100'}`}>
+                    <CardContent className="p-5">
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                        <div className="space-y-2 flex-1 w-full">
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+                                {message.name}
+                                <span className="text-xs font-normal text-slate-400 flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+                                    <Mail className="w-3 h-3" /> {message.email}
+                                </span>
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                {!message.read ? (
+                                    <Badge className="bg-[#FD4345] hover:bg-[#ff5456] border-none text-white shadow-sm">
+                                        New Message
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="outline" className="text-slate-500 border-slate-200 bg-slate-50">
+                                        Read
+                                    </Badge>
+                                )}
+                                {new Date(message.createdAt) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && message.read && (
+                                <Badge className="bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100">
+                                    Recent
+                                </Badge>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="bg-slate-50 p-3 rounded-md border border-slate-100 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
+                            {message.message}
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                            <Clock className="w-3 h-3" />
+                            {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                        </div>
+                        </div>
+                        
+                        {!message.read && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-500 hover:text-[#FD4345] hover:bg-[#FD4345]/10 shrink-0 whitespace-nowrap"
+                            onClick={() => handleMarkAsRead(message._id)}
                         >
-                          {message.read ? 'Read' : 'Unread'}
-                        </Badge>
-                        {new Date(message.createdAt) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-                          <Badge className="bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200">
-                            New
-                          </Badge>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Mark as Read
+                        </Button>
                         )}
-                      </div>
-                      <p className="text-sm text-slate-600 font-medium">{message.email}</p>
-                      <p className="text-sm text-slate-700 leading-relaxed">{message.message}</p>
-                      <p className="text-xs text-slate-500">
-                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                      </p>
                     </div>
-                    {!message.read && (
-                      <Button
-                        variant="outline"
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-300 ml-4"
-                        onClick={() => handleMarkAsRead(message._id)}
-                      >
-                        Mark as Read
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                    </CardContent>
+                </Card>
+                ))}
+            </div>
           )}
-        </div>
       </div>
 
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
+        <div className="flex justify-center gap-2 mt-8">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <Button
               key={page}
               variant={currentPage === page ? 'default' : 'outline'}
-              className={currentPage === page ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}
+              size="sm"
+              className={currentPage === page ? 'bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-sm' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}
               onClick={() => setCurrentPage(page)}
             >
               {page}
@@ -199,4 +248,4 @@ export default function MessagesManager() {
       )}
     </div>
   );
-} 
+}

@@ -9,6 +9,7 @@ import SkillIcon from '@/components/SkillIcon'
 import type { IProject } from '@/models/Project'
 import type { Document, Types } from 'mongoose'
 import { ExternalLink } from 'lucide-react'
+import { slugify } from '@/lib/utils'
 
 interface Skill extends Document {
     _id: Types.ObjectId;
@@ -113,6 +114,30 @@ export default function Projects({ lang = 'en' }: { lang?: 'en' | 'es' }) {
 
     const filteredProjects = techFilter === 'all' ? projects : projects.filter(p => p.technologies.some(t => t.name === techFilter))
 
+    const resolveSlug = (project: ProjectWithTechnologies) => {
+        const rawSlug = project.slug?.trim()
+        if (rawSlug && rawSlug !== 'undefined') return rawSlug
+        const fallbackSource =
+            project.title ||
+            project.title_en ||
+            project.title_es ||
+            project.subtitle ||
+            project.subtitle_en ||
+            project.subtitle_es ||
+            ''
+        return fallbackSource ? slugify(fallbackSource) : ''
+    }
+
+    const sanitizePublicUrl = (url?: string | null) => {
+        const trimmed = url?.trim()
+        if (!trimmed) return null
+        const lowered = trimmed.toLowerCase()
+        if (lowered === 'undefined' || lowered === 'null' || lowered === 'none' || lowered === '#') {
+            return null
+        }
+        return trimmed
+    }
+
     return (
         <section id="projects" className="container mx-auto px-4 py-16">
             <h2 className="text-3xl font-bold mb-6 text-primary">{t.heading}</h2>
@@ -134,62 +159,71 @@ export default function Projects({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                 ))}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr gap-6">
-                {filteredProjects.map((project) => (
-                    <Link
-                        key={project._id.toString()}
-                        href={`/${lang}/projects/${project.slug}`}
-                        prefetch={true}
-                        className="transition-transform hover:scale-105"
-                    >
-                        <Card className="h-full flex flex-col hover:bg-primary/5">
-                            <div className="relative aspect-video w-full">
-                                <Image
-                                    src={project.thumbnail || '/images/projects/default-project.jpg'}
-                                    alt={`Thumbnail image for project ${pickLang(project.title_en || project.title, project.title_es || project.title, project.title)}`}
-                                    fill
-                                    className="object-cover rounded-t-lg"
-                                    priority={false}
-                                    placeholder="blur"
-                                    blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNjQwJyBoZWlnaHQ9JzM2MCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCBmaWxsPSIjZWVlIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+PC9zdmc+"
-                                />
-                            </div>
-                            <CardHeader className="flex-grow">
-                                <CardTitle className="line-clamp-1">
-                                    {pickLang(project.title_en || project.title, project.title_es || project.title, project.title)}
-                                </CardTitle>
-                                <p className="text-sm text-muted-foreground line-clamp-2">
-                                    {pickLang(project.subtitle_en || project.subtitle, project.subtitle_es || project.subtitle, project.subtitle)}
-                                </p>
-                                {project.publicUrl && (
-                                    <a
-                                        href={project.publicUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="mt-2 inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <ExternalLink className="w-4 h-4" />
-                                        {lang === 'es' ? 'Ver proyecto' : 'Visit project'}
-                                    </a>
-                                )}
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex flex-wrap gap-2">
-                                    {project.technologies.map((tech) => (
-                                        <Badge
-                                            key={tech._id.toString()}
-                                            variant="outline"
-                                            className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 inline-flex items-center gap-1"
-                                        >
-                                            <SkillIcon name={tech.name} icon={tech.icon} size={14} className="w-3.5 h-3.5" />
-                                            <span>{tech.name}</span>
-                                        </Badge>
-                                    ))}
+                {filteredProjects.map((project) => {
+                    const slug = resolveSlug(project)
+                    if (!slug) {
+                        console.warn('Skipping project without slug', project._id?.toString?.())
+                        return null
+                    }
+                    const publicUrl = sanitizePublicUrl(project.publicUrl)
+
+                    return (
+                        <Link
+                            key={project._id.toString()}
+                            href={`/${lang}/projects/${slug}`}
+                            prefetch
+                            className="transition-transform hover:scale-105"
+                        >
+                            <Card className="h-full flex flex-col hover:bg-primary/5">
+                                <div className="relative aspect-video w-full">
+                                    <Image
+                                        src={project.thumbnail || '/images/projects/default-project.jpg'}
+                                        alt={`Thumbnail image for project ${pickLang(project.title_en || project.title, project.title_es || project.title, project.title)}`}
+                                        fill
+                                        className="object-cover rounded-t-lg"
+                                        priority={false}
+                                        placeholder="blur"
+                                        blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNjQwJyBoZWlnaHQ9JzM2MCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCBmaWxsPSIjZWVlIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+PC9zdmc+"
+                                    />
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
-                ))}
+                                <CardHeader className="flex-grow">
+                                    <CardTitle className="line-clamp-1">
+                                        {pickLang(project.title_en || project.title, project.title_es || project.title, project.title)}
+                                    </CardTitle>
+                                    <p className="text-sm text-muted-foreground line-clamp-2">
+                                        {pickLang(project.subtitle_en || project.subtitle, project.subtitle_es || project.subtitle, project.subtitle)}
+                                    </p>
+                                    {publicUrl && (
+                                        <a
+                                            href={publicUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="mt-2 inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                            {lang === 'es' ? 'Ver proyecto' : 'Visit project'}
+                                        </a>
+                                    )}
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex flex-wrap gap-2">
+                                        {project.technologies.map((tech) => (
+                                            <Badge
+                                                key={tech._id.toString()}
+                                                variant="outline"
+                                                className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 inline-flex items-center gap-1"
+                                            >
+                                                <SkillIcon name={tech.name} icon={tech.icon} size={14} className="w-3.5 h-3.5" />
+                                                <span>{tech.name}</span>
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    )
+                })}
             </div>
         </section>
     )

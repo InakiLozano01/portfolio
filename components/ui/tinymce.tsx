@@ -39,10 +39,11 @@ interface TinyMCEProps {
     id?: string;
 }
 
-export function TinyMCE({ value, onChange, height = 500, disabled = false, id }: TinyMCEProps) {
+export function TinyMCE({ value, onChange, height = 400, disabled = false, id }: TinyMCEProps) {
     const editorRef = useRef<TinyMCEEditor | null>(null);
 
     return (
+        <div style={{ height, minHeight: height, maxHeight: height }} className="overflow-hidden">
         <Editor
             id={id}
             tinymceScriptSrc="/tinymce/tinymce.min.js"
@@ -165,31 +166,9 @@ export function TinyMCE({ value, onChange, height = 500, disabled = false, id }:
                         display: block;
                         margin: 1rem auto;
                     }
-                    .tox-tinymce {
-                        border: 1px solid #e2e8f0 !important;
-                        border-radius: 0.375rem !important;
-                        backdrop-filter: none !important;
-                    }
-                    .tox-editor-container {
-                        backdrop-filter: none !important;
-                    }
-                    .tox-edit-area {
-                        backdrop-filter: none !important;
-                    }
-                    .tox-edit-area__iframe {
-                        backdrop-filter: none !important;
-                    }
-                    .tox-dialog {
-                        backdrop-filter: none !important;
-                    }
-                    .tox-dialog-wrap {
-                        backdrop-filter: none !important;
-                    }
-                    .tox-tbtn--select, .tox-tbtn--bespoke {
-                        transform: none !important;
-                    }
                 `,
             }}
         />
+        </div>
     );
 }
