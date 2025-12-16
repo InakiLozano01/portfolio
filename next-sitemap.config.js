@@ -63,9 +63,15 @@ module.exports = {
                 userAgent: 'Bingbot',
                 allow: '/',
                 disallow: ['/admin/', '/api/']
+            },
+            {
+                userAgent: 'Yandex',
+                allow: '/',
+                disallow: ['/admin/', '/api/']
             }
         ],
-        additionalSitemaps: uniqueSitemaps
+        additionalSitemaps: uniqueSitemaps,
+        additionalRobotsTxt: ['Host: inakilozano.com']
     },
 
     // Exclude certain paths

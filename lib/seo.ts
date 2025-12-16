@@ -48,3 +48,43 @@ export function normalizeCanonicalPath(path?: string) {
     if (!path) return ''
     return path.startsWith('/') ? path : `/${path}`
 }
+
+export function selectHostsForLanguage(lang: string, baseUrl?: string, alternateBaseUrl?: string) {
+    const normalizedLang = lang === 'es' ? 'es' : 'en'
+    const primary = normalizeUrl(baseUrl) || normalizeUrl(FALLBACK_BASE_URL) || 'https://inakilozano.com'
+    const secondary = normalizeUrl(alternateBaseUrl) || normalizeUrl(FALLBACK_ALT_URL)
+
+    const spanishHost = (primary?.includes('inakilozano.com') ? primary : secondary) || primary
+    const englishHost = (primary?.includes('inakilozano.dev') ? primary : secondary) || secondary || primary
+    const canonicalHost = normalizedLang === 'es' ? spanishHost : englishHost
+    const backupHost = canonicalHost === primary ? secondary : primary
+
+    return { canonicalHost, secondaryHost: backupHost, englishHost, spanishHost }
+}
+
+export function buildLanguageAlternateUrls(
+    englishHost: string,
+    spanishHost: string,
+    englishPath: string,
+    spanishPath: string
+) {
+    const normalizedEnglishHost = normalizeUrl(englishHost) || englishHost
+    const normalizedSpanishHost = normalizeUrl(spanishHost) || spanishHost
+    const enPath = normalizeCanonicalPath(englishPath)
+    const esPath = normalizeCanonicalPath(spanishPath)
+
+    return {
+        'en-US': `${normalizedEnglishHost}${enPath}`,
+        'es-AR': `${normalizedSpanishHost}${esPath}`,
+        'es-ES': `${normalizedSpanishHost}${esPath}`,
+        'x-default': `${normalizedEnglishHost}${enPath}`
+    }
+}
+
+export function buildMetaDescription(rawValue?: string | null, fallback: string = '', maxLength = 160) {
+    const source = rawValue || fallback || ''
+    const stripped = source.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+    if (!stripped) return ''
+    if (stripped.length <= maxLength) return stripped
+    return `${stripped.slice(0, maxLength - 3).trim()}...`
+}

@@ -2,7 +2,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Github, ArrowLeft, ExternalLink } from 'lucide-react'
-import { IProject } from '@/models/Project'
 import SkillIcon from '@/components/SkillIcon'
 import mongoose from 'mongoose'
 import DOMPurify from 'isomorphic-dompurify'
@@ -10,6 +9,122 @@ import { getProjectBySlug } from '@/lib/projects'
 import BackNavigationHandler from '@/components/BackNavigationHandler'
 import ShareActions from '@/components/ShareActions'
 import { redirect } from 'next/navigation'
+import type { Metadata } from 'next'
+import {
+    buildLanguageAlternateUrls,
+    buildMetaDescription,
+    normalizeCanonicalPath,
+    resolveAlternateBaseUrl,
+    resolveBaseUrl,
+    selectHostsForLanguage
+} from '@/lib/seo'
+import { JsonLd } from '@/components/JsonLd'
+
+type SupportedLang = 'en' | 'es'
+
+const normalizeLang = (lang: string): SupportedLang => (lang === 'es' ? 'es' : 'en')
+
+const getLocalizedProjectFields = (project: any, lang: SupportedLang, fallbackSlug: string) => ({
+    title:
+        lang === 'es'
+            ? project?.title_es || project?.title_en || project?.title
+            : project?.title_en || project?.title_es || project?.title,
+    subtitle:
+        lang === 'es'
+            ? project?.subtitle_es || project?.subtitle_en || project?.subtitle
+            : project?.subtitle_en || project?.subtitle_es || project?.subtitle,
+    description:
+        lang === 'es'
+            ? project?.description_es || project?.description_en || project?.description
+            : project?.description_en || project?.description_es || project?.description,
+    slug: project?.slug || fallbackSlug
+})
+
+const buildThumbnailUrl = (thumbnail: string | undefined | null, baseUrl: string) => {
+    if (!thumbnail) return `${baseUrl}/pfp.jpg`
+    if (thumbnail.startsWith('http')) return thumbnail
+    return `${baseUrl}${thumbnail.startsWith('/') ? thumbnail : `/${thumbnail}`}`
+}
+
+export async function generateMetadata({
+    params
+}: {
+    params: { slug: string; lang: string }
+}): Promise<Metadata> {
+    const { slug, lang } = params
+    const resolvedLang = normalizeLang(lang)
+    const project = await getProjectBySlug(slug)
+    const localized = getLocalizedProjectFields(project, resolvedLang, slug)
+
+    const baseUrl = await resolveBaseUrl()
+    const alternateBaseUrl = resolveAlternateBaseUrl(baseUrl)
+    const { canonicalHost, englishHost, spanishHost } = selectHostsForLanguage(resolvedLang, baseUrl, alternateBaseUrl)
+    const canonicalBase = canonicalHost || 'https://inakilozano.com'
+
+    const enPath = `/en/projects/${localized.slug}`
+    const esPath = `/es/projects/${localized.slug}`
+    const canonicalPath = resolvedLang === 'es' ? esPath : enPath
+    const canonicalUrl = `${canonicalBase}${normalizeCanonicalPath(canonicalPath)}`
+
+    const description =
+        buildMetaDescription(localized.subtitle, localized.description) ||
+        (resolvedLang === 'es'
+            ? 'Detalle de proyecto en el portafolio de Iñaki F. Lozano.'
+            : 'Project detail on the Iñaki F. Lozano portfolio.')
+    const pageTitle = localized.title
+        ? `${localized.title} | Iñaki F. Lozano`
+        : resolvedLang === 'es'
+            ? 'Proyecto | Iñaki F. Lozano'
+            : 'Project | Iñaki F. Lozano'
+    const keywords = Array.isArray(project?.technologies)
+        ? (project.technologies as any[]).map((tech) => (tech as any).name).filter(Boolean)
+        : []
+    const imageUrl = buildThumbnailUrl(project?.thumbnail, canonicalBase)
+    const publishedTime = project?.createdAt ? new Date(project.createdAt).toISOString() : undefined
+    const modifiedTime = project?.updatedAt ? new Date(project.updatedAt).toISOString() : undefined
+
+    return {
+        metadataBase: new URL(canonicalBase),
+        title: pageTitle,
+        description,
+        keywords,
+        alternates: {
+            canonical: canonicalUrl,
+            languages: buildLanguageAlternateUrls(
+                englishHost || canonicalBase,
+                spanishHost || canonicalBase,
+                enPath,
+                esPath
+            )
+        },
+        openGraph: {
+            url: canonicalUrl,
+            type: 'website',
+            locale: resolvedLang === 'es' ? 'es_AR' : 'en_US',
+            title: pageTitle,
+            description,
+            siteName: 'Iñaki F. Lozano Portfolio',
+            images: [
+                {
+                    url: imageUrl,
+                    width: 1200,
+                    height: 630,
+                    alt: localized.title || 'Project'
+                }
+            ],
+            ...(publishedTime ? { publishedTime } : {}),
+            ...(modifiedTime ? { modifiedTime } : {})
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: pageTitle,
+            description,
+            images: [imageUrl],
+            creator: '@inakilozano',
+            site: '@inakilozano'
+        }
+    }
+}
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -54,22 +169,82 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         redirect(`/${lang}#projects`)
     }
 
-    const title =
-        lang === 'es'
-            ? project.title_es || project.title_en || project.title
-            : project.title_en || project.title_es || project.title
-    const subtitle =
-        lang === 'es'
-            ? project.subtitle_es || project.subtitle_en || project.subtitle
-            : project.subtitle_en || project.subtitle_es || project.subtitle
-    const description =
-        lang === 'es'
-            ? project.description_es || project.description_en || project.description
-            : project.description_en || project.description_es || project.description
+    const resolvedLang = normalizeLang(lang)
+    const localized = getLocalizedProjectFields(project, resolvedLang, slug)
+    const baseUrl = await resolveBaseUrl()
+    const alternateBaseUrl = resolveAlternateBaseUrl(baseUrl)
+    const { canonicalHost, englishHost, spanishHost } = selectHostsForLanguage(resolvedLang, baseUrl, alternateBaseUrl)
+    const canonicalBase = canonicalHost || baseUrl
+
+    const enPath = `/en/projects/${localized.slug}`
+    const esPath = `/es/projects/${localized.slug}`
+    const canonicalPath = resolvedLang === 'es' ? esPath : enPath
+    const canonicalUrl = `${canonicalBase}${normalizeCanonicalPath(canonicalPath)}`
+    const imageUrl = buildThumbnailUrl(project.thumbnail, canonicalBase)
+    const metaDescription =
+        buildMetaDescription(localized.subtitle, localized.description) ||
+        (resolvedLang === 'es'
+            ? 'Detalle de proyecto en el portafolio de Iñaki F. Lozano.'
+            : 'Project detail on the Iñaki F. Lozano portfolio.')
+    const technologyKeywords = Array.isArray(project.technologies)
+        ? (project.technologies as any[]).map((tech) => (tech as any).name).filter(Boolean)
+        : []
+
+    const hostForLang = resolvedLang === 'es' ? spanishHost || canonicalBase : englishHost || canonicalBase
+    const homePath = normalizeCanonicalPath(`/${resolvedLang === 'es' ? 'es' : 'en'}`)
+    const projectsSectionPath = `${homePath}#projects`
+
+    const breadcrumbJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {
+                '@type': 'ListItem',
+                position: 1,
+                name: resolvedLang === 'es' ? 'Inicio' : 'Home',
+                item: `${hostForLang}${homePath}`
+            },
+            {
+                '@type': 'ListItem',
+                position: 2,
+                name: resolvedLang === 'es' ? 'Proyectos' : 'Projects',
+                item: `${hostForLang}${projectsSectionPath}`
+            },
+            {
+                '@type': 'ListItem',
+                position: 3,
+                name: localized.title || project.title,
+                item: canonicalUrl
+            }
+        ]
+    }
+
+    const projectJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'CreativeWork',
+        name: localized.title || project.title,
+        headline: localized.subtitle || undefined,
+        description: metaDescription,
+        image: imageUrl,
+        url: canonicalUrl,
+        mainEntityOfPage: canonicalUrl,
+        dateCreated: project.createdAt,
+        dateModified: project.updatedAt,
+        inLanguage: resolvedLang === 'es' ? 'es-AR' : 'en-US',
+        author: {
+            '@type': 'Person',
+            name: 'Iñaki F. Lozano',
+            url: canonicalBase
+        },
+        ...(technologyKeywords.length ? { keywords: technologyKeywords } : {}),
+        ...(project.publicUrl ? { sameAs: [project.publicUrl] } : {})
+    }
 
     return (
         <div className="flex min-h-screen bg-[#263547]">
             <BackNavigationHandler />
+            <JsonLd data={breadcrumbJsonLd} />
+            <JsonLd data={projectJsonLd} />
 
             <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
 
@@ -95,18 +270,18 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                     </Link>
 
                     <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">
-                        {title}
+                        {localized.title}
                     </h1>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
-                        <p className="text-xl text-muted-foreground">{subtitle}</p>
-                        <ShareActions url={`${process.env.NEXT_PUBLIC_APP_URL || ''}/${lang}/projects/${project.slug}`} title={title} />
+                        <p className="text-xl text-muted-foreground">{localized.subtitle}</p>
+                        <ShareActions url={canonicalUrl} title={localized.title || project.title} />
                     </div>
 
                     {project.thumbnail && (
                         <div className="relative w-full mb-8">
                             <Image
                                 src={project.thumbnail}
-                                alt={title}
+                                alt={localized.title}
                                 width={1920}
                                 height={1080}
                                 className="w-full rounded-lg shadow-lg"
@@ -165,7 +340,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                                     'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li', 'img', 'a', 'strong', 'em', 'b', 'i', 'u', 's', 'del', 'mark', 'span', 'br', 'hr', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'figure', 'figcaption', 'sub', 'sup'
                                 ]
                                 const allowedAttrs = ['href', 'target', 'rel', 'src', 'alt', 'width', 'height', 'class', 'style', 'loading']
-                                const sanitized = DOMPurify.sanitize(description || '', {
+                                const sanitized = DOMPurify.sanitize(localized.description || '', {
                                     ALLOWED_TAGS: allowedTags,
                                     ALLOWED_ATTR: allowedAttrs
                                 })
