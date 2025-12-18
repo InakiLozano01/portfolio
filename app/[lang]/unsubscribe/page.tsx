@@ -3,6 +3,14 @@ import { cookies } from 'next/headers'
 import { Suspense } from 'react'
 import { connectToDatabase } from '@/lib/mongodb'
 import Subscriber from '@/models/Subscriber'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 const STATUS_CONTENT: Record<string, { title: string; message: string; icon: string }> = {
   success: {

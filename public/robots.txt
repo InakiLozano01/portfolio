@@ -1,3 +1,4 @@
+# *
 User-agent: *
 Allow: /
 Disallow: /admin/
@@ -5,21 +6,26 @@ Disallow: /api/
 Disallow: /_next/
 Disallow: /static/
 
+# Googlebot
 User-agent: Googlebot
 Allow: /
 Disallow: /admin/
 Disallow: /api/
 
+# Bingbot
 User-agent: Bingbot
 Allow: /
 Disallow: /admin/
 Disallow: /api/
 
+# Yandex
 User-agent: Yandex
 Allow: /
 Disallow: /admin/
 Disallow: /api/
 
-Host: inakilozano.com
+# Host
+Host: https://inakilozano.com
+
+# Sitemaps
 Sitemap: https://inakilozano.com/sitemap.xml
-Sitemap: https://inakilozano.dev/sitemap.xml

@@ -16,27 +16,23 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
     const alternateBaseUrl = resolveAlternateBaseUrl(baseUrl)
     const isSpanish = resolved === 'es'
     const canonicalPath = normalizeCanonicalPath(resolved === 'es' ? '/es' : '/en')
-    const spanishHost = (baseUrl.includes('inakilozano.com') ? baseUrl : alternateBaseUrl) || baseUrl
-    const englishHost = (baseUrl.includes('inakilozano.dev') ? baseUrl : alternateBaseUrl) || alternateBaseUrl || baseUrl
-    const canonicalHostForLang = isSpanish ? spanishHost : englishHost
-    const secondaryHost = canonicalHostForLang === baseUrl ? alternateBaseUrl : baseUrl
 
     const metadataForLang = isSpanish
-        ? buildSpanishMetadata(canonicalHostForLang, secondaryHost, canonicalPath)
-        : buildEnglishMetadata(canonicalHostForLang, secondaryHost, canonicalPath)
+        ? buildSpanishMetadata(baseUrl, alternateBaseUrl, canonicalPath)
+        : buildEnglishMetadata(baseUrl, alternateBaseUrl, canonicalPath)
 
     const languageAlternates = {
-        'en-US': `${englishHost}${normalizeCanonicalPath('/en')}`,
-        'es-AR': `${spanishHost}${normalizeCanonicalPath('/es')}`,
-        'es-ES': `${spanishHost}${normalizeCanonicalPath('/es')}`,
-        'x-default': `${englishHost}${normalizeCanonicalPath('/en')}`,
+        'en-US': `${baseUrl}${normalizeCanonicalPath('/en')}`,
+        'es-AR': `${baseUrl}${normalizeCanonicalPath('/es')}`,
+        'es-ES': `${baseUrl}${normalizeCanonicalPath('/es')}`,
+        'x-default': `${baseUrl}${normalizeCanonicalPath('/en')}`,
     }
 
     return {
         ...metadataForLang,
         alternates: {
             ...metadataForLang.alternates,
-            canonical: `${canonicalHostForLang}${canonicalPath}`,
+            canonical: `${baseUrl}${canonicalPath}`,
             languages: languageAlternates,
         },
     }
@@ -53,10 +49,6 @@ export default async function RootLayout({
     const resolved = lang === 'es' ? 'es' : 'en'
     const baseUrl = await resolveBaseUrl()
     const alternateBaseUrl = resolveAlternateBaseUrl(baseUrl)
-    const spanishHost = (baseUrl.includes('inakilozano.com') ? baseUrl : alternateBaseUrl) || baseUrl
-    const englishHost = (baseUrl.includes('inakilozano.dev') ? baseUrl : alternateBaseUrl) || alternateBaseUrl || baseUrl
-    const canonicalHostForLang = resolved === 'es' ? spanishHost : englishHost
-    const secondaryHost = canonicalHostForLang === baseUrl ? alternateBaseUrl : baseUrl
 
     return (
         <html lang={resolved} suppressHydrationWarning>
@@ -65,8 +57,8 @@ export default async function RootLayout({
                 <meta name="theme-color" content="#1a2433" />
                 <StructuredData
                     lang={resolved}
-                    baseUrl={canonicalHostForLang}
-                    alternateBaseUrl={secondaryHost}
+                    baseUrl={baseUrl}
+                    alternateBaseUrl={alternateBaseUrl}
                 />
 
                 {/* Google Analytics */}

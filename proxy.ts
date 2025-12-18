@@ -5,6 +5,20 @@ import { getToken } from 'next-auth/jwt'
 const locales = ['en', 'es'] as const
 const defaultLocale = 'en'
 
+function getForwardedHost(request: NextRequest): string {
+  const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || ''
+  return forwardedHost.split(',')[0]?.trim() || ''
+}
+
+function getForwardedProto(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-proto') ||
+    request.headers.get('x-forwarded-scheme') ||
+    request.nextUrl.protocol.replace(':', '') ||
+    'https'
+  )
+}
+
 function getLocale(request: NextRequest): string {
   const localeCookie = request.cookies.get('NEXT_LOCALE')?.value
   if (localeCookie && locales.includes(localeCookie as any)) {
@@ -23,7 +37,32 @@ function getLocale(request: NextRequest): string {
 }
 
 export async function proxy(request: NextRequest) {
+  const host = getForwardedHost(request) || request.nextUrl.host
+  const proto = getForwardedProto(request)
+
+  const shouldCanonicalizeHost =
+    host.startsWith('www.') && (host.endsWith('inakilozano.com') || host.endsWith('inakilozano.dev'))
+  const shouldCanonicalizeProto =
+    proto === 'http' && (host.endsWith('inakilozano.com') || host.endsWith('inakilozano.dev'))
+
+  if (shouldCanonicalizeHost || shouldCanonicalizeProto) {
+    const url = request.nextUrl.clone()
+    url.protocol = 'https:'
+    url.host = host.startsWith('www.') ? host.slice(4) : host
+    return NextResponse.redirect(url, 308)
+  }
+
   const pathname = request.nextUrl.pathname
+
+  if (pathname === '/$') {
+    return NextResponse.redirect(new URL(`/${getLocale(request)}`, request.url), 308)
+  }
+
+  const segments = pathname.split('/').filter(Boolean)
+  if (segments.length >= 2 && locales.includes(segments[0] as any) && locales.includes(segments[1] as any)) {
+    const normalized = `/${[segments[0], ...segments.slice(2)].join('/')}`
+    return NextResponse.redirect(new URL(normalized || `/${segments[0]}`, request.url), 308)
+  }
 
   if (pathname.startsWith('/admin')) {
     const response = NextResponse.next()

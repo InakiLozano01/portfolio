@@ -37,10 +37,6 @@ export function resolveAlternateBaseUrl(currentBase?: string) {
 
     const fromEnv = normalizeUrl(FALLBACK_ALT_URL)
     if (fromEnv) return fromEnv
-
-    if (normalizedCurrent?.includes('inakilozano.com')) return 'https://inakilozano.dev'
-    if (normalizedCurrent?.includes('inakilozano.dev')) return 'https://inakilozano.com'
-
     return normalizedCurrent || 'https://inakilozano.com'
 }
 
@@ -50,16 +46,16 @@ export function normalizeCanonicalPath(path?: string) {
 }
 
 export function selectHostsForLanguage(lang: string, baseUrl?: string, alternateBaseUrl?: string) {
-    const normalizedLang = lang === 'es' ? 'es' : 'en'
     const primary = normalizeUrl(baseUrl) || normalizeUrl(FALLBACK_BASE_URL) || 'https://inakilozano.com'
     const secondary = normalizeUrl(alternateBaseUrl) || normalizeUrl(FALLBACK_ALT_URL)
+    const canonicalHost = primary
 
-    const spanishHost = (primary?.includes('inakilozano.com') ? primary : secondary) || primary
-    const englishHost = (primary?.includes('inakilozano.dev') ? primary : secondary) || secondary || primary
-    const canonicalHost = normalizedLang === 'es' ? spanishHost : englishHost
-    const backupHost = canonicalHost === primary ? secondary : primary
-
-    return { canonicalHost, secondaryHost: backupHost, englishHost, spanishHost }
+    return {
+        canonicalHost,
+        secondaryHost: secondary || primary,
+        englishHost: primary,
+        spanishHost: primary
+    }
 }
 
 export function buildLanguageAlternateUrls(

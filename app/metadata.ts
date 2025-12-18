@@ -3,9 +3,7 @@ import type { Metadata } from 'next'
 const normalizeBaseUrl = (url: string) => url.replace(/\/$/, '')
 
 const fallbackBaseUrl = normalizeBaseUrl(process.env.NEXT_PUBLIC_APP_URL || 'https://inakilozano.com')
-const fallbackAltBaseUrl =
-    normalizeBaseUrl(process.env.NEXT_PUBLIC_ALT_APP_URL || '') ||
-    (fallbackBaseUrl.includes('dev') ? 'https://inakilozano.com' : 'https://inakilozano.dev')
+const fallbackAltBaseUrl = normalizeBaseUrl(process.env.NEXT_PUBLIC_ALT_APP_URL || '')
 
 const accentKeywordVariants = [
     'Iñaki Lozano',

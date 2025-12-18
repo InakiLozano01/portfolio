@@ -14,26 +14,7 @@ const normalizeBaseUrl = (url) => {
     }
 }
 
-const primarySiteUrl = normalizeBaseUrl(process.env.NEXT_PUBLIC_APP_URL || 'https://inakilozano.com')
-const alternateSiteUrl =
-    normalizeBaseUrl(process.env.NEXT_PUBLIC_ALT_APP_URL) ||
-    (primarySiteUrl.includes('dev') ? 'https://inakilozano.com' : 'https://inakilozano.dev')
-const spanishHost = primarySiteUrl.includes('inakilozano.com') ? primarySiteUrl : alternateSiteUrl
-const englishHost = primarySiteUrl.includes('inakilozano.dev') ? primarySiteUrl : alternateSiteUrl
-const uniqueSitemaps = Array.from(new Set([primarySiteUrl, alternateSiteUrl].filter(Boolean))).map(
-    (site) => `${site}/sitemap.xml`
-)
-
-const normalizePath = (path) => (path.startsWith('/') ? path : `/${path}`)
-const buildAlternateRefs = (section) => {
-    const hash = section ? `#${section}` : ''
-    return [
-        { href: `${englishHost}${normalizePath('/en')}${hash}`, hreflang: 'en-US' },
-        { href: `${spanishHost}${normalizePath('/es')}${hash}`, hreflang: 'es-AR' },
-        { href: `${spanishHost}${normalizePath('/es')}${hash}`, hreflang: 'es-ES' },
-        { href: `${englishHost}${normalizePath('/en')}${hash}`, hreflang: 'x-default' }
-    ]
-}
+const siteUrl = normalizeBaseUrl(process.env.NEXT_PUBLIC_APP_URL || 'https://inakilozano.com')
 
 /** @type {import('next-sitemap').IConfig} */
 async function fetchDynamicPaths() {
@@ -42,7 +23,7 @@ async function fetchDynamicPaths() {
 }
 
 module.exports = {
-    siteUrl: primarySiteUrl,
+    siteUrl,
     generateRobotsTxt: true,
     generateIndexSitemap: false,
 
@@ -70,12 +51,13 @@ module.exports = {
                 disallow: ['/admin/', '/api/']
             }
         ],
-        additionalSitemaps: uniqueSitemaps,
-        additionalRobotsTxt: ['Host: inakilozano.com']
+        additionalSitemaps: [],
+        additionalRobotsTxt: [`Host: ${new URL(siteUrl).host}`]
     },
 
     // Exclude certain paths
     exclude: [
+        '/admin',
         '/admin/*',
         '/api/*',
         '/_next/*',
@@ -92,22 +74,13 @@ module.exports = {
         let priority = 0.7
         let changefreq = 'monthly'
 
-        // Homepage gets highest priority
-        if (path === '/') {
+        // Language homepages
+        if (path === '/en') {
             priority = 1.0
             changefreq = 'weekly'
-        }
-
-        // Blog section gets high priority
-        if (path.includes('#blog')) {
-            priority = 0.9
+        } else if (path === '/es') {
+            priority = 0.95
             changefreq = 'weekly'
-        }
-
-        // Main sections get good priority
-        if (path.includes('#about') || path.includes('#experience') || path.includes('#skills')) {
-            priority = 0.8
-            changefreq = 'monthly'
         }
 
         return {
@@ -122,54 +95,28 @@ module.exports = {
     additionalPaths: async (config) => {
         const { blogs, projects } = await fetchDynamicPaths()
 
-        const blogPaths = blogs.map(blog => ({
-            loc: `/blog/${blog.slug}`,
-            changefreq: 'weekly',
-            priority: 0.7,
-            lastmod: blog.lastmod
-        }))
-
-        const projectPaths = projects.map(project => ({
-            loc: `/projects/${project.slug}`,
-            changefreq: 'monthly',
-            priority: 0.6,
-            lastmod: project.lastmod
-        }))
-
-        // Languages to generate paths for
         const languages = ['en', 'es']
-        const languagePaths = []
-        const languageAlternateRefs = buildAlternateRefs()
 
-        // Generate language-specific main pages
-        languages.forEach(lang => {
-            languagePaths.push({
-                loc: `/${lang}`,
+        const languageHomepages = await Promise.all(languages.map((lang) => config.transform(config, `/${lang}`)))
+
+        const blogPaths = blogs.flatMap((blog) =>
+            languages.map((lang) => ({
+                loc: `/${lang}/blog/${blog.slug}`,
                 changefreq: 'weekly',
-                priority: lang === 'es' ? 0.95 : 1.0, // Spanish gets high priority for Argentina
-                lastmod: new Date().toISOString(),
-                alternateRefs: languageAlternateRefs
-            })
-        })
+                priority: 0.7,
+                lastmod: blog.lastmod
+            }))
+        )
 
-        // Add section anchors for each language
-        const sections = ['about', 'experience', 'education', 'skills', 'projects', 'blog', 'contact']
-        const sectionPaths = []
+        const projectPaths = projects.flatMap((project) =>
+            languages.map((lang) => ({
+                loc: `/${lang}/projects/${project.slug}`,
+                changefreq: 'monthly',
+                priority: 0.6,
+                lastmod: project.lastmod
+            }))
+        )
 
-        languages.forEach(lang => {
-            sections.forEach(section => {
-                const priority = ['projects', 'blog'].includes(section) ? 0.9 : 0.8
-                const pathHash = `#${section}`
-                sectionPaths.push({
-                    loc: `/${lang}#${section}`,
-                    changefreq: ['projects', 'blog'].includes(section) ? 'weekly' : 'monthly',
-                    priority: priority,
-                    lastmod: new Date().toISOString(),
-                    alternateRefs: buildAlternateRefs(section)
-                })
-            })
-        })
-
-        return [...blogPaths, ...projectPaths, ...languagePaths, ...sectionPaths]
+        return [...languageHomepages, ...blogPaths, ...projectPaths]
     }
 }
