@@ -241,12 +241,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     }
 
     return (
-        <div className="flex min-h-screen bg-[#263547]">
+        <div className="flex min-h-screen bg-navy-light">
             <BackNavigationHandler />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={projectJsonLd} />
 
-            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
+            <div className="hidden lg:block w-16 xl:w-24 bg-navy-light" aria-hidden="true" />
 
             <div className="relative flex-1 overflow-x-hidden overflow-y-auto bg-white">
                 <div className="pointer-events-none absolute inset-0 -z-10">
@@ -292,7 +292,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                         </div>
                     )}
 
-                    <div className="flex flex-wrap gap-2 mb-8 justify-center border-b border-[#263547]/20 pb-8">
+                    <div className="flex flex-wrap gap-2 mb-8 justify-center border-b border-navy/20 pb-8">
                     {project.technologies.map((tech: any) => (
                             <Badge
                                 key={(tech as any)._id.toString()}
@@ -306,7 +306,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                     </div>
 
                     {project.githubUrl && (
-                        <div className="mb-8 pb-8 border-b border-[#263547]/20">
+                        <div className="mb-8 pb-8 border-b border-navy/20">
                             <Link
                                 href={project.githubUrl}
                                 target="_blank"
@@ -319,7 +319,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                         </div>
                     )}
                     {project.publicUrl && (
-                        <div className="mb-8 pb-8 border-b border-[#263547]/20">
+                        <div className="mb-8 pb-8 border-b border-navy/20">
                             <Link
                                 href={project.publicUrl}
                                 target="_blank"
@@ -365,7 +365,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 </article>
             </div>
 
-            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
+            <div className="hidden lg:block w-16 xl:w-24 bg-navy-light" aria-hidden="true" />
         </div>
     )
 } 

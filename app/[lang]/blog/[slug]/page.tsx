@@ -230,12 +230,12 @@ export default async function BlogPage({ params, searchParams }: BlogPageProps) 
     }
 
     return (
-        <div className="flex min-h-screen bg-[#263547]">
+        <div className="flex min-h-screen bg-navy-light">
             <BackNavigationHandler />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={blogPostingJsonLd} />
 
-            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
+            <div className="hidden lg:block w-16 xl:w-24 bg-navy-light" aria-hidden="true" />
 
             <div className="relative flex-1 overflow-x-hidden overflow-y-auto bg-white">
                 <div className="pointer-events-none absolute inset-0 -z-10">
@@ -273,7 +273,7 @@ export default async function BlogPage({ params, searchParams }: BlogPageProps) 
                 </article>
             </div>
 
-            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
+            <div className="hidden lg:block w-16 xl:w-24 bg-navy-light" aria-hidden="true" />
         </div>
     )
 }

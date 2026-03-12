@@ -1,7 +1,7 @@
 export default function SectionLoading() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#800020]"></div>
-    </div>
-  )
-} 
+	return (
+		<div className="min-h-screen flex items-center justify-center bg-cream">
+			<div className="w-10 h-10 border-2 border-navy/10 border-t-bordeaux rounded-full animate-spin" />
+		</div>
+	)
+}
