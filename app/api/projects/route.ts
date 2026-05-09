@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Project from '@/models/Project';
-import Skill from '@/models/Skill';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/cache';
+import { requireAdmin } from '@/lib/admin-auth';
+import { normalizeProjectPayload } from '@/lib/project-normalize';
+import { optimizeExistingProjectThumbnail } from '@/lib/project-thumbnail-optimization';
 
 const PROJECTS_CACHE_KEY = 'projects';
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -43,16 +43,13 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
 
     await connectToDatabase();
-    const data = await request.json();
+    const data = normalizeProjectPayload(await request.json());
+    const optimizedThumbnail = await optimizeExistingProjectThumbnail(data.thumbnail, data.thumbnailOptimization);
+    if (optimizedThumbnail) data.thumbnail = optimizedThumbnail;
 
     const project = new Project(data);
     await project.save();
@@ -78,9 +75,15 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: Request) {
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     const body = await request.json();
+    const data = normalizeProjectPayload(body);
+    const optimizedThumbnail = await optimizeExistingProjectThumbnail(data.thumbnail, data.thumbnailOptimization);
+    if (optimizedThumbnail) data.thumbnail = optimizedThumbnail;
     await connectToDatabase();
-    const project = await Project.findByIdAndUpdate(body._id, body, { new: true });
+    const project = await Project.findByIdAndUpdate(body._id, data, { new: true, runValidators: true });
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
@@ -98,6 +101,9 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     await connectToDatabase();
@@ -115,4 +121,4 @@ export async function DELETE(request: Request) {
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 });
   }
-} 
+}

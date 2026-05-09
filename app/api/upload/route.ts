@@ -8,16 +8,17 @@ import fs from 'fs/promises';
 import { constants as fsConstants } from 'fs';
 import { randomUUID } from 'crypto';
 import { invalidateCache } from '@/lib/cache';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/admin-auth';
+import {
+    optimizeProjectThumbnailToWebp,
+} from '@/lib/project-thumbnail-optimization';
+import { normalizeProjectThumbnailOptimization } from '@/lib/project-thumbnail-settings';
 
 type AllowedFormats = {
     'image/jpeg': string[];
     'image/png': string[];
     'image/webp': string[];
     'image/avif': string[];
-    'image/gif': string[];
-    'image/svg+xml': string[];
 };
 
 // Define allowed MIME types and their corresponding file extensions
@@ -25,12 +26,11 @@ const ALLOWED_FORMATS: AllowedFormats = {
     'image/jpeg': ['.jpg', '.jpeg'],
     'image/png': ['.png'],
     'image/webp': ['.webp'],
-    'image/avif': ['.avif'],
-    'image/gif': ['.gif'],
-    'image/svg+xml': ['.svg']
+    'image/avif': ['.avif']
 };
 
 const APP_PUBLIC_IMAGES_DIR = path.resolve('/app/public/images');
+const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
 
 async function pathExists(pathToCheck: string) {
     try {
@@ -147,18 +147,28 @@ async function ensureSymlink(targetDir: string, linkDir: string) {
 
 export async function POST(request: Request) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.email) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const admin = await requireAdmin(request);
+        if (!admin.ok) return admin.response;
+
         const formData = await request.formData();
         const file = formData.get('file') as File;
+        const thumbnailOptimization = normalizeProjectThumbnailOptimization({
+            enabled: formData.get('thumbnailOptimizationEnabled') !== 'false',
+            quality: formData.get('thumbnailOptimizationQuality'),
+            effort: formData.get('thumbnailOptimizationEffort'),
+        });
 
         if (!file) {
             console.error('Upload error: No file provided');
             return NextResponse.json(
                 { error: 'No file provided' },
                 { status: 400 }
+            );
+        }
+        if (file.size > MAX_IMAGE_BYTES) {
+            return NextResponse.json(
+                { error: 'Image is too large. Maximum size is 6 MB.' },
+                { status: 413 }
             );
         }
 
@@ -206,22 +216,37 @@ export async function POST(request: Request) {
             console.log('Successfully initialized Sharp with buffer');
 
             const metadata = await image.metadata();
+            if (!metadata.format || !['jpeg', 'png', 'webp', 'avif'].includes(metadata.format)) {
+                return NextResponse.json(
+                    { error: 'Invalid image content' },
+                    { status: 400 }
+                );
+            }
             console.log('Image metadata:', metadata);
 
-            // Only resize if the image is larger than 1920px wide
-            // This maintains aspect ratio and doesn't crop
-            const resizedImage = await image
-                .resize({
-                    width: 1920,
-                    height: undefined,
-                    withoutEnlargement: true,
-                    fit: 'inside'
-                })
-                .toBuffer();
-            console.log('Successfully resized image');
+            const processedImage = thumbnailOptimization.enabled
+                ? await optimizeProjectThumbnailToWebp(buffer, thumbnailOptimization)
+                : await image
+                    .resize({
+                        width: 1920,
+                        height: undefined,
+                        withoutEnlargement: true,
+                        fit: 'inside'
+                    })
+                    .toBuffer();
+            console.log('Successfully processed image', {
+                optimized: thumbnailOptimization.enabled,
+                quality: thumbnailOptimization.quality,
+                effort: thumbnailOptimization.effort,
+            });
 
             // Generate unique filename
-            const filename = `${randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '-')}`;
+            const originalBaseName = file.name
+                .replace(/\.[^.]+$/, '')
+                .replace(/[^a-zA-Z0-9-]/g, '-');
+            const filename = thumbnailOptimization.enabled
+                ? `${randomUUID()}-${originalBaseName}.webp`
+                : `${randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '-')}`;
             const runtimeImagesDir = path.join(process.cwd(), 'public', 'images');
             const responsePath = path.posix.join('images', 'projects', filename);
 
@@ -240,7 +265,7 @@ export async function POST(request: Request) {
             let canonicalFilePath: string | null = null;
             if (await pathExists('/app/public')) {
                 try {
-                    canonicalFilePath = await persistImage(APP_PUBLIC_IMAGES_DIR, filename, resizedImage);
+                    canonicalFilePath = await persistImage(APP_PUBLIC_IMAGES_DIR, filename, processedImage);
                     verificationTargets.add(canonicalFilePath);
                     persistedSomewhere = true;
                 } catch (canonicalError) {
@@ -262,7 +287,7 @@ export async function POST(request: Request) {
             // Always ensure the runtime public directory has a copy if the symlink is not ready.
             if (!symlinkActive) {
                 try {
-                    const runtimeFilePath = await persistImage(runtimeImagesDir, filename, resizedImage);
+                    const runtimeFilePath = await persistImage(runtimeImagesDir, filename, processedImage);
                     verificationTargets.add(runtimeFilePath);
                     persistedSomewhere = true;
                 } catch (runtimeError) {
@@ -290,7 +315,7 @@ export async function POST(request: Request) {
             }
 
             // Get dimensions of the processed image
-            const processedMetadata = await sharp(resizedImage).metadata();
+            const processedMetadata = await sharp(processedImage).metadata();
             console.log('Final image metadata:', processedMetadata);
 
             // Invalidate relevant caches after upload
@@ -306,7 +331,9 @@ export async function POST(request: Request) {
             return NextResponse.json({
                 path: `/${responsePath}`,
                 width: processedMetadata.width,
-                height: processedMetadata.height
+                height: processedMetadata.height,
+                optimized: thumbnailOptimization.enabled,
+                thumbnailOptimization
             });
         } catch (processingError: unknown) {
             console.error('Error during image processing:', {
@@ -329,8 +356,7 @@ export async function POST(request: Request) {
         });
         return NextResponse.json(
             {
-                error: 'Failed to process upload',
-                details: error instanceof Error ? error.message : 'Unknown error'
+                error: 'Failed to process upload'
             },
             { status: 500 }
         );

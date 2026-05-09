@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Project from '@/models/Project'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { invalidateCache } from '@/lib/cache'
+import { requireAdmin } from '@/lib/admin-auth'
+import { normalizeProjectPayload } from '@/lib/project-normalize'
+import { optimizeExistingProjectThumbnail } from '@/lib/project-thumbnail-optimization'
+
+const PROJECTS_CACHE_KEY = 'projects'
+const isDevelopment = process.env.NODE_ENV !== 'production'
 
 export async function GET(
     _request: NextRequest,
@@ -38,21 +43,18 @@ export async function PUT(
 ) {
     const { id } = await context.params
     try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.email) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            )
-        }
+        const admin = await requireAdmin(request)
+        if (!admin.ok) return admin.response
 
         await connectToDatabase()
-        const data = await request.json()
+        const data = normalizeProjectPayload(await request.json())
+        const optimizedThumbnail = await optimizeExistingProjectThumbnail(data.thumbnail, data.thumbnailOptimization)
+        if (optimizedThumbnail) data.thumbnail = optimizedThumbnail
 
         const project = await Project.findByIdAndUpdate(
             id,
             { $set: data },
-            { new: true }
+            { new: true, runValidators: true }
         ).populate('technologies')
 
         if (!project) {
@@ -60,6 +62,10 @@ export async function PUT(
                 { error: 'Project not found' },
                 { status: 404 }
             )
+        }
+
+        if (!isDevelopment) {
+            await invalidateCache(PROJECTS_CACHE_KEY)
         }
 
         return NextResponse.json(project)
@@ -78,13 +84,8 @@ export async function DELETE(
 ) {
     const { id } = await context.params
     try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.email) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            )
-        }
+        const admin = await requireAdmin(request)
+        if (!admin.ok) return admin.response
 
         await connectToDatabase()
         const project = await Project.findByIdAndDelete(id)
@@ -94,6 +95,10 @@ export async function DELETE(
                 { error: 'Project not found' },
                 { status: 404 }
             )
+        }
+
+        if (!isDevelopment) {
+            await invalidateCache(PROJECTS_CACHE_KEY)
         }
 
         return NextResponse.json({ message: 'Project deleted successfully' })

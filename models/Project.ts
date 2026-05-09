@@ -2,6 +2,12 @@ import mongoose, { Types } from 'mongoose';
 import slugify from 'slugify';
 import './Skill';  // Import Skill model to ensure it's registered
 
+export interface IProjectThumbnailOptimization {
+  enabled: boolean;
+  quality: number;
+  effort: number;
+}
+
 export interface IProject extends mongoose.Document {
   title: string;
   subtitle: string;
@@ -16,6 +22,7 @@ export interface IProject extends mongoose.Document {
   technologies: Types.ObjectId[] | Array<{ _id: Types.ObjectId; name: string }>;
   thumbnail?: string;
   thumbnailAlt?: string;
+  thumbnailOptimization?: IProjectThumbnailOptimization;
   imageHeight?: number;
   imageWidth?: number;
   githubUrl?: string;
@@ -61,6 +68,24 @@ const ProjectSchema = new mongoose.Schema({
   thumbnailAlt: {
     type: String,
     default: 'Project thumbnail',
+  },
+  thumbnailOptimization: {
+    enabled: {
+      type: Boolean,
+      default: true,
+    },
+    quality: {
+      type: Number,
+      default: 82,
+      min: 50,
+      max: 95,
+    },
+    effort: {
+      type: Number,
+      default: 4,
+      min: 0,
+      max: 6,
+    },
   },
   imageHeight: {
     type: Number,

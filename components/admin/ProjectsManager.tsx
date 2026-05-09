@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,18 +9,16 @@ import { TinyMCE } from '@/components/ui/tinymce';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { IProject } from '@/models/Project';
-import Skill from '@/models/Skill';
-import { Plus, Trash2, Save, Edit, Briefcase, Search, X } from 'lucide-react';
+import { Plus, Trash2, Save, Edit, Briefcase, Search } from 'lucide-react';
 import { Types } from 'mongoose';
 import Image from 'next/image';
 import { slugify } from '@/lib/utils';
+import { DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION, ProjectThumbnailOptimization } from '@/lib/project-thumbnail-settings';
 
 interface ISkill {
   _id: Types.ObjectId;
   name: string;
   category: string;
-  proficiency: number;
-  yearsOfExperience: number;
   icon: string;
 }
 
@@ -29,8 +27,35 @@ type ProjectWithId = IProject & {
   _id: Types.ObjectId;
 };
 
+type EditableProject = Partial<ProjectWithId> & {
+  technologies: Types.ObjectId[];
+  thumbnailOptimization: ProjectThumbnailOptimization;
+};
+
 type ProjectWithTechnologies = ProjectWithId & {
   technologies: ISkill[];
+};
+
+const emptyProject = (): EditableProject => ({
+  title: '',
+  title_es: '',
+  subtitle_en: '',
+  subtitle: '',
+  subtitle_es: '',
+  description: '',
+  description_en: '',
+  description_es: '',
+  technologies: [],
+  thumbnail: '',
+  githubUrl: '',
+  publicUrl: '',
+  thumbnailOptimization: DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION,
+});
+
+const clampNumber = (value: string, fallback: number, min: number, max: number) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(parsed)));
 };
 
 export default function ProjectsManager() {
@@ -38,22 +63,8 @@ export default function ProjectsManager() {
   const { toast } = useToast();
   const [projects, setProjects] = useState<ProjectWithTechnologies[]>([]);
   const [skills, setSkills] = useState<ISkill[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Partial<ProjectWithId> & { technologies: Types.ObjectId[] }>({
-    title: '',
-    title_es: '',
-    subtitle_en: '',
-    subtitle: '',
-    subtitle_es: '',
-    description: '',
-    description_en: '',
-    description_es: '',
-    technologies: [],
-    thumbnail: '',
-    githubUrl: '',
-    publicUrl: '',
-  });
+  const [selectedProject, setSelectedProject] = useState<EditableProject>(emptyProject);
   const [isLoading, setIsLoading] = useState(true);
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ title?: string; subtitle?: string }>({});
   const [search, setSearch] = useState('');
@@ -113,12 +124,14 @@ export default function ProjectsManager() {
             thumbnail: draft.thumbnail || '',
             githubUrl: draft.githubUrl || '',
             publicUrl: draft.publicUrl || '',
-            _id: draft._id ? new Types.ObjectId(draft._id) : undefined,
+            thumbnailOptimization: {
+              ...DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION,
+              ...(draft.thumbnailOptimization || {}),
+            },
           });
         }
       }
     } catch { }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Autosave draft
@@ -126,8 +139,9 @@ export default function ProjectsManager() {
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     autosaveTimer.current = setTimeout(() => {
       try {
+        const { _id: _draftId, ...draftProject } = selectedProject;
         const toSave = {
-          ...selectedProject,
+          ...draftProject,
           technologies: selectedProject.technologies.map((id) => id.toString()),
         };
         localStorage.setItem('projectDraft', JSON.stringify(toSave));
@@ -142,11 +156,11 @@ export default function ProjectsManager() {
     const file = e.target.files?.[0];
     if (file) {
       // Check file type before uploading
-      const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
       if (!supportedTypes.includes(file.type)) {
         toast({
           title: 'Unsupported File Format',
-          description: 'Please upload a JPEG, PNG, WebP, or GIF image.',
+          description: 'Please upload a JPEG, PNG, WebP, or AVIF image.',
           variant: 'destructive',
         });
         e.target.value = '';
@@ -159,6 +173,9 @@ export default function ProjectsManager() {
       // Try uploading the file
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('thumbnailOptimizationEnabled', String(selectedProject.thumbnailOptimization.enabled));
+      formData.append('thumbnailOptimizationQuality', String(selectedProject.thumbnailOptimization.quality));
+      formData.append('thumbnailOptimizationEffort', String(selectedProject.thumbnailOptimization.effort));
 
       try {
         const uploadResponse = await fetch('/api/upload', {
@@ -172,10 +189,15 @@ export default function ProjectsManager() {
         }
 
         // If upload successful, set the image file and preview
-        setImageFile(file);
         setImagePreview(previewUrl);
         const imageData = await uploadResponse.json();
-        setSelectedProject(prev => ({ ...prev, thumbnail: imageData.path }));
+        setSelectedProject(prev => ({
+          ...prev,
+          thumbnail: imageData.path,
+          imageWidth: imageData.width,
+          imageHeight: imageData.height,
+          thumbnailOptimization: imageData.thumbnailOptimization || prev.thumbnailOptimization,
+        }));
       } catch (error) {
         // Clean up the preview URL
         URL.revokeObjectURL(previewUrl);
@@ -246,16 +268,10 @@ export default function ProjectsManager() {
       }
 
       // Reset form
+      localStorage.removeItem('projectDraft');
       setSelectedProject({
-        title: '',
-        subtitle: '',
-        description: '',
-        technologies: [],
-        thumbnail: '',
-        githubUrl: '',
-        publicUrl: '',
+        ...emptyProject(),
       });
-      setImageFile(null);
       setImagePreview(null);
 
       const projectSlug = slugify(savedProject.title || selectedProject.title || '');
@@ -290,14 +306,9 @@ export default function ProjectsManager() {
       setProjects(projects.filter((p) => p._id.toString() !== id));
 
       if (selectedProject._id?.toString() === id) {
+        localStorage.removeItem('projectDraft');
         setSelectedProject({
-          title: '',
-          subtitle: '',
-          description: '',
-          technologies: [],
-          thumbnail: '',
-          githubUrl: '',
-          publicUrl: '',
+          ...emptyProject(),
         });
       }
 
@@ -388,6 +399,10 @@ export default function ProjectsManager() {
                              description_es: project.description_es || '',
                              publicUrl: project.publicUrl || '',
                              technologies: project.technologies.map((tech) => tech._id),
+                             thumbnailOptimization: {
+                               ...DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION,
+                               ...(project.thumbnailOptimization || {}),
+                             },
                            });
                            setImagePreview(null);
                         }}
@@ -441,21 +456,8 @@ export default function ProjectsManager() {
                     size="sm" 
                     className="text-slate-300 hover:text-white hover:bg-white/10"
                     onClick={() => {
-                        setSelectedProject({
-                            title: '',
-                            title_es: '',
-                            subtitle_en: '',
-                            subtitle: '',
-                            subtitle_es: '',
-                            description: '',
-                            description_en: '',
-                            description_es: '',
-                            technologies: [],
-                            thumbnail: '',
-                            githubUrl: '',
-                            publicUrl: '',
-                        });
-                        setImageFile(null);
+                        localStorage.removeItem('projectDraft');
+                        setSelectedProject(emptyProject());
                         setImagePreview(null);
                     }}
                 >
@@ -576,6 +578,71 @@ export default function ProjectsManager() {
             </div>
           </div>
 
+          <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <label className="text-sm font-medium text-slate-700">Thumbnail optimization</label>
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={selectedProject.thumbnailOptimization.enabled}
+                  onChange={(e) =>
+                    setSelectedProject({
+                      ...selectedProject,
+                      thumbnailOptimization: {
+                        ...selectedProject.thumbnailOptimization,
+                        enabled: e.target.checked,
+                      },
+                    })
+                  }
+                  className="h-4 w-4 rounded border-slate-300 text-[#FD4345] focus:ring-[#FD4345]"
+                />
+                Convert uploads to WebP
+              </label>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="text-xs font-medium text-slate-600">
+                Quality
+                <Input
+                  type="number"
+                  min={50}
+                  max={95}
+                  value={selectedProject.thumbnailOptimization.quality}
+                  disabled={!selectedProject.thumbnailOptimization.enabled}
+                  onChange={(e) =>
+                    setSelectedProject({
+                      ...selectedProject,
+                      thumbnailOptimization: {
+                        ...selectedProject.thumbnailOptimization,
+                        quality: clampNumber(e.target.value, DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION.quality, 50, 95),
+                      },
+                    })
+                  }
+                  className="mt-1 h-9 focus-visible:ring-[#FD4345]"
+                />
+              </label>
+              <label className="text-xs font-medium text-slate-600">
+                Effort
+                <Input
+                  type="number"
+                  min={0}
+                  max={6}
+                  value={selectedProject.thumbnailOptimization.effort}
+                  disabled={!selectedProject.thumbnailOptimization.enabled}
+                  onChange={(e) =>
+                    setSelectedProject({
+                      ...selectedProject,
+                      thumbnailOptimization: {
+                        ...selectedProject.thumbnailOptimization,
+                        effort: clampNumber(e.target.value, DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION.effort, 0, 6),
+                      },
+                    })
+                  }
+                  className="mt-1 h-9 focus-visible:ring-[#FD4345]"
+                />
+              </label>
+            </div>
+          </div>
+
           <div className="space-y-3">
             <label className="text-sm font-medium text-slate-700">Thumbnail Image</label>
             <div className="flex gap-6 items-start">
@@ -586,7 +653,7 @@ export default function ProjectsManager() {
                         onChange={handleImageChange}
                         className="h-auto py-2.5 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#263547] file:text-white hover:file:bg-[#1e293b] file:cursor-pointer focus-visible:ring-[#FD4345]"
                     />
-                    <p className="text-xs text-slate-500 mt-2">Supported formats: JPG, PNG, WebP, GIF</p>
+                    <p className="text-xs text-slate-500 mt-2">Supported formats: JPG, PNG, WebP, AVIF</p>
                 </div>
               {(imagePreview || selectedProject.thumbnail) && (
                 <div className="relative w-40 aspect-video bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
@@ -641,21 +708,8 @@ export default function ProjectsManager() {
           <div className="sticky bottom-0 bg-white border-t border-slate-200 py-4 mt-6 z-10 flex flex-col sm:flex-row justify-end gap-3">
             <Button
               onClick={() => {
-                setSelectedProject({
-                  title: '',
-                  title_es: '',
-                  subtitle_en: '',
-                  subtitle: '',
-                  subtitle_es: '',
-                  description: '',
-                  description_en: '',
-                  description_es: '',
-                  technologies: [],
-                  thumbnail: '',
-                  githubUrl: '',
-                  publicUrl: '',
-                });
-                setImageFile(null);
+                localStorage.removeItem('projectDraft');
+                setSelectedProject(emptyProject());
                 setImagePreview(null);
               }}
               variant="ghost"
