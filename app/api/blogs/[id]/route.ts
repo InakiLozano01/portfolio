@@ -5,6 +5,9 @@ import { connectToDatabase } from '@/lib/mongodb';
 import BlogModel from '@/models/Blog';
 import { normalizeBlogPayload } from '@/lib/blog-normalize';
 import { notifyBlogSubscribers } from '@/lib/server/blog-newsletter';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export async function GET(
     _request: NextRequest,
@@ -19,7 +22,9 @@ export async function GET(
     }
     try {
         await connectToDatabase();
-        const blog = await BlogModel.findById(id);
+        const session = await getServerSession(authOptions);
+        const query = session?.user?.email ? { _id: id } : { _id: id, published: true };
+        const blog = await BlogModel.findOne(query);
 
         if (!blog) {
             return NextResponse.json(
@@ -50,6 +55,9 @@ export async function PUT(
         );
     }
     try {
+        const admin = await requireAdmin(request);
+        if (!admin.ok) return admin.response;
+
         const raw = await request.json();
         const body = normalizeBlogPayload(raw);
 
@@ -58,7 +66,7 @@ export async function PUT(
         const blog = await BlogModel.findByIdAndUpdate(
             id,
             body,
-            { new: true }
+            { new: true, runValidators: true }
         );
 
         if (!blog) {
@@ -84,7 +92,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-    _request: NextRequest,
+    request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     const { id } = await context.params;
@@ -95,6 +103,9 @@ export async function DELETE(
         );
     }
     try {
+        const admin = await requireAdmin(request);
+        if (!admin.ok) return admin.response;
+
         await connectToDatabase();
         const blog = await BlogModel.findByIdAndDelete(id);
 

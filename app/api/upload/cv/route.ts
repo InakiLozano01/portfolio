@@ -1,21 +1,23 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAdmin } from '@/lib/admin-auth'
 import path from 'path'
 import fs from 'fs/promises'
 
+const MAX_CV_BYTES = 8 * 1024 * 1024
+
 export async function POST(request: Request) {
     try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.email) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        const admin = await requireAdmin(request)
+        if (!admin.ok) return admin.response
 
         const formData = await request.formData()
         const file = formData.get('file') as File
 
         if (!file) {
             return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+        }
+        if (file.size > MAX_CV_BYTES) {
+            return NextResponse.json({ error: 'PDF is too large. Maximum size is 8 MB.' }, { status: 413 })
         }
 
         // Validate PDF
@@ -25,6 +27,9 @@ export async function POST(request: Request) {
 
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
+        if (buffer.subarray(0, 5).toString('utf8') !== '%PDF-') {
+            return NextResponse.json({ error: 'Invalid PDF content' }, { status: 400 })
+        }
 
         const absolutePath = path.join(process.cwd(), 'public', 'CV.pdf')
 
@@ -37,5 +42,3 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Failed to upload CV' }, { status: 500 })
     }
 }
-
-

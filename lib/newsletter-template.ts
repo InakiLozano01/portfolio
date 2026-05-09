@@ -23,6 +23,14 @@ const baseUrl = (() => {
 const stringOrEmpty = (value: unknown): string =>
   typeof value === 'string' ? value : ''
 
+const escapeHtml = (value: unknown) =>
+  stringOrEmpty(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
 export const localizedField = (
   blog: Record<string, any>,
   field: string,
@@ -100,8 +108,15 @@ export const buildNewsletterEmail = (
   const title = localizedField(blog, 'title', lang)
   const subtitle = localizedField(blog, 'subtitle', lang)
   const subject = `${strings.subjectPrefix}${title || blog.slug}`
+  const escapedTitle = escapeHtml(title)
+  const escapedSubtitle = escapeHtml(subtitle)
+  const escapedSubject = escapeHtml(subject)
+  const escapedSummary = escapeHtml(blog.summary)
+  const escapedLinkBase = escapeHtml(linkBase)
+  const escapedUnsubscribeLink = escapeHtml(unsubscribeLink)
 
   const heroImage = toOptimizedImageUrl(heroImageFromBlog(blog))
+  const escapedHeroImage = escapeHtml(heroImage)
 
   const logoSource = LOGO_SRC
 
@@ -109,7 +124,7 @@ export const buildNewsletterEmail = (
     ? `
               <tr>
                 <td style="padding:0;">
-                  <img src="${heroImage}" alt="${title}" style="display:block;width:100%;height:auto;" />
+                  <img src="${escapedHeroImage}" alt="${escapedTitle}" style="display:block;width:100%;height:auto;" />
                 </td>
               </tr>`
     : ''
@@ -119,7 +134,7 @@ export const buildNewsletterEmail = (
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${subject}</title>
+    <title>${escapedSubject}</title>
   </head>
   <body style="margin:0;padding:0;background-color:#f6f7fb;">
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background-color:#f6f7fb;">
@@ -130,18 +145,18 @@ export const buildNewsletterEmail = (
               <td align="center" style="padding:36px 28px;background:linear-gradient(135deg,#1a2433,#800020);color:#ffffff;">
                 <img src="${logoSource}" alt="Iñaki Lozano logo" width="88" height="88" style="border-radius:20px;margin-bottom:16px;border:2px solid rgba(255,255,255,0.2);display:block;" />
                 <p style="margin:0 0 12px;font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:1px;">${strings.intro}</p>
-                <h1 style="margin:0 0 8px;font-family:Helvetica,Arial,sans-serif;font-size:26px;line-height:32px;font-weight:700;">${title}</h1>
-                ${subtitle ? `<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:24px;color:rgba(255,255,255,0.85);">${subtitle}</p>` : ''}
+                <h1 style="margin:0 0 8px;font-family:Helvetica,Arial,sans-serif;font-size:26px;line-height:32px;font-weight:700;">${escapedTitle}</h1>
+                ${subtitle ? `<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:24px;color:rgba(255,255,255,0.85);">${escapedSubtitle}</p>` : ''}
               </td>
             </tr>
             ${heroSection}
             <tr>
               <td style="padding:32px 28px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:26px;color:#1f2937;">
-                ${blog.summary ? `<p style="margin:0 0 24px;">${blog.summary}</p>` : ''}
+                ${blog.summary ? `<p style="margin:0 0 24px;">${escapedSummary}</p>` : ''}
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
                   <tr>
                     <td align="center" style="border-radius:999px;background-color:#800020;">
-                      <a href="${linkBase}" style="display:inline-block;padding:14px 28px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:20px;color:#ffffff;text-decoration:none;font-weight:600;">${strings.cta}</a>
+                      <a href="${escapedLinkBase}" style="display:inline-block;padding:14px 28px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:20px;color:#ffffff;text-decoration:none;font-weight:600;">${strings.cta}</a>
                     </td>
                   </tr>
                 </table>
@@ -150,7 +165,7 @@ export const buildNewsletterEmail = (
             <tr>
               <td align="center" style="padding:28px 24px;background-color:#0f172a;color:#e2e8f0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;">
                 <p style="margin:0 0 8px;">${strings.footerNote}</p>
-                <p style="margin:0 0 12px;">${strings.unsubscribe} <a href="${unsubscribeLink}" style="color:#fbbf24;text-decoration:none;font-weight:600;">${strings.unsubscribeLinkText}</a>.</p>
+                <p style="margin:0 0 12px;">${strings.unsubscribe} <a href="${escapedUnsubscribeLink}" style="color:#fbbf24;text-decoration:none;font-weight:600;">${strings.unsubscribeLinkText}</a>.</p>
                 <p style="margin:0;font-style:italic;color:#cbd5f5;">— Iñaki F. Lozano</p>
               </td>
             </tr>

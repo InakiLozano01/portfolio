@@ -1,25 +1,26 @@
 /// <reference types="node" />
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAdmin } from '@/lib/admin-auth'
 import sharp from 'sharp'
 import path from 'path'
 import fs from 'fs/promises'
 
 const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp'])
+const MAX_PROFILE_IMAGE_BYTES = 4 * 1024 * 1024
 
 export async function POST(request: Request) {
     try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.email) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        const admin = await requireAdmin(request)
+        if (!admin.ok) return admin.response
 
         const formData = await request.formData()
         const file = formData.get('file') as File
 
         if (!file) {
             return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+        }
+        if (file.size > MAX_PROFILE_IMAGE_BYTES) {
+            return NextResponse.json({ error: 'Image is too large. Maximum size is 4 MB.' }, { status: 413 })
         }
         if (!ALLOWED.has(file.type)) {
             return NextResponse.json({ error: 'Invalid image format' }, { status: 400 })
@@ -28,6 +29,10 @@ export async function POST(request: Request) {
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
         const image = sharp(buffer)
+        const metadata = await image.metadata()
+        if (!metadata.format || !['jpeg', 'png', 'webp'].includes(metadata.format)) {
+            return NextResponse.json({ error: 'Invalid image content' }, { status: 400 })
+        }
 
         // Ensure it's square and reasonable size
         const processed = await image
@@ -45,5 +50,3 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Failed to upload profile image' }, { status: 500 })
     }
 }
-
-

@@ -24,7 +24,6 @@ export default function BlogManager() {
     const { toast } = useToast()
     const [blogs, setBlogs] = useState<Blog[]>([])
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
     const [search, setSearch] = useState('')
     
     // Newsletter state
@@ -102,7 +101,7 @@ export default function BlogManager() {
             const data = await response.json()
             setBlogs(data)
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred')
+            console.error('Failed to fetch blogs', err)
         } finally {
             setLoading(false)
         }

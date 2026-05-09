@@ -1,4 +1,5 @@
-import nodemailer, { Transporter } from 'nodemailer';
+import nodemailer from 'portfolio-nodemailer';
+import type { Transporter } from 'nodemailer';
 
 // Conditional Redis imports and initialization
 let redis: any = null;

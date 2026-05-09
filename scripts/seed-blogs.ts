@@ -110,7 +110,7 @@ const sampleBlogs: BlogSeed[] = [
 
             export async function middleware(request) {
                 const token = request.cookies.get('token');
-                
+
                 if (!token) {
                     return NextResponse.redirect('/login');
                 }
@@ -149,7 +149,7 @@ async function seedBlogs() {
             })
         );
 
-        console.log('Successfully seeded blogs data.');
+        console.log(`Successfully seeded ${blogs.length} blogs.`);
         process.exit(0);
     } catch (error) {
         console.error('Error seeding blogs:', error);
@@ -157,4 +157,4 @@ async function seedBlogs() {
     }
 }
 
-seedBlogs(); 
+seedBlogs();

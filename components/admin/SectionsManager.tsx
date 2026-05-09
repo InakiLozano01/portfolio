@@ -319,7 +319,7 @@ export default function SectionsManager() {
               Delete Section
             </AlertDialogTitle>
             <AlertDialogDescription className="text-slate-600">
-              Are you sure you want to delete the "{sectionToDelete?.title}" section? This action cannot be undone.
+              Are you sure you want to delete the &quot;{sectionToDelete?.title}&quot; section? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -337,4 +337,4 @@ export default function SectionsManager() {
       </AlertDialog>
     </div>
   );
-} 
+}

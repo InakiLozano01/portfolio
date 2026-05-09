@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import Contact from '@/models/Contact';
 import { headers } from 'next/headers';
 import { emailService } from '@/lib/email';
+import { requireAdmin } from '@/lib/admin-auth';
 
 // Rate limit: 5 messages per hour per IP
 const RATE_LIMIT = 5;
@@ -65,7 +66,10 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const admin = await requireAdmin(request);
+  if (!admin.ok) return admin.response;
+
   // During build time, return empty array
   if (process.env.SKIP_DB_DURING_BUILD === 'true') {
     console.log('[MongoDB] Skipping connection during build');

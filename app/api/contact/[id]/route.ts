@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Contact from '@/models/Contact';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export async function PUT(
   request: NextRequest,
@@ -8,6 +9,9 @@ export async function PUT(
 ) {
   const { id } = await context.params;
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     const body = await request.json();
     await connectToDatabase();
     
@@ -34,11 +38,14 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     await connectToDatabase();
     
     const contact = await Contact.findByIdAndDelete(id);

@@ -8,7 +8,7 @@ jest.mock('../../lib/mongodb', () => ({
 describe('Comments API', () => {
   it('returns 500 on DB error for GET', async () => {
     ;(connectToDatabase as jest.Mock).mockRejectedValue(new Error('db error'))
-    const res = await GET({} as any, { params: { id: '1' } } as any)
+    const res = await GET({} as any, { params: { id: '507f1f77bcf86cd799439011' } } as any)
     expect(res.status).toBe(500)
   })
 })

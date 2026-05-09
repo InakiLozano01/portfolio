@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, notFound } from 'next/navigation';
 import { TinyMCE } from '@/components/ui/tinymce';
 import { Button } from '@/components/ui/button';
@@ -13,14 +13,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ZodError } from 'zod';
 
 interface EditBlogPageProps {
-    params: {
+    params: Promise<{
         id: string;
-    };
+    }>;
 }
 
 const requiredField = (value: string) => value.trim();
 
 export default function EditBlogPage({ params }: EditBlogPageProps) {
+    const { id } = use(params);
     const router = useRouter();
 
     const [titleEn, setTitleEn] = useState('');
@@ -52,7 +53,7 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
     useEffect(() => {
         const fetchBlog = async () => {
             try {
-                const response = await fetch(`/api/blogs/${params.id}`);
+                const response = await fetch(`/api/blogs/${id}`);
                 if (!response.ok) {
                     if (response.status === 404) {
                         notFound();
@@ -92,7 +93,7 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
         };
 
         fetchBlog();
-    }, [params.id]);
+    }, [id]);
 
     const commitPendingTag = useCallback((raw?: string) => {
         const value = typeof raw === 'string' ? raw : pendingTag;
@@ -185,7 +186,7 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
         try {
             BlogSchema.parse(blogData);
 
-            const response = await fetch(`/api/blogs/${params.id}`, {
+            const response = await fetch(`/api/blogs/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -391,7 +392,7 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                     const fd = new FormData();
                                     fd.append('file', pdfEnFile);
                                     fd.append('lang', 'en');
-                                    const res = await fetch(`/api/blogs/${params.id}/pdf`, { method: 'POST', body: fd });
+                                    const res = await fetch(`/api/blogs/${id}/pdf`, { method: 'POST', body: fd });
                                     setPdfUploading(false);
                                     if (res.ok) {
                                         const data = await res.json();
@@ -424,7 +425,7 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                     const fd = new FormData();
                                     fd.append('file', pdfEsFile);
                                     fd.append('lang', 'es');
-                                    const res = await fetch(`/api/blogs/${params.id}/pdf`, { method: 'POST', body: fd });
+                                    const res = await fetch(`/api/blogs/${id}/pdf`, { method: 'POST', body: fd });
                                     setPdfUploading(false);
                                     if (res.ok) {
                                         const data = await res.json();

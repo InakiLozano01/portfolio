@@ -4,11 +4,10 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import BlogManager from './BlogManager';
 import MessagesManager from './MessagesManager';
@@ -21,15 +20,11 @@ import {
   RefreshCw, 
   Activity, 
   Database, 
-  Settings, 
   FileText, 
   Briefcase, 
   Wrench, 
   MessageSquare, 
   Menu, 
-  X, 
-  Home, 
-  Lock,
   LayoutDashboard,
   Image as ImageIcon,
   UserCog
@@ -42,8 +37,6 @@ interface Skill {
   _id: string;
   name: string;
   category: string;
-  proficiency: number;
-  yearsOfExperience: number;
   icon: string;
 }
 

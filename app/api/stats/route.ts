@@ -4,9 +4,13 @@ import Contact from '@/models/Contact'
 import Project from '@/models/Project'
 import Skill from '@/models/Skill'
 import BlogModel from '@/models/Blog'
+import { requireAdmin } from '@/lib/admin-auth'
 
-export async function GET() {
+export async function GET(request: Request) {
 	try {
+		const admin = await requireAdmin(request)
+		if (!admin.ok) return admin.response
+
 		await connectToDatabase()
 
 		// Use countDocuments for efficient counting

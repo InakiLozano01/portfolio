@@ -1,4 +1,4 @@
-import { GET, POST } from '../../app/api/blogs/route'
+import { GET } from '../../app/api/blogs/route'
 import { connectToDatabase } from '../../lib/mongodb'
 
 jest.mock('../../lib/mongodb', () => ({

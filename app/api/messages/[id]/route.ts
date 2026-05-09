@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Contact from '@/models/Contact';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export async function PATCH(
     request: NextRequest,
@@ -8,6 +9,9 @@ export async function PATCH(
 ) {
     const { id } = await context.params;
     try {
+        const admin = await requireAdmin(request);
+        if (!admin.ok) return admin.response;
+
         const body = await request.json();
 
         await connectToDatabase();

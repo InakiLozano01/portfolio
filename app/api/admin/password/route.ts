@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { requireAdmin } from '@/lib/admin-auth'
 import { connectToDatabase } from '@/lib/mongodb'
 import Admin from '@/models/Admin'
-import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const adminGuard = await requireAdmin(request)
+    if (!adminGuard.ok) return adminGuard.response
 
     const { currentPassword, newPassword } = await request.json()
     if (!currentPassword || !newPassword) {
@@ -21,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     await connectToDatabase()
-    const admin = await Admin.findOne({ email: session.user.email })
+    const admin = await Admin.findOne({ email: adminGuard.session.user?.email })
     if (!admin) {
       return NextResponse.json({ error: 'Admin not found' }, { status: 404 })
     }
@@ -31,9 +27,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 })
     }
 
-    const salt = await bcrypt.genSalt(10)
-    const hashed = await bcrypt.hash(newPassword, salt)
-    admin.password = hashed
+    admin.password = newPassword
     await admin.save()
 
     return NextResponse.json({ success: true })
@@ -42,5 +36,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to change password' }, { status: 500 })
   }
 }
-
-

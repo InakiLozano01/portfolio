@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect, useCallback } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatDistanceToNow } from 'date-fns'
 import { useToast } from '@/components/ui/use-toast'
-import { MessageSquare, CheckCircle, Clock, Inbox, Mail, Search } from 'lucide-react'
+import { CheckCircle, Clock, Inbox, Mail, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
 type FilterType = 'priority' | 'read' | 'all'
@@ -28,11 +28,7 @@ export default function MessagesManager() {
   const [search, setSearch] = useState('');
   const messagesPerPage = 10;
 
-  useEffect(() => {
-    fetchMessages();
-  }, []);
-
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     try {
       const response = await fetch('/api/messages');
       if (!response.ok) throw new Error('Failed to fetch messages');
@@ -45,7 +41,11 @@ export default function MessagesManager() {
         variant: 'destructive',
       });
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
 
   const handleMarkAsRead = async (id: string) => {
     try {

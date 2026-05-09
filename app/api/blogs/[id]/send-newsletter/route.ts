@@ -4,6 +4,9 @@ import BlogModel from '@/models/Blog'
 import Subscriber from '@/models/Subscriber'
 import { sendNewsletterEmail } from '@/lib/email'
 import { buildNewsletterEmail } from '@/lib/newsletter-template'
+import { requireAdmin } from '@/lib/admin-auth'
+
+const MAX_MANUAL_NEWSLETTER_RECIPIENTS = 100
 
 export async function POST(
     request: NextRequest,
@@ -12,9 +15,16 @@ export async function POST(
     const { id } = await context.params
 
     try {
+        const admin = await requireAdmin(request)
+        if (!admin.ok) return admin.response
+
         const { subscriberIds } = await request.json() as { subscriberIds: string[] }
-        if (!Array.isArray(subscriberIds) || subscriberIds.length === 0) {
+        const uniqueSubscriberIds = Array.isArray(subscriberIds) ? Array.from(new Set(subscriberIds)) : []
+        if (uniqueSubscriberIds.length === 0) {
             return NextResponse.json({ error: 'No recipients selected' }, { status: 400 })
+        }
+        if (uniqueSubscriberIds.length > MAX_MANUAL_NEWSLETTER_RECIPIENTS) {
+            return NextResponse.json({ error: `Select ${MAX_MANUAL_NEWSLETTER_RECIPIENTS} recipients or fewer` }, { status: 400 })
         }
 
         await connectToDatabase()
@@ -24,7 +34,7 @@ export async function POST(
             return NextResponse.json({ error: 'Blog not found' }, { status: 404 })
         }
 
-        const subscribers = await Subscriber.find({ _id: { $in: subscriberIds }, unsubscribed: false }).lean()
+        const subscribers = await Subscriber.find({ _id: { $in: uniqueSubscriberIds }, unsubscribed: false }).lean()
         if (!subscribers.length) {
             return NextResponse.json({ error: 'No active subscribers for selection' }, { status: 400 })
         }

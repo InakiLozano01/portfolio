@@ -37,7 +37,6 @@ export function normalizeBlogPayload(payload: BlogPayload) {
   const slug = stringOrEmpty(payload.slug).trim() || slugify(titleEn || titleEs)
 
   return {
-    ...payload,
     title_en: titleEn,
     title_es: titleEs,
     subtitle_en: subtitleEn,
@@ -55,6 +54,9 @@ export function normalizeBlogPayload(payload: BlogPayload) {
     footer: normalizeOptional(stringOrEmpty(payload.footer).trim() || footerEn || footerEs),
     bibliography: normalizeOptional(stringOrEmpty(payload.bibliography).trim() || bibliographyEn || bibliographyEs),
     slug,
+    published: payload.published === true,
+    pdf_en: normalizeOptional(payload.pdf_en),
+    pdf_es: normalizeOptional(payload.pdf_es),
     tags,
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { emailService } from '@/lib/email';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/admin-auth';
 
 // This endpoint is for testing email configuration
 // Remove or secure this in production
@@ -26,18 +27,16 @@ export async function GET() {
         return NextResponse.json({
             success: false,
             emailConfigured: false,
-            message: 'Email test failed',
-            error: error instanceof Error ? error.message : 'Unknown error'
+            message: 'Email test failed'
         }, { status: 500 });
     }
 }
 
 // Test endpoint to send a test email
-export async function POST() {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export async function POST(request: Request) {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     try {
         const testEmailData = {
             name: 'Test User',
@@ -56,8 +55,7 @@ export async function POST() {
         console.error('Test email error:', error);
         return NextResponse.json({
             success: false,
-            message: 'Test email failed',
-            error: error instanceof Error ? error.message : 'Unknown error'
+            message: 'Test email failed'
         }, { status: 500 });
     }
 }

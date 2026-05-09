@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { getCachedSections, clearSectionsCache } from '@/lib/cache';
-import { SectionModel } from '@/models/Section';
+import { SectionModel, SectionSchema } from '@/models/Section';
 import mongoose from 'mongoose';
-import { headers } from 'next/headers';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/admin-auth';
+import { ZodError } from 'zod';
 
 // Configure route segment
 export const runtime = 'nodejs';
@@ -22,10 +25,8 @@ export async function GET(
   }
 
   try {
-    // Check if request is from admin page
-    const headersList = await headers();
-    const referer = headersList.get('referer') || '';
-    const isAdminRequest = referer.includes('/admin');
+    const session = await getServerSession(authOptions);
+    const isAdminRequest = Boolean(session?.user?.email);
 
     // Try to find section by title first
     const title = id.charAt(0).toUpperCase() + id.slice(1).toLowerCase();
@@ -123,15 +124,26 @@ export async function PUT(
 ) {
   const { id } = await context.params;
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     const body = await request.json();
+    const updateData = SectionSchema.partial().parse(body);
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No section fields provided' },
+        { status: 400 }
+      );
+    }
+
     await connectToDatabase();
 
     // Try to update by title first
     const title = id.charAt(0).toUpperCase() + id.slice(1).toLowerCase();
     const sectionByTitle = await SectionModel.findOneAndUpdate(
       { title },
-      { $set: body },
-      { new: true }
+      { $set: updateData },
+      { new: true, runValidators: true }
     );
 
     if (sectionByTitle) {
@@ -144,8 +156,8 @@ export async function PUT(
     if (mongoose.Types.ObjectId.isValid(id)) {
       const sectionById = await SectionModel.findByIdAndUpdate(
         id,
-        body,
-        { new: true }
+        updateData,
+        { new: true, runValidators: true }
       );
 
       if (sectionById) {
@@ -160,6 +172,13 @@ export async function PUT(
       { status: 404 }
     );
   } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid section payload' },
+        { status: 400 }
+      );
+    }
+
     console.error('[Sections API] Failed to update section:', error);
     return NextResponse.json(
       { error: 'Failed to update section' },
@@ -169,11 +188,14 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     await connectToDatabase();
 
     // Only allow deletion by valid ObjectId

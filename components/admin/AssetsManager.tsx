@@ -5,9 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { FileText, Image as ImageIcon, UploadCloud, AlertCircle, FileType } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function AssetsManager() {
     const { toast } = useToast()

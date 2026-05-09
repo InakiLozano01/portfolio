@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { clearSectionsCache, invalidateCache } from '@/lib/cache'
 import { revalidateTag, revalidatePath } from 'next/cache'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions)
-        if (!session?.user?.email) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            )
-        }
+        const admin = await requireAdmin(request)
+        if (!admin.ok) return admin.response
 
         const { cacheType } = await request.json()
 
@@ -28,6 +22,8 @@ export async function POST(request: NextRequest) {
                 ])
                 // Revalidate all paths
                 revalidatePath('/', 'layout')
+                revalidatePath('/en')
+                revalidatePath('/es')
                 revalidatePath('/projects')
                 revalidatePath('/blog')
                 break
@@ -41,6 +37,8 @@ export async function POST(request: NextRequest) {
             case 'sections':
                 await clearSectionsCache()
                 revalidatePath('/', 'layout')
+                revalidatePath('/en')
+                revalidatePath('/es')
                 revalidateTag('sections', 'max')
                 break
 
@@ -71,7 +69,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Error clearing cache:', error)
         return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Failed to clear cache' },
+            { error: 'Failed to clear cache' },
             { status: 500 }
         )
     }

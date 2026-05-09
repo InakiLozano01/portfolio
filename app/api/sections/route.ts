@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { SectionModel, SectionSchema, Section } from '@/models/Section';
 import { getCachedSections, clearSectionsCache } from '@/lib/cache';
-import { headers } from 'next/headers';
 import { extractAndSaveSchemas } from '@/lib/schema-extractor';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/admin-auth';
+import mongoose from 'mongoose';
+import { ZodError } from 'zod';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -15,10 +19,8 @@ export async function GET() {
   }
 
   try {
-    // Check if request is from admin page
-    const headersList = await headers();
-    const referer = headersList.get('referer') || '';
-    const isAdminRequest = referer.includes('/admin');
+    const session = await getServerSession(authOptions);
+    const isAdminRequest = Boolean(session?.user?.email);
 
     // Try to get from cache first (even in development)
     const sections = await getCachedSections();
@@ -46,6 +48,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     const body = await request.json();
     // Use flexible validation for creation
     const validatedData = SectionSchema.parse(body);
@@ -63,6 +68,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json(section);
   } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid section payload' },
+        { status: 400 }
+      );
+    }
+
     console.error('Failed to create section:', error);
     return NextResponse.json(
       { error: 'Failed to create section' },
@@ -73,6 +85,9 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     const body = await request.json();
     await connectToDatabase();
 
@@ -82,13 +97,19 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+    if (!mongoose.Types.ObjectId.isValid(body._id)) {
+      return NextResponse.json(
+        { error: 'Invalid section ID' },
+        { status: 400 }
+      );
+    }
 
     // Use flexible validation for updates
     const validatedData = SectionSchema.parse(body);
     const section = await SectionModel.findByIdAndUpdate(
       body._id,
       validatedData,
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     if (!section) {
@@ -108,6 +129,13 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(section);
   } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid section payload' },
+        { status: 400 }
+      );
+    }
+
     console.error('Failed to update section:', error);
     return NextResponse.json(
       { error: 'Failed to update section' },
@@ -118,8 +146,15 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid section ID' }, { status: 400 });
+    }
+
     await connectToDatabase();
     const section = await SectionModel.findByIdAndDelete(id);
 

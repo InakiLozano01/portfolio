@@ -11,7 +11,7 @@ import { BlogSchema } from '@/models/BlogClient';
 import { slugify } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ZodError } from 'zod';
-import { ArrowLeft, Save, FileText, Globe, Check } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const requiredField = (value: string) => value.trim();

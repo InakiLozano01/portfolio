@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server';
 import { clearSectionsCache } from '@/lib/cache';
 import { revalidatePath } from 'next/cache';
+import { requireAdmin } from '@/lib/admin-auth';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     await clearSectionsCache();
 
     // Revalidate the paths where sections are used
     revalidatePath('/');  // Home page
+    revalidatePath('/en');
+    revalidatePath('/es');
     revalidatePath('/admin');  // Admin dashboard
 
     return NextResponse.json({
@@ -25,4 +31,4 @@ export async function POST() {
       { status: 500 }
     );
   }
-} 
+}

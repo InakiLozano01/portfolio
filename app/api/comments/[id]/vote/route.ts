@@ -4,11 +4,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Comment from '@/models/Comment'
 
+const RATE_LIMIT_WINDOW_MS = 60 * 1000
+const MAX_VOTE_REQUESTS_PER_WINDOW = 30
+const voteAttempts = new Map<string, { count: number; resetAt: number }>()
+
+function isRateLimited(key: string) {
+  const now = Date.now()
+  const current = voteAttempts.get(key)
+  if (!current || current.resetAt <= now) {
+    voteAttempts.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return false
+  }
+
+  current.count += 1
+  return current.count > MAX_VOTE_REQUESTS_PER_WINDOW
+}
+
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params
   try {
     const { direction } = await req.json() as { direction: 'up' | 'down' | 'clear' }
     const ip = (req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown').split(',')[0].trim()
+    if (isRateLimited(`${ip}:${id}`)) {
+      return NextResponse.json({ error: 'Too many vote attempts' }, { status: 429 })
+    }
+
     if (!['up', 'down', 'clear'].includes(direction)) {
       return NextResponse.json({ error: 'Invalid vote' }, { status: 400 })
     }
