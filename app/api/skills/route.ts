@@ -2,17 +2,45 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Skill from '@/models/Skill';
 import { headers } from 'next/headers';
+import { requireAdmin } from '@/lib/admin-auth';
+import mongoose from 'mongoose';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const legacyMetricFields = [
+  'proficiency',
+  'yearsOfExperience',
+  'yearsExperience',
+  'experienceLevel',
+  'expertise',
+  'expertisePercent',
+  'expertisePercentage',
+  'percentage',
+  'percent',
+];
+
+function normalizeSkillPayload(body: Record<string, unknown>) {
+  return {
+    name: body.name,
+    category: body.category,
+    icon: body.icon,
+  };
+}
+
 export async function GET() {
-  const headersList = await headers();
-  console.log('[Skills API] Received GET request from:', headersList.get('user-agent'));
+  let userAgent = 'unknown';
+  try {
+    const headersList = await headers();
+    userAgent = headersList.get('user-agent') ?? userAgent;
+  } catch {
+    // Tests and build-time callers may execute this route outside a request scope.
+  }
+
+  console.log('[Skills API] Received GET request from:', userAgent);
   console.log('[Skills API] Environment:', {
     SKIP_DB_DURING_BUILD: process.env.SKIP_DB_DURING_BUILD,
     NODE_ENV: process.env.NODE_ENV,
-    MONGODB_URI: process.env.MONGODB_URI?.split('?')[0] // Log URI without credentials
   });
 
   // During build time, return empty array
@@ -26,7 +54,8 @@ export async function GET() {
     console.log('[Skills API] Connected to database');
 
     const skills = await Skill.find({})
-      .sort({ category: 1, proficiency: -1 })
+      .select('name category icon createdAt updatedAt')
+      .sort({ category: 1, name: 1 })
       .lean()
       .exec();
 
@@ -51,11 +80,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     const body = await request.json();
     await connectToDatabase();
 
     // Create new skill
-    const skill = await Skill.create(body);
+    const skill = await Skill.create(normalizeSkillPayload(body));
     console.log('[Skills API] Created new skill:', skill.name);
 
     return NextResponse.json(skill);
@@ -70,6 +102,9 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
     const body = await request.json();
 
     if (!body._id) {
@@ -78,11 +113,27 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+    if (!mongoose.isValidObjectId(body._id)) {
+      return NextResponse.json(
+        { error: 'Invalid skill ID' },
+        { status: 400 }
+      );
+    }
 
     await connectToDatabase();
 
     // Update existing skill
-    const skill = await Skill.findByIdAndUpdate(body._id, body, { new: true });
+    const skill = await Skill.findByIdAndUpdate(
+      body._id,
+      {
+        $set: {
+          ...normalizeSkillPayload(body),
+          updatedAt: new Date(),
+        },
+        $unset: Object.fromEntries(legacyMetricFields.map((field) => [field, ''])),
+      },
+      { new: true, runValidators: true }
+    );
     if (!skill) {
       return NextResponse.json(
         { error: 'Skill not found' },

@@ -9,19 +9,16 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { PlusCircle, Trash2, Plus } from 'lucide-react'
+import { PlusCircle, Plus } from 'lucide-react'
 import { VscCode } from 'react-icons/vsc'
-import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import IconPicker from '@/components/admin/IconPicker'
-import { iconMap, type IconProps, isCustomIconPath } from '@/components/skills/icon-registry'
+import { iconMap, isCustomIconPath } from '@/components/skills/icon-registry'
 
 interface Skill {
   _id: string;
   name: string;
   category: string;
-  proficiency: number;
-  yearsOfExperience: number;
   icon: string;
 }
 
@@ -39,8 +36,6 @@ export default function SkillsManager({ skills, onSave }: Props) {
   const [newSkill, setNewSkill] = useState<Omit<Skill, '_id'>>({
     name: '',
     category: '',
-    proficiency: 0,
-    yearsOfExperience: 0,
     icon: ''
   });
 
@@ -65,17 +60,8 @@ export default function SkillsManager({ skills, onSave }: Props) {
     setNewSkill({
       name: '',
       category: '',
-      proficiency: 0,
-      yearsOfExperience: 0,
       icon: ''
     });
-  };
-
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'proficiency' | 'yearsOfExperience', setter: Function) => {
-    const value = e.target.value === '' ? 0 : parseInt(e.target.value);
-    if (!isNaN(value)) {
-      setter((prev: any) => ({ ...prev, [field]: value }));
-    }
   };
 
   const handleAddCategory = () => {
@@ -172,29 +158,6 @@ export default function SkillsManager({ skills, onSave }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label className="text-slate-700 font-medium mb-1.5 block">Proficiency (%)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={newSkill.proficiency || ''}
-                    onChange={(e) => handleNumberChange(e, 'proficiency', setNewSkill)}
-                    placeholder="Proficiency percentage"
-                    className="border-slate-300 focus-visible:ring-[#FD4345]"
-                  />
-                </div>
-                <div>
-                  <Label className="text-slate-700 font-medium mb-1.5 block">Years of Experience</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={newSkill.yearsOfExperience || ''}
-                    onChange={(e) => handleNumberChange(e, 'yearsOfExperience', setNewSkill)}
-                    placeholder="Years of experience"
-                    className="border-slate-300 focus-visible:ring-[#FD4345]"
-                  />
-                </div>
                 <div className="md:col-span-2">
                   <Label className="text-slate-700 font-medium mb-1.5 block">Icon</Label>
                   <IconPicker value={newSkill.icon} onChange={(val) => setNewSkill(prev => ({ ...prev, icon: val }))} />
@@ -247,8 +210,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                     <TableRow className="bg-slate-50/50 border-b border-slate-200 hover:bg-slate-50/50">
                       <TableHead className="w-16 text-slate-500 font-medium text-xs uppercase tracking-wider">Icon</TableHead>
                       <TableHead className="text-slate-500 font-medium text-xs uppercase tracking-wider">Name</TableHead>
-                      <TableHead className="text-slate-500 font-medium text-xs uppercase tracking-wider">Proficiency</TableHead>
-                      <TableHead className="text-slate-500 font-medium text-xs uppercase tracking-wider">Years</TableHead>
+                      <TableHead className="text-slate-500 font-medium text-xs uppercase tracking-wider">Category</TableHead>
                       <TableHead className="text-right text-slate-500 font-medium text-xs uppercase tracking-wider">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -279,34 +241,8 @@ export default function SkillsManager({ skills, onSave }: Props) {
                                 />
                             ) : skill.name}
                           </TableCell>
-                          <TableCell>
-                            {editingSkill?._id === skill._id ? (
-                              <Input
-                                type="number"
-                                value={editingSkill.proficiency || ''}
-                                onChange={(e) => handleNumberChange(e, 'proficiency', setEditingSkill)}
-                                className="h-8 w-20"
-                              />
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div className="h-full bg-[#FD4345]" style={{ width: `${skill.proficiency}%` }} />
-                                </div>
-                                <span className="text-sm text-slate-600">{skill.proficiency}%</span>
-                              </div>
-                            )}
-                          </TableCell>
                           <TableCell className="text-slate-600">
-                             {editingSkill?._id === skill._id ? (
-                              <Input
-                                type="number"
-                                value={editingSkill.yearsOfExperience || ''}
-                                onChange={(e) => handleNumberChange(e, 'yearsOfExperience', setEditingSkill)}
-                                className="h-8 w-20"
-                              />
-                            ) : (
-                              <span className="text-sm">{skill.yearsOfExperience}y</span>
-                            )}
+                            <span className="text-sm capitalize">{skill.category}</span>
                           </TableCell>
                           <TableCell className="text-right">
                             {editingSkill?._id === skill._id ? (

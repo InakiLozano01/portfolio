@@ -4,8 +4,6 @@
   },
   "name": "Java",
   "category": "language",
-  "proficiency": 80,
-  "yearsOfExperience": 2,
   "icon": "FaJava"
 },
 {
@@ -14,8 +12,6 @@
   },
   "name": "JavaScript",
   "category": "language",
-  "proficiency": 75,
-  "yearsOfExperience": 1,
   "icon": "FaJs"
 },
 {
@@ -24,8 +20,6 @@
   },
   "name": "TypeScript",
   "category": "language",
-  "proficiency": 65,
-  "yearsOfExperience": 0.5,
   "icon": "SiTypescript"
 },
 {
@@ -34,8 +28,6 @@
   },
   "name": "PHP",
   "category": "language",
-  "proficiency": 80,
-  "yearsOfExperience": 1,
   "icon": "FaPhp"
 },
 {
@@ -44,8 +36,6 @@
   },
   "name": "Python",
   "category": "language",
-  "proficiency": 85,
-  "yearsOfExperience": 3,
   "icon": "FaPython"
 },
 {
@@ -54,8 +44,6 @@
   },
   "name": "HTML5",
   "category": "language",
-  "proficiency": 90,
-  "yearsOfExperience": 4,
   "icon": "FaHtml5"
 },
 {
@@ -64,8 +52,6 @@
   },
   "name": "Spring",
   "category": "framework",
-  "proficiency": 75,
-  "yearsOfExperience": 2,
   "icon": "SiSpring"
 },
 {
@@ -74,8 +60,6 @@
   },
   "name": "React",
   "category": "framework",
-  "proficiency": 65,
-  "yearsOfExperience": 0.5,
   "icon": "FaReact"
 },
 {
@@ -84,8 +68,6 @@
   },
   "name": "CSS3",
   "category": "framework",
-  "proficiency": 85,
-  "yearsOfExperience": 4,
   "icon": "FaCss3"
 },
 {
@@ -94,8 +76,6 @@
   },
   "name": "Bootstrap",
   "category": "framework",
-  "proficiency": 80,
-  "yearsOfExperience": 4,
   "icon": "FaBootstrap"
 },
 {
@@ -104,8 +84,6 @@
   },
   "name": "CodeIgniter",
   "category": "framework",
-  "proficiency": 70,
-  "yearsOfExperience": 1,
   "icon": "SiCodeigniter"
 },
 {
@@ -114,8 +92,6 @@
   },
   "name": "Flask",
   "category": "framework",
-  "proficiency": 80,
-  "yearsOfExperience": 2,
   "icon": "SiFlask"
 },
 {
@@ -124,8 +100,6 @@
   },
   "name": "MySQL",
   "category": "database",
-  "proficiency": 85,
-  "yearsOfExperience": 3,
   "icon": "SiMysql"
 },
 {
@@ -134,8 +108,6 @@
   },
   "name": "PostgreSQL",
   "category": "database",
-  "proficiency": 90,
-  "yearsOfExperience": 1,
   "icon": "SiPostgresql"
 },
 {
@@ -144,8 +116,6 @@
   },
   "name": "VS Code",
   "category": "tool",
-  "proficiency": 90,
-  "yearsOfExperience": 4,
   "icon": "VscCode"
 },
 {
@@ -154,8 +124,6 @@
   },
   "name": "IntelliJ",
   "category": "tool",
-  "proficiency": 80,
-  "yearsOfExperience": 2,
   "icon": "SiIntellijidea"
 },
 {
@@ -164,8 +132,6 @@
   },
   "name": "Node.js",
   "category": "tool",
-  "proficiency": 80,
-  "yearsOfExperience": 1,
   "icon": "FaNodeJs"
 },
 {
@@ -174,8 +140,6 @@
   },
   "name": "GitHub",
   "category": "tool",
-  "proficiency": 90,
-  "yearsOfExperience": 4,
   "icon": "FaGithub"
 },
 {
@@ -184,8 +148,6 @@
   },
   "name": "GitLab",
   "category": "tool",
-  "proficiency": 75,
-  "yearsOfExperience": 1,
   "icon": "FaGitlab"
 },
 {
@@ -194,8 +156,6 @@
   },
   "name": "Git",
   "category": "tool",
-  "proficiency": 85,
-  "yearsOfExperience": 4,
   "icon": "FaGit"
 },
 {
@@ -204,8 +164,6 @@
   },
   "name": "Ubuntu",
   "category": "devops",
-  "proficiency": 85,
-  "yearsOfExperience": 2,
   "icon": "FaUbuntu"
 },
 {
@@ -214,8 +172,6 @@
   },
   "name": "Docker",
   "category": "devops",
-  "proficiency": 90,
-  "yearsOfExperience": 2,
   "icon": "FaDocker"
 },
 {
@@ -224,8 +180,6 @@
   },
   "name": "Google Cloud",
   "category": "devops",
-  "proficiency": 60,
-  "yearsOfExperience": 0.5,
   "icon": "SiGooglecloud"
 },
 {
@@ -234,8 +188,6 @@
   },
   "name": "ChatGPT",
   "category": "ai",
-  "proficiency": 95,
-  "yearsOfExperience": 2,
   "icon": "SiOpenai",
   "createdAt": {
     "$date": "2025-01-10T00:07:22.870Z"

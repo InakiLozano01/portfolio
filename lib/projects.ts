@@ -8,8 +8,6 @@ interface Skill {
     _id: Types.ObjectId;
     name: string;
     category: string;
-    proficiency: number;
-    yearsOfExperience: number;
     icon: string;
     createdAt: Date;
     updatedAt: Date;
@@ -77,7 +75,7 @@ export const getProjectBySlug = async (slug: string) => {
 export const getAllProjects = cache(async () => {
     await connectToDatabase()
 
-    const projects = await Project.find({ published: true })
+    const projects = await Project.find({})
         .select('slug updatedAt')
         .lean()
         .exec()

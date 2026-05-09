@@ -5,7 +5,7 @@ import { VscCode } from 'react-icons/vsc'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 import Image from 'next/image'
-import { iconMap, isCustomIconPath, resolveIconKey, type IconProps } from '@/components/skills/icon-registry'
+import { iconMap, isCustomIconPath } from '@/components/skills/icon-registry'
 
 // Icon map and helpers are imported from icon-registry
 
@@ -13,8 +13,6 @@ interface Skill {
   _id?: string;
   name: string;
   category: string;
-  proficiency: number;
-  yearsOfExperience: number;
   icon: string;
 }
 
@@ -23,18 +21,9 @@ const copy = {
     heading: 'Skills & Technologies',
     descriptionFallback: 'A comprehensive set of technical skills across various domains',
     searchPlaceholder: 'Search skills...',
-    sortLabel: 'Sort by',
-    sortOptions: {
-      proficiency: 'Proficiency',
-      years: 'Years',
-      name: 'Name',
-    },
     sortDirAsc: 'Asc',
     sortDirDesc: 'Desc',
     all: 'All',
-    proficiency: 'Proficiency',
-    experience: 'Experience',
-    years: (n: number) => (n === 1 ? 'year' : 'years'),
     paginationPrev: 'Previous',
     paginationNext: 'Next',
     ariaSortToggle: 'Toggle sort direction',
@@ -43,18 +32,9 @@ const copy = {
     heading: 'Habilidades y Tecnologías',
     descriptionFallback: 'Un conjunto integral de habilidades técnicas en diversos dominios',
     searchPlaceholder: 'Buscar habilidades...',
-    sortLabel: 'Ordenar por',
-    sortOptions: {
-      proficiency: 'Dominio',
-      years: 'Años',
-      name: 'Nombre',
-    },
     sortDirAsc: 'Ascendente',
     sortDirDesc: 'Descendente',
     all: 'Todas',
-    proficiency: 'Dominio',
-    experience: 'Experiencia',
-    years: (n: number) => (n === 1 ? 'año' : 'años'),
     paginationPrev: 'Anterior',
     paginationNext: 'Siguiente',
     ariaSortToggle: 'Cambiar dirección de orden',
@@ -66,31 +46,34 @@ function coerceSkill(raw: any): Skill {
     _id: raw._id,
     name: String(raw.name || '').trim(),
     category: String(raw.category || '').trim(),
-    proficiency: typeof raw.proficiency === 'number' ? raw.proficiency : Number(raw.proficiency) || 0,
-    yearsOfExperience: typeof raw.yearsOfExperience === 'number' ? raw.yearsOfExperience : Number(raw.yearsOfExperience) || 0,
     icon: String(raw.icon || '').trim()
   }
 }
 
-export default function Skills({ lang = 'en' }: { lang?: 'en' | 'es' }) {
-  const [titleBase, setTitleBase] = useState<string>('')
-  const [titleEn, setTitleEn] = useState<string>('')
-  const [titleEs, setTitleEs] = useState<string>('')
-  const [description, setDescription] = useState<string>('')
-  const [description_en, setDescription_en] = useState<string>('')
-  const [description_es, setDescription_es] = useState<string>('')
+export default function Skills({
+  lang = 'en',
+  initialContent,
+}: {
+  lang?: 'en' | 'es'
+  initialContent?: Record<string, any>
+}) {
+  const [titleBase, setTitleBase] = useState<string>(() => String(initialContent?.title || ''))
+  const [titleEn, setTitleEn] = useState<string>(() => String(initialContent?.title_en || initialContent?.title || ''))
+  const [titleEs, setTitleEs] = useState<string>(() => String(initialContent?.title_es || initialContent?.title || ''))
+  const [description, setDescription] = useState<string>(() => String(initialContent?.description || ''))
+  const [description_en, setDescription_en] = useState<string>(() => String(initialContent?.description_en || ''))
+  const [description_es, setDescription_es] = useState<string>(() => String(initialContent?.description_es || ''))
   const [content, setContent] = useState<Skill[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState<'proficiency' | 'years' | 'name'>('proficiency')
-  const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc')
+  const [sortDir, setSortDir] = useState<'desc' | 'asc'>('asc')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(8)
+  const [showDesktopPagination, setShowDesktopPagination] = useState(false)
   const gridRef = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion()
-  const [isClient, setIsClient] = useState(false)
 
   const t = copy[lang] ?? copy.en
   const heading = lang === 'es'
@@ -102,39 +85,49 @@ export default function Skills({ lang = 'en' }: { lang?: 'en' | 'es' }) {
       : (description_en || description || t.descriptionFallback)
 
   useEffect(() => {
+    if (!initialContent) return
+    setTitleBase(String(initialContent.title || ''))
+    setTitleEn(String(initialContent.title_en || initialContent.title || ''))
+    setTitleEs(String(initialContent.title_es || initialContent.title || ''))
+    setDescription(String(initialContent.description || ''))
+    setDescription_en(String(initialContent.description_en || ''))
+    setDescription_es(String(initialContent.description_es || ''))
+  }, [initialContent])
+
+  useEffect(() => {
     const fetchSkills = async () => {
       try {
-        // First fetch section data
-        const sectionResponse = await fetch('/api/sections/skills')
-        if (!sectionResponse.ok) {
-          throw new Error('Failed to fetch skills section')
+        if (!initialContent) {
+          const sectionResponse = await fetch('/api/sections/skills')
+          if (!sectionResponse.ok) {
+            throw new Error('Failed to fetch skills section')
+          }
+          const sectionData = await sectionResponse.json()
+
+          if (sectionData && sectionData.content) {
+            setTitleBase(sectionData.title || sectionData.content.title || '')
+            setTitleEn(sectionData.content.title_en || sectionData.content.title || sectionData.title || '')
+            setTitleEs(sectionData.content.title_es || sectionData.content.title || sectionData.title || '')
+            setDescription(sectionData.content.description || '')
+            setDescription_en(sectionData.content.description_en || '')
+            setDescription_es(sectionData.content.description_es || '')
+          }
         }
-        const sectionData = await sectionResponse.json()
 
-        if (sectionData && sectionData.content) {
-          setTitleBase(sectionData.title || sectionData.content.title || '')
-          setTitleEn(sectionData.content.title_en || sectionData.content.title || sectionData.title || '')
-          setTitleEs(sectionData.content.title_es || sectionData.content.title || sectionData.title || '')
-          setDescription(sectionData.content.description || '')
-          setDescription_en(sectionData.content.description_en || '')
-          setDescription_es(sectionData.content.description_es || '')
+        const skillsResponse = await fetch('/api/skills')
+        if (!skillsResponse.ok) {
+          throw new Error('Failed to fetch skills data')
+        }
+        const skillsData = await skillsResponse.json()
 
-          // Then fetch skills data
-          const skillsResponse = await fetch('/api/skills')
-          if (!skillsResponse.ok) {
-            throw new Error('Failed to fetch skills data')
-          }
-          const skillsData = await skillsResponse.json()
-
-          if (Array.isArray(skillsData)) {
-            const normalizedSkills = skillsData
-              .map(coerceSkill)
-              .filter(skill => skill.name && skill.category)
-            setContent(normalizedSkills)
-          } else {
-            console.error('[Skills Component] Invalid skills data format:', skillsData)
-            setError('Invalid skills data format')
-          }
+        if (Array.isArray(skillsData)) {
+          const normalizedSkills = skillsData
+            .map(coerceSkill)
+            .filter(skill => skill.name && skill.category)
+          setContent(normalizedSkills)
+        } else {
+          console.error('[Skills Component] Invalid skills data format:', skillsData)
+          setError('Invalid skills data format')
         }
       } catch (err) {
         console.error('[Skills Component] Error:', err)
@@ -145,16 +138,15 @@ export default function Skills({ lang = 'en' }: { lang?: 'en' | 'es' }) {
     }
 
     fetchSkills()
-  }, [])
-
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
+  }, [initialContent])
 
   // Calculate items per page based on available height
   useEffect(() => {
     function calculateItemsPerPage() {
-      if (!gridRef.current || window.innerWidth < 768) {
+      const isDesktop = window.innerWidth >= 768
+      setShowDesktopPagination(isDesktop)
+
+      if (!gridRef.current || !isDesktop) {
         setItemsPerPage(999) // Show all items on mobile
         return
       }
@@ -163,11 +155,11 @@ export default function Skills({ lang = 'en' }: { lang?: 'en' | 'es' }) {
       const footerHeight = 140 // Footer height + padding and overlap guard
       const paginationHeight = 60 // Pagination controls height + margin
       const availableHeight = window.innerHeight - headerHeight - footerHeight - paginationHeight
-      const itemHeight = 160 // Height of each skill card including margin
-      const gap = 16 // Gap between items
-      const columns = window.innerWidth >= 1280 ? 4 : window.innerWidth >= 1024 ? 3 : 2
+      const itemHeight = 84 // Compact skill card height including margin
+      const gap = 12 // Gap between items
+      const columns = window.innerWidth >= 1280 ? 5 : window.innerWidth >= 1024 ? 4 : 3
 
-      const rowsCanFit = Math.floor(availableHeight / itemHeight)
+      const rowsCanFit = Math.floor(availableHeight / (itemHeight + gap))
       const newItemsPerPage = Math.max(rowsCanFit * columns, columns)
 
       setItemsPerPage(newItemsPerPage)
@@ -206,26 +198,14 @@ export default function Skills({ lang = 'en' }: { lang?: 'en' | 'es' }) {
     const sorted = [...withSearch].sort((a, b) => {
       let comparison = 0
 
-      switch (sortBy) {
-        case 'proficiency':
-          comparison = a.proficiency - b.proficiency
-          break
-        case 'years':
-          comparison = a.yearsOfExperience - b.yearsOfExperience
-          break
-        case 'name':
-          comparison = a.name.localeCompare(b.name)
-          break
-        default:
-          comparison = 0
-      }
+      comparison = a.name.localeCompare(b.name)
 
       // Apply sort direction
       return sortDir === 'desc' ? -comparison : comparison
     })
 
     return sorted
-  }, [content, selectedCategory, searchQuery, sortBy, sortDir])
+  }, [content, selectedCategory, searchQuery, sortDir])
 
   const paginatedSkills = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
@@ -290,16 +270,6 @@ export default function Skills({ lang = 'en' }: { lang?: 'en' | 'es' }) {
               placeholder={t.searchPlaceholder}
               className="h-9 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
             />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="h-9 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
-              aria-label={t.sortLabel}
-            >
-              <option value="proficiency">{t.sortOptions.proficiency}</option>
-              <option value="years">{t.sortOptions.years}</option>
-              <option value="name">{t.sortOptions.name}</option>
-            </select>
             <button
               onClick={() => setSortDir(prev => (prev === 'desc' ? 'asc' : 'desc'))}
               className="h-9 px-3 rounded-md border border-gray-300 text-sm hover:bg-gray-50"
@@ -313,7 +283,7 @@ export default function Skills({ lang = 'en' }: { lang?: 'en' | 'es' }) {
 
       <div
         ref={gridRef}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4 px-4 md:px-0"
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mt-4 px-4 md:px-0"
         role="tabpanel"
         id={`${selectedCategory}-panel`}
         aria-label={
@@ -338,62 +308,36 @@ export default function Skills({ lang = 'en' }: { lang?: 'en' | 'es' }) {
               initial={reduceMotion ? false : { opacity: 0, y: 20 }}
               animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
               transition={reduceMotion ? { duration: 0 } : { duration: 0.3, delay: index * 0.1 }}
-              className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1 h-40"
+              className="bg-white px-3 py-2.5 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 min-h-20"
             >
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2">
                 {isCustomIconPath(skill.icon) ? (
                   <Image
                     src={skill.icon.startsWith('http') ? skill.icon : (skill.icon.startsWith('/') ? skill.icon : `/${skill.icon}`)}
                     alt={skill.name}
-                    width={24}
-                    height={24}
-                    className="w-6 h-6 object-contain"
+                    width={22}
+                    height={22}
+                    className="w-5 h-5 object-contain shrink-0"
                   />
                 ) : (
                   Icon && (
                     <Icon
-                      className="w-6 h-6 text-primary"
+                      className="w-5 h-5 text-primary shrink-0"
                       aria-hidden="true"
                     />
                   )
                 )}
-                <h3 className="font-medium text-base">{skill.name}</h3>
-              </div>
-              <div className="space-y-2">
-                <div>
-                  <div className="flex justify-between text-sm text-gray-600 mb-1">
-                    <span>{t.proficiency}</span>
-                    <span>{skill.proficiency}%</span>
-                  </div>
-                  <div
-                    className="h-2 bg-gray-200 rounded-full overflow-hidden"
-                    role="progressbar"
-                    aria-valuenow={skill.proficiency}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={
-                      lang === 'es'
-                        ? `Dominio de ${skill.name}`
-                        : `Proficiency for ${skill.name}`
-                    }
-                  >
-                    <div
-                      className="h-full bg-primary transition-all duration-500"
-                      style={{ width: `${skill.proficiency}%` }}
-                    />
-                  </div>
+                <div className="min-w-0">
+                  <h3 className="font-medium text-sm leading-tight text-gray-900 truncate">{skill.name}</h3>
+                  <p className="text-xs leading-tight text-gray-500 capitalize truncate">{skill.category}</p>
                 </div>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">{t.experience}: </span>
-                  {skill.yearsOfExperience} {t.years(skill.yearsOfExperience)}
-                </p>
               </div>
             </motion.div>
           )
         })}
       </div>
 
-      {totalPages > 1 && isClient && window.innerWidth >= 768 && (
+      {totalPages > 1 && showDesktopPagination && (
         <div className="flex justify-center items-center gap-2 py-4">
           <button
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}

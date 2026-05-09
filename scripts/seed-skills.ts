@@ -7,6 +7,18 @@ import Skill from '../models/Skill';
 
 config();
 
+const legacyMetricFields = [
+  'proficiency',
+  'yearsOfExperience',
+  'yearsExperience',
+  'experienceLevel',
+  'expertise',
+  'expertisePercent',
+  'expertisePercentage',
+  'percentage',
+  'percent',
+];
+
 // Set MongoDB URI for Docker environment if not set
 if (!process.env.MONGODB_URI) {
   process.env.MONGODB_URI = 'mongodb://mongodb:27017/portfolio';
@@ -26,6 +38,9 @@ function transformData(data: any[]) {
     }
     if (transformed.updatedAt && transformed.updatedAt.$date) {
       transformed.updatedAt = new Date(transformed.updatedAt.$date);
+    }
+    for (const field of legacyMetricFields) {
+      delete transformed[field];
     }
     return transformed;
   });
@@ -74,4 +89,4 @@ async function seedSkills() {
   }
 }
 
-seedSkills(); 
+seedSkills();
