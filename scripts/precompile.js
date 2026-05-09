@@ -15,7 +15,7 @@ function checkServerReady() {
   return new Promise((resolve, reject) => {
     let attempts = 0;
     const maxAttempts = 30; // 15 seconds max wait time
-    
+
     const checkInterval = setInterval(() => {
       attempts++;
       const req = http.request({
@@ -55,8 +55,7 @@ async function warmupRoute(route) {
 
   return new Promise((resolve) => {
     const req = http.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => { data += chunk; });
+      res.on('data', () => {});
       res.on('end', () => {
         console.log(`✓ Compiled ${route}`);
         resolve();
@@ -77,9 +76,9 @@ async function main() {
     console.log('Waiting for Next.js server...');
     await checkServerReady();
     console.log('Server ready, precompiling routes...');
-    
+
     await Promise.all(routes.map(route => warmupRoute(route)));
-    
+
     console.log('✓ All routes precompiled!');
   } catch (error) {
     console.error('Failed:', error.message);
@@ -87,4 +86,4 @@ async function main() {
   }
 }
 
-main(); 
+main();

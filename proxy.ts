@@ -4,6 +4,8 @@ import { getToken } from 'next-auth/jwt'
 
 const locales = ['en', 'es'] as const
 const defaultLocale = 'en'
+const HSTS_HEADER = 'max-age=63072000; includeSubDomains; preload'
+const PERMISSIONS_POLICY_HEADER = 'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
 
 function getForwardedHost(request: NextRequest): string {
   const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || ''
@@ -67,12 +69,12 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith('/admin')) {
     const response = NextResponse.next()
     response.headers.set('X-DNS-Prefetch-Control', 'on')
-    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-    response.headers.set('X-Frame-Options', 'SAMEORIGIN')
+    response.headers.set('Strict-Transport-Security', HSTS_HEADER)
+    response.headers.set('X-Frame-Options', 'DENY')
     response.headers.set('X-Content-Type-Options', 'nosniff')
     response.headers.set('X-XSS-Protection', '1; mode=block')
-    response.headers.set('Referrer-Policy', 'same-origin')
-    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    response.headers.set('Permissions-Policy', PERMISSIONS_POLICY_HEADER)
 
     try {
       const token = await getToken({
@@ -110,12 +112,12 @@ export async function proxy(request: NextRequest) {
 
   const response = NextResponse.next()
   response.headers.set('X-DNS-Prefetch-Control', 'on')
-  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-  response.headers.set('X-Frame-Options', 'SAMEORIGIN')
+  response.headers.set('Strict-Transport-Security', HSTS_HEADER)
+  response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-XSS-Protection', '1; mode=block')
-  response.headers.set('Referrer-Policy', 'same-origin')
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.headers.set('Permissions-Policy', PERMISSIONS_POLICY_HEADER)
 
   return response
 }
