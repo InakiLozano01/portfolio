@@ -43,9 +43,9 @@ const getLocalizedBlogFields = (blog: any, lang: SupportedLang, fallbackSlug: st
 export async function generateMetadata({
     params
 }: {
-    params: { slug: string; lang: string }
+    params: Promise<{ slug: string; lang: string }>
 }): Promise<Metadata> {
-    const { slug, lang } = params
+    const { slug, lang } = await params
     const resolvedLang = normalizeLang(lang)
     const blog = await getBlogBySlug(slug)
     const { title, subtitle, content, slug: finalSlug } = getLocalizedBlogFields(blog, resolvedLang, slug)
@@ -111,29 +111,29 @@ export async function generateMetadata({
     }
 }
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-export const fetchCache = 'force-no-store'
+export const revalidate = 300
 
 interface BlogPageProps {
-    params: {
+    params: Promise<{
         slug: string
         lang: 'en' | 'es'
-    },
-    searchParams?: {
+    }>
+    searchParams?: Promise<{
         [key: string]: string | string[] | undefined
-    }
+    }>
 }
 
 export default async function BlogPage({ params, searchParams }: BlogPageProps) {
-    const blog = await getBlogBySlug(params.slug)
+    const { slug, lang } = await params
+    const resolvedSearchParams = searchParams ? await searchParams : {}
+    const blog = await getBlogBySlug(slug)
 
     if (!blog) {
         notFound()
     }
 
-    const resolvedLang = normalizeLang(params.lang)
-    const localized = getLocalizedBlogFields(blog, resolvedLang, params.slug)
+    const resolvedLang = normalizeLang(lang)
+    const localized = getLocalizedBlogFields(blog, resolvedLang, slug)
     const baseUrl = await resolveBaseUrl()
     const alternateBaseUrl = resolveAlternateBaseUrl(baseUrl)
     const { canonicalHost, englishHost, spanishHost } = selectHostsForLanguage(resolvedLang, baseUrl, alternateBaseUrl)
@@ -151,12 +151,12 @@ export default async function BlogPage({ params, searchParams }: BlogPageProps) 
     const keywords = Array.isArray(blog.tags) ? blog.tags : []
 
     const preferredLangParam = (() => {
-        const lang = searchParams?.lang
-        if (!lang) return undefined
-        if (Array.isArray(lang)) {
-            return lang[0]?.toLowerCase()
+        const selectedLang = resolvedSearchParams?.lang
+        if (!selectedLang) return undefined
+        if (Array.isArray(selectedLang)) {
+            return selectedLang[0]?.toLowerCase()
         }
-        return lang.toLowerCase()
+        return selectedLang.toLowerCase()
     })()
 
     const blogHasEnglish = typeof blog.content_en === 'string' ? blog.content_en.trim().length > 0 : false
@@ -251,7 +251,8 @@ export default async function BlogPage({ params, searchParams }: BlogPageProps) 
 
                 <article className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
                     <Link
-                        href={`/${params.lang}`}
+                        href={`/${lang}`}
+                        prefetch={false}
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-6"
                     >
                         <ArrowLeft size={20} />

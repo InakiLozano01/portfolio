@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Github, ArrowLeft, ExternalLink } from 'lucide-react'
 import SkillIcon from '@/components/SkillIcon'
-import mongoose from 'mongoose'
 import DOMPurify from 'isomorphic-dompurify'
 import { getProjectBySlug } from '@/lib/projects'
 import BackNavigationHandler from '@/components/BackNavigationHandler'
@@ -49,9 +48,9 @@ const buildThumbnailUrl = (thumbnail: string | undefined | null, baseUrl: string
 export async function generateMetadata({
     params
 }: {
-    params: { slug: string; lang: string }
+    params: Promise<{ slug: string; lang: string }>
 }): Promise<Metadata> {
-    const { slug, lang } = params
+    const { slug, lang } = await params
     const resolvedLang = normalizeLang(lang)
     const project = await getProjectBySlug(slug)
     const localized = getLocalizedProjectFields(project, resolvedLang, slug)
@@ -126,18 +125,7 @@ export async function generateMetadata({
     }
 }
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-export const fetchCache = 'force-no-store'
-
-interface ISkill {
-    _id: mongoose.Types.ObjectId;
-    name: string;
-    category: string;
-    proficiency: number;
-    yearsOfExperience: number;
-    icon: string;
-}
+export const revalidate = 300
 
 interface ProjectPageProps {
     params: Promise<{
@@ -263,6 +251,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 <article className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
                     <Link
                         href={`/${lang}`}
+                        prefetch={false}
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-6"
                     >
                         <ArrowLeft size={20} />

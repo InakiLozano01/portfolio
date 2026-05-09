@@ -1,13 +1,9 @@
-import { Inter } from 'next/font/google'
-import '../globals.css'
 import Script from 'next/script'
 import { buildEnglishMetadata, buildSpanishMetadata } from '../metadata'
-import ClientLayout from '../client-layout'
+import DocumentLanguage from './document-language'
 import { StructuredData } from '@/components/structured-data'
 import { Metadata } from 'next'
 import { normalizeCanonicalPath, resolveAlternateBaseUrl, resolveBaseUrl } from '@/lib/seo'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
     const { lang } = await params
@@ -49,21 +45,21 @@ export default async function RootLayout({
     const resolved = lang === 'es' ? 'es' : 'en'
     const baseUrl = await resolveBaseUrl()
     const alternateBaseUrl = resolveAlternateBaseUrl(baseUrl)
+    const gaId = process.env.NEXT_PUBLIC_GA_ID
 
     return (
-        <html lang={resolved} suppressHydrationWarning>
-            <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-                <meta name="theme-color" content="#1a2433" />
-                <StructuredData
-                    lang={resolved}
-                    baseUrl={baseUrl}
-                    alternateBaseUrl={alternateBaseUrl}
-                />
+        <>
+            <DocumentLanguage lang={resolved} />
+            <StructuredData
+                lang={resolved}
+                baseUrl={baseUrl}
+                alternateBaseUrl={alternateBaseUrl}
+            />
 
-                {/* Google Analytics */}
+            {gaId ? (
+                <>
                 <Script
-                    src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+                    src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
                     strategy="afterInteractive"
                 />
                 <Script id="google-analytics" strategy="afterInteractive">
@@ -71,16 +67,13 @@ export default async function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
+            gtag('config', '${gaId}');
           `}
                 </Script>
-            </head>
-            <body className={inter.className} suppressHydrationWarning>
-                <ClientLayout>
-                    {/* Main content landmark for accessibility and skip link target */}
-                    <main id="content">{children}</main>
-                </ClientLayout>
-            </body>
-        </html>
+                </>
+            ) : null}
+
+            {children}
+        </>
     )
 }

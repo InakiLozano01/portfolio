@@ -106,7 +106,7 @@ export function TinyMCE({ value, onChange, height = 400, disabled = false, id }:
                 images_file_types: 'jpg,jpeg,png,gif,webp',
 
                 // Custom image upload handler for the image dialog
-                images_upload_handler: async function (blobInfo: any, progress: any) {
+                images_upload_handler: async function (blobInfo: any, _progress: any) {
                     return new Promise((resolve, reject) => {
                         const reader = new FileReader();
                         reader.onload = () => {

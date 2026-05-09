@@ -1,5 +1,3 @@
-import { headers } from 'next/headers'
-
 const FALLBACK_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://inakilozano.com'
 const FALLBACK_ALT_URL = process.env.NEXT_PUBLIC_ALT_APP_URL
 
@@ -20,16 +18,10 @@ const normalizeUrl = (url: string | null | undefined) => {
 }
 
 export async function resolveBaseUrl(): Promise<string> {
-    const hdrs = await headers()
-    const proto = hdrs.get('x-forwarded-proto') || hdrs.get('x-forwarded-scheme') || 'https'
-    const host = hdrs.get('x-forwarded-host') || hdrs.get('host')
+    const configuredBaseUrl = normalizeUrl(FALLBACK_BASE_URL)
+    if (configuredBaseUrl) return configuredBaseUrl
 
-    if (host) {
-        const candidate = normalizeUrl(`${proto}://${host}`)
-        if (candidate) return candidate
-    }
-
-    return normalizeUrl(FALLBACK_BASE_URL) || 'https://inakilozano.com'
+    return 'https://inakilozano.com'
 }
 
 export function resolveAlternateBaseUrl(currentBase?: string) {

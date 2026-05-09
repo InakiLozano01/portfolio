@@ -1,15 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
-import { Menu, X } from 'lucide-react'
 import Image from 'next/image'
+import { Menu, X } from 'lucide-react'
 import LanguageSwitcher from './LanguageSwitcher'
 
 interface StaticSection {
   id: string;
   label: string;
-  component: () => React.ReactElement | null;
 }
 
 interface HeaderProps {
@@ -41,6 +39,8 @@ export default function Header({
 
   // Close menu when window is resized to desktop size
   useEffect(() => {
+    if (!isMenuOpen) return
+
     const handleResize = () => {
       if (window.innerWidth >= 768) {
         setIsMenuOpen(false)
@@ -48,19 +48,18 @@ export default function Header({
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [isMenuOpen])
 
   // Close on Escape and prevent body scroll when open
   useEffect(() => {
+    if (!isMenuOpen) return
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsMenuOpen(false)
     }
     document.addEventListener('keydown', onKeyDown)
-    if (isMenuOpen) {
-      document.body.classList.add('overflow-hidden')
-    } else {
-      document.body.classList.remove('overflow-hidden')
-    }
+    document.body.classList.add('overflow-hidden')
+
     return () => {
       document.removeEventListener('keydown', onKeyDown)
       document.body.classList.remove('overflow-hidden')
@@ -114,7 +113,11 @@ export default function Header({
       </a>
       <nav className="h-full container mx-auto px-4">
         <div className="h-full flex justify-between items-center">
-          <Link href={`/${lang}`} className="text-lg md:text-xl font-bold text-white truncate max-w-[200px] md:max-w-none flex items-center gap-2" aria-label={dictionary.home || 'Home'}>
+          <a
+            href={`/${lang}`}
+            className="text-lg md:text-xl font-bold text-white truncate max-w-[200px] md:max-w-none flex items-center gap-2"
+            aria-label={`Iñaki F. Lozano ${dictionary.home || 'Home'}`}
+          >
             <Image
               src="/inakilozanodotcomlogo.png"
               alt="Logo"
@@ -123,7 +126,7 @@ export default function Header({
               className="rounded-sm"
             />
             Iñaki F. Lozano
-          </Link>
+          </a>
 
           <div className="flex items-center gap-4">
             {/* Desktop navigation */}

@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { FaEnvelope, FaGithub, FaLinkedin, FaMapMarkerAlt } from 'react-icons/fa'
 import type { ContactContent } from '@/models/Section'
-import LoadingSpinner from '@/components/ui/loading-spinner'
 
 interface ContactSectionProps {
   lang?: 'en' | 'es';
@@ -295,5 +294,4 @@ export default function ContactSection({ lang = 'en' }: ContactSectionProps) {
     </div>
   )
 }
-
 

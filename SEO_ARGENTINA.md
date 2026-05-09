@@ -80,7 +80,7 @@ Created complete Spanish metadata export with:
 - Same geo-location tags
 
 ### 5. **Sitemap Considerations**
-The existing sitemap configuration (`next-sitemap.config.js`) should be updated to include:
+The native sitemap route (`app/sitemap.ts`) should include:
 - `/es/` routes for all pages
 - `/en/` routes for all pages
 - Proper priority for Spanish content pages
@@ -181,7 +181,7 @@ Consider adding:
 
 ## Next Steps
 
-1. **Regenerate Sitemap**: Run `npm run postbuild` to regenerate the sitemap with new language routes
+1. **Verify Sitemap**: Check `/sitemap.xml` after deploy to confirm the language routes are present
 2. **Test Structured Data**: Use [Google's Rich Results Test](https://search.google.com/test/rich-results)
 3. **Verify Hreflang**: Use [hreflang testing tools](https://www.aleydasolis.com/english/international-seo-tools/hreflang-tags-generator/)
 4. **Submit to Search Engines**: 

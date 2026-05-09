@@ -1,9 +1,7 @@
-import { Redis } from 'ioredis';
 import redis from './redis';
 import { connectToDatabase } from './mongodb';
 import { SectionModel } from '@/models/Section';
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
 const CACHE_DURATION = 3600; // 1 hour in seconds
 
 export async function getCachedSections(type?: string) {
@@ -106,4 +104,4 @@ export async function invalidateCache(cacheKey: string): Promise<void> {
   } catch (error) {
     console.error(`[Cache Error] Failed to invalidate ${cacheKey} in Redis:`, error);
   }
-} 
+}

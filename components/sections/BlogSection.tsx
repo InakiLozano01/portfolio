@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 // Removed unused imports
 import { type Blog } from '@/models/BlogClient'
-import { Skeleton } from '@/components/ui/skeleton'
 import { formatDistanceToNow } from 'date-fns'
 import { es as esLocale } from 'date-fns/locale'
 import { formatDate } from '@/lib/utils'
@@ -38,6 +37,7 @@ const copy = {
 } as const
 
 export default function BlogSection({ lang = 'en' }: { lang?: 'en' | 'es' }) {
+    const router = useRouter()
     const t = copy[lang] ?? copy.en
     const [blogs, setBlogs] = useState<Blog[]>([]);
     const [filteredBlogs, setFilteredBlogs] = useState<Blog[]>([]);
@@ -137,8 +137,6 @@ export default function BlogSection({ lang = 'en' }: { lang?: 'en' | 'es' }) {
             )
         )
     }
-
-    // Using Link for prefetch and accessibility
 
     const maxVisibleTags = 6
 
@@ -246,8 +244,19 @@ export default function BlogSection({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                         const href = `/${lang}/blog/${blog.slug}`
 
                         return (
-                            <Link key={blog._id} href={href} prefetch={true} className="block">
-                            <Card className="hover:shadow-lg hover:bg-primary/5 transition-shadow duration-200 overflow-hidden group">
+                            <Card
+                                key={blog._id}
+                                role="link"
+                                tabIndex={0}
+                                onClick={() => router.push(href)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                        event.preventDefault()
+                                        router.push(href)
+                                    }
+                                }}
+                                className="hover:shadow-lg hover:bg-primary/5 transition-shadow duration-200 overflow-hidden group cursor-pointer"
+                            >
                                 <CardHeader className="relative space-y-2">
                                     <CardTitle className="text-xl bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">
                                         {highlight(title)}
@@ -293,7 +302,6 @@ export default function BlogSection({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                                     </div>
                                 </CardContent>
                             </Card>
-                        </Link>
                         )
                     })}
                 </div>

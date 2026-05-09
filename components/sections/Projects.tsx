@@ -15,8 +15,6 @@ interface Skill extends Document {
     _id: Types.ObjectId;
     name: string;
     category: string;
-    proficiency: number;
-    yearsOfExperience: number;
   icon: string;
 }
 
@@ -166,20 +164,27 @@ export default function Projects({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                         return null
                     }
                     const publicUrl = sanitizePublicUrl(project.publicUrl)
+                    const projectHref = `/${lang}/projects/${slug}`
+                    const title = pickLang(project.title_en || project.title, project.title_es || project.title, project.title)
 
                     return (
-                        <Link
+                        <article
                             key={project._id.toString()}
-                            href={`/${lang}/projects/${slug}`}
-                            prefetch
                             className="transition-transform hover:scale-105"
                         >
-                            <Card className="h-full flex flex-col hover:bg-primary/5">
+                            <Card className="relative h-full flex flex-col hover:bg-primary/5">
+                                <Link
+                                    href={projectHref}
+                                    prefetch={false}
+                                    aria-label={`${lang === 'es' ? 'Ver proyecto' : 'View project'} ${title}`}
+                                    className="absolute inset-0 z-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
+                                />
                                 <div className="relative aspect-video w-full">
                                     <Image
                                         src={project.thumbnail || '/images/projects/default-project.jpg'}
                                         alt={`Thumbnail image for project ${pickLang(project.title_en || project.title, project.title_es || project.title, project.title)}`}
                                         fill
+                                        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
                                         className="object-cover rounded-t-lg"
                                         priority={false}
                                         placeholder="blur"
@@ -188,7 +193,7 @@ export default function Projects({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                                 </div>
                                 <CardHeader className="flex-grow">
                                     <CardTitle className="line-clamp-1">
-                                        {pickLang(project.title_en || project.title, project.title_es || project.title, project.title)}
+                                        {title}
                                     </CardTitle>
                                     <p className="text-sm text-muted-foreground line-clamp-2">
                                         {pickLang(project.subtitle_en || project.subtitle, project.subtitle_es || project.subtitle, project.subtitle)}
@@ -198,8 +203,9 @@ export default function Projects({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                                             href={publicUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="mt-2 inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
+                                            className="relative z-20 mt-2 inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
                                             onClick={(e) => e.stopPropagation()}
+                                            onKeyDown={(e) => e.stopPropagation()}
                                         >
                                             <ExternalLink className="w-4 h-4" />
                                             {lang === 'es' ? 'Ver proyecto' : 'Visit project'}
@@ -221,7 +227,7 @@ export default function Projects({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                                     </div>
                                 </CardContent>
                             </Card>
-                        </Link>
+                        </article>
                     )
                 })}
             </div>

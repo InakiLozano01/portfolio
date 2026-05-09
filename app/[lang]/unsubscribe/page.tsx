@@ -1,6 +1,4 @@
 import Link from 'next/link'
-import { cookies } from 'next/headers'
-import { Suspense } from 'react'
 import { connectToDatabase } from '@/lib/mongodb'
 import Subscriber from '@/models/Subscriber'
 import type { Metadata } from 'next'
@@ -60,9 +58,10 @@ async function resolveStatus(token: string | undefined | null): Promise<'success
 export default async function UnsubscribePage({
   searchParams
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined }
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const rawToken = searchParams?.token
+  const resolvedSearchParams = searchParams ? await searchParams : {}
+  const rawToken = resolvedSearchParams?.token
   const token = Array.isArray(rawToken) ? rawToken[0] : rawToken
   const status = await resolveStatus(token)
   const content = STATUS_CONTENT[status]

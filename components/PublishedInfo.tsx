@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useMemo } from "react"
 import { formatDistanceToNow } from "date-fns"
 
 type Props = {
@@ -9,9 +9,7 @@ type Props = {
 }
 
 export function PublishedInfo({ createdAt, updatedAt }: Props) {
-  const [label, setLabel] = useState<string>("")
-
-  useEffect(() => {
+  const label = useMemo(() => {
     const created = new Date(createdAt)
     const updated = updatedAt ? new Date(updatedAt) : null
 
@@ -23,7 +21,7 @@ export function PublishedInfo({ createdAt, updatedAt }: Props) {
       parts.push(`Updated ${formatDistanceToNow(updated, { addSuffix: true })}`)
     }
 
-    setLabel(parts.join(" • "))
+    return parts.join(" • ")
   }, [createdAt, updatedAt])
 
   if (!label) return null

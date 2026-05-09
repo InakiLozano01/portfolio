@@ -24,25 +24,19 @@ NEXT_PUBLIC_APP_URL=https://inakilozano.com
 
 **⚠️ Important**: Each domain MUST have unique content to avoid SEO penalties.
 
-## 📋 Next-Sitemap Implementation
+## 📋 Sitemap And Robots Implementation
 
-This project uses `next-sitemap` for advanced sitemap and robots.txt generation.
-
-### Installation
-```bash
-npm install next-sitemap
-```
+This project uses native Next.js metadata routes for sitemap and robots.txt generation.
 
 ### Configuration Files
-- `next-sitemap.config.js` - Main configuration
-- `package.json` - Includes `postbuild` script
-- Automatically generates `sitemap.xml` and `robots.txt`
+- `app/sitemap.ts` - Dynamic sitemap route
+- `app/robots.ts` - Robots route
+- `NEXT_PUBLIC_APP_URL` - Canonical production base URL
 
 ### Features
 - **Dynamic Content**: Fetches blog posts and projects from database
-- **Section Anchors**: Includes page sections (#about, #skills, etc.)
 - **Priority Management**: Different priorities for different content types
-- **Multi-User Agent**: Specific rules for Googlebot, Bingbot, etc.
+- **Admin/API Protection**: Disallows admin and API paths
 - **Auto-generation**: Runs automatically after `npm run build`
 
 ### Generated Files
@@ -119,13 +113,11 @@ After verification, submit these sitemaps:
   - Twitter Card optimization
   - Canonical URLs across all domains
 
-- [x] **Sitemap & Robots (next-sitemap)**
+- [x] **Sitemap & Robots**
   - Dynamic sitemap including blog and project pages
   - Database-driven content inclusion
-  - Optimized robots.txt with multiple user agents
-  - XML sitemap auto-generation with proper priorities
-  - Section anchors for better navigation
-  - Automatic post-build generation
+  - Optimized robots.txt for public crawling
+  - Runtime sitemap route with proper priorities
 
 ### ✅ Performance Optimization
 - [x] **Core Web Vitals**
@@ -342,8 +334,7 @@ For optimal performance with CDN (Cloudflare, AWS CloudFront):
 1. **Sitemap not found**
    - Check `/sitemap.xml` accessibility
    - Verify database connections for dynamic content
-   - Ensure `postbuild` script runs: `npm run build` should automatically run `next-sitemap`
-   - Check Docker build logs for sitemap generation errors
+   - Check Docker runtime logs for sitemap generation errors
    - Verify `NEXT_PUBLIC_APP_URL` is set correctly in environment
 
 2. **Structured data errors**
@@ -362,4 +353,4 @@ For optimal performance with CDN (Cloudflare, AWS CloudFront):
 
 ---
 
-**Note**: This implementation provides a solid foundation for SEO across all three domains. Remember to customize the content for each domain's specific purpose and audience. 
+**Note**: This implementation provides a solid foundation for SEO across all three domains. Remember to customize the content for each domain's specific purpose and audience.

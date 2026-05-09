@@ -1,33 +1,40 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { FaLinkedin, FaGithub, FaEnvelope } from 'react-icons/fa'
+import { Github, Linkedin, Mail } from 'lucide-react'
 import type { ContactContent } from '@/models/Section'
 
 interface FooterProps {
     dictionary?: any;
+    initialContact?: ContactContent | null;
+    currentYear?: number;
 }
 
-export default function Footer({ dictionary = {} }: FooterProps) {
-    const [contactData, setContactData] = useState<ContactContent>({
+export default function Footer({ dictionary = {}, initialContact = null, currentYear }: FooterProps) {
+    const fallbackContact: ContactContent = {
         email: 'inakilozano01@gmail.com',
         city: 'San Miguel de Tucumán, Argentina',
         social: {
             github: 'https://github.com/InakiLozano01',
             linkedin: 'https://www.linkedin.com/in/inaki-lozano'
         }
-    })
-    const currentYear = new Date().getFullYear()
+    }
+    const [fetchedContact, setFetchedContact] = useState<ContactContent | null>(null)
+    const contactData = initialContact ?? fetchedContact ?? fallbackContact
+    const displayYear = currentYear ?? new Date().getFullYear()
 
     useEffect(() => {
+        if (initialContact) {
+            return
+        }
+
         const fetchContactData = async () => {
             try {
                 const response = await fetch('/api/sections/contact')
                 if (!response.ok) throw new Error('Failed to fetch contact data')
                 const data = await response.json()
                 if (data.content) {
-                    setContactData(data.content)
+                    setFetchedContact(data.content)
                 }
             } catch (error) {
                 console.error('Error fetching contact data:', error)
@@ -36,11 +43,11 @@ export default function Footer({ dictionary = {} }: FooterProps) {
         }
 
         fetchContactData()
-    }, [])
+    }, [initialContact])
 
     const copyrightText = dictionary.copyright
-        ? dictionary.copyright.replace('{year}', currentYear)
-        : `© ${currentYear} Iñaki Fernando Lozano`
+        ? dictionary.copyright.replace('{year}', String(displayYear))
+        : `© ${displayYear} Iñaki Fernando Lozano`
 
     return (
         <footer
@@ -57,7 +64,7 @@ export default function Footer({ dictionary = {} }: FooterProps) {
             >
                 <div className="flex items-center space-x-4">
                     {contactData.social.linkedin && (
-                        <Link
+                        <a
                             href={contactData.social.linkedin}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -65,12 +72,12 @@ export default function Footer({ dictionary = {} }: FooterProps) {
                             aria-label={dictionary.linkedin || "LinkedIn"}
                         >
                             <span className="pointer-events-none">
-                                <FaLinkedin size={20} />
+                                <Linkedin className="h-5 w-5" />
                             </span>
-                        </Link>
+                        </a>
                     )}
                     {contactData.social.github && (
-                        <Link
+                        <a
                             href={contactData.social.github}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -78,20 +85,20 @@ export default function Footer({ dictionary = {} }: FooterProps) {
                             aria-label={dictionary.github || "GitHub"}
                         >
                             <span className="pointer-events-none">
-                                <FaGithub size={20} />
+                                <Github className="h-5 w-5" />
                             </span>
-                        </Link>
+                        </a>
                     )}
                     {contactData.email && (
-                        <Link
+                        <a
                             href={`mailto:${contactData.email}`}
                             className="hover:text-[#FD4345] transition-colors"
                             aria-label={dictionary.email || "Email"}
                         >
                             <span className="pointer-events-none">
-                                <FaEnvelope size={20} />
+                                <Mail className="h-5 w-5" />
                             </span>
-                        </Link>
+                        </a>
                     )}
                 </div>
                 <p className="text-sm text-gray-400">{copyrightText}</p>
@@ -99,5 +106,3 @@ export default function Footer({ dictionary = {} }: FooterProps) {
         </footer>
     )
 }
-
-

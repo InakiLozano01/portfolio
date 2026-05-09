@@ -32,6 +32,21 @@ const baseLanguageAlternates = (baseUrl: string) => ({
     'x-default': `${baseUrl}/en`
 })
 
+const buildVerification = () => {
+    const other: Record<string, string> = {}
+    if (process.env.BING_SITE_VERIFICATION) {
+        other['msvalidate.01'] = process.env.BING_SITE_VERIFICATION
+    }
+    if (process.env.YANDEX_SITE_VERIFICATION) {
+        other['yandex-verification'] = process.env.YANDEX_SITE_VERIFICATION
+    }
+
+    return {
+        ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
+        ...(Object.keys(other).length ? { other } : {})
+    }
+}
+
 const buildCanonicalUrl = (baseUrl: string, canonicalPath?: string) => {
     const normalizedPath = canonicalPath ? (canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`) : ''
     return `${baseUrl}${normalizedPath}`
@@ -133,13 +148,7 @@ export const buildEnglishMetadata = (
                 'max-snippet': -1
             }
         },
-        verification: {
-            google: process.env.GOOGLE_SITE_VERIFICATION || 'your-google-site-verification',
-            other: {
-                'msvalidate.01': process.env.BING_SITE_VERIFICATION || '',
-                'yandex-verification': process.env.YANDEX_SITE_VERIFICATION || ''
-            }
-        },
+        verification: buildVerification(),
         category: 'technology',
         alternates: {
             canonical: canonicalUrl,
@@ -255,13 +264,7 @@ export const buildSpanishMetadata = (
                 'max-snippet': -1
             }
         },
-        verification: {
-            google: process.env.GOOGLE_SITE_VERIFICATION || 'your-google-site-verification',
-            other: {
-                'msvalidate.01': process.env.BING_SITE_VERIFICATION || '',
-                'yandex-verification': process.env.YANDEX_SITE_VERIFICATION || ''
-            }
-        },
+        verification: buildVerification(),
         category: 'technology',
         alternates: {
             canonical: canonicalUrl,
