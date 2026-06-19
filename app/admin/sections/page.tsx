@@ -59,8 +59,8 @@ export default function SectionsPage() {
   if (error) return <div className="p-8 text-red-500">{error}</div>;
 
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">Manage Sections</h1>
+    <div className="container mx-auto p-4 md:p-8">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Manage Sections</h1>
       <div className="space-y-8">
         {sections.map(section => (
           <SectionEditor

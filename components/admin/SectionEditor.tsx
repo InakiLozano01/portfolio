@@ -750,9 +750,9 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-0">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
-          <div className="flex items-center gap-4">
+      <div className="p-4 md:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Label className="text-slate-700 font-semibold">Order</Label>
               <Input

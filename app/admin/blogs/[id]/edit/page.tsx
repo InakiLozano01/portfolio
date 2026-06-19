@@ -11,6 +11,7 @@ import { BlogSchema } from '@/models/BlogClient';
 import { slugify } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ZodError } from 'zod';
+import { ArrowLeft } from 'lucide-react';
 
 interface EditBlogPageProps {
     params: Promise<{
@@ -220,30 +221,31 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
 
     if (loading) {
         return (
-            <Card className="max-w-5xl mx-auto">
-                <CardContent className="p-6">
-                    <div className="text-center">Loading blog...</div>
-                </CardContent>
-            </Card>
+            <div className="min-h-screen overflow-y-auto p-4 md:p-6 bg-slate-50">
+                <Card className="max-w-5xl mx-auto">
+                    <CardContent className="p-6">
+                        <div className="text-center">Loading blog...</div>
+                    </CardContent>
+                </Card>
+            </div>
         );
     }
 
     return (
-        <Card className="max-w-5xl mx-auto">
-            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <CardTitle className="text-2xl font-semibold">Edit Blog</CardTitle>
-                <div className="flex gap-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleBack}
-                        className="text-slate-700"
-                    >
-                        ← Back to Admin
-                    </Button>
-                </div>
+        <div className="min-h-screen overflow-y-auto p-4 md:p-6 bg-slate-50">
+        <Card className="max-w-5xl mx-auto border-slate-200 shadow-sm bg-white">
+            <CardHeader className="bg-[#263547] py-4 px-4 md:px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <CardTitle className="text-lg md:text-xl font-semibold text-white">Edit Blog</CardTitle>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleBack}
+                    className="text-slate-300 hover:text-white hover:bg-white/10 shrink-0"
+                >
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Admin
+                </Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 md:p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -452,17 +454,19 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                         <p className="text-sm text-red-500">{error}</p>
                     )}
 
-                    <div className="flex justify-end space-x-2">
+                    <div className="flex flex-col sm:flex-row justify-end gap-3">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={handleBack}
+                            className="border-slate-200 text-slate-700 hover:bg-slate-50"
                         >
                             Cancel
                         </Button>
                         <Button
                             type="submit"
                             disabled={isSubmitting}
+                            className="bg-[#FD4345] hover:bg-[#ff5456] text-white"
                         >
                             {isSubmitting ? 'Saving...' : 'Save Blog'}
                         </Button>
@@ -470,5 +474,6 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                 </form>
             </CardContent>
         </Card>
+        </div>
     );
 }

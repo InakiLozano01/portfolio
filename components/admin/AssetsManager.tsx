@@ -37,8 +37,8 @@ export default function AssetsManager() {
 
     return (
         <div className="space-y-6">
-            <div className="p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
-                <h2 className="text-2xl font-bold text-slate-900">Assets Manager</h2>
+            <div className="p-4 md:p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
+                <h2 className="text-xl md:text-2xl font-bold text-slate-900">Assets Manager</h2>
                 <p className="text-slate-500 text-sm mt-1">Manage your global assets like CV and Profile Picture</p>
             </div>
 
@@ -56,7 +56,7 @@ export default function AssetsManager() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
-                        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 text-center transition-all hover:border-blue-400 hover:bg-blue-50/30 group cursor-pointer relative">
+                        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 md:p-8 text-center transition-all hover:border-blue-400 hover:bg-blue-50/30 group cursor-pointer relative">
                             <input
                                 type="file"
                                 accept="image/jpeg,image/png,image/webp"
@@ -108,7 +108,7 @@ export default function AssetsManager() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
-                        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 text-center transition-all hover:border-red-400 hover:bg-red-50/30 group cursor-pointer relative">
+                        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 md:p-8 text-center transition-all hover:border-red-400 hover:bg-red-50/30 group cursor-pointer relative">
                             <input
                                 type="file"
                                 accept="application/pdf"

@@ -177,13 +177,13 @@ export default function SectionsManager() {
 
   return (
     <div className="flex flex-col space-y-6 sm:space-y-8">
-      <div className="p-6 bg-white rounded-lg shadow-md border-l-4 border-blue-600">
+      <div className="p-4 md:p-6 bg-white rounded-lg shadow-md border-l-4 border-[#FD4345]">
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Sections Management</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900">Sections Management</h2>
             <p className="text-slate-600 text-sm mt-1">Configure homepage sections and content</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <Button
               onClick={handleRefreshCache}
               disabled={refreshing}
@@ -209,7 +209,7 @@ export default function SectionsManager() {
             </Button>
             <Button
               onClick={() => setIsAddingSection(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+              className="flex items-center gap-2 bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-sm"
             >
               <PlusCircle className="w-4 h-4" />
               Add Section
@@ -220,7 +220,7 @@ export default function SectionsManager() {
 
       {isAddingSection && (
         <Card className="bg-white shadow-md border-0">
-          <CardHeader className="bg-gradient-to-r from-red-600 to-blue-600 text-white">
+          <CardHeader className="bg-[#263547] text-white">
             <CardTitle>Create New Section</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -232,7 +232,7 @@ export default function SectionsManager() {
                     value={newSection.title}
                     onChange={e => setNewSection({ ...newSection, title: e.target.value })}
                     placeholder="Section title"
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                    className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
                   />
                 </div>
                 <div className="space-y-2">
@@ -242,7 +242,7 @@ export default function SectionsManager() {
                     value={newSection.order}
                     onChange={e => setNewSection({ ...newSection, order: parseInt(e.target.value) })}
                     placeholder="Display order"
-                    className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 focus:ring-1"
+                    className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
                   />
                 </div>
               </div>
@@ -256,7 +256,7 @@ export default function SectionsManager() {
                   {newSection.visible ? 'Section will be visible on the website' : 'Section will be hidden from visitors'}
                 </span>
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-slate-200">
                 <Button
                   variant="outline"
                   onClick={() => setIsAddingSection(false)}
@@ -266,7 +266,7 @@ export default function SectionsManager() {
                 </Button>
                 <Button
                   onClick={handleAddSection}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-[#FD4345] hover:bg-[#ff5456] text-white"
                 >
                   Create Section
                 </Button>
@@ -276,11 +276,11 @@ export default function SectionsManager() {
         </Card>
       )}
 
-      <div className="space-y-6 p-4 pt-4 sm:p-6 overflow-y-auto">
+      <div className="space-y-6">
         {sections.map(section => (
           <Card key={section._id} className="bg-white shadow-md border-0 relative group">
-            <CardHeader className="bg-gradient-to-r from-blue-600 to-red-600 text-white relative">
-              <div className="flex justify-between items-center">
+            <CardHeader className="bg-[#263547] text-white relative">
+              <div className="flex flex-wrap justify-between items-center gap-3">
                 <CardTitle className="capitalize">{section.title}</CardTitle>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
@@ -295,6 +295,7 @@ export default function SectionsManager() {
                     size="icon"
                     className="text-white hover:bg-white/20 transition-colors"
                     onClick={() => handleDeleteSection(section)}
+                    aria-label="Delete section"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

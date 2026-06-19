@@ -61,7 +61,7 @@ export default function IconPicker({ value, onChange, placeholder = 'Select icon
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[360px] p-0 bg-white shadow-lg border border-slate-200" align="start">
+            <PopoverContent className="w-[calc(100vw-1.5rem)] max-w-[360px] p-0 bg-white shadow-lg border border-slate-200" align="start">
                 <Command className="bg-white text-slate-900">
                     <CommandInput placeholder="Search icons or enter a path…" value={query} onValueChange={setQuery} className="border-b border-slate-100" />
                     <CommandList className="max-h-[300px] p-1">

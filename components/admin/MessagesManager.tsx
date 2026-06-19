@@ -112,10 +112,10 @@ export default function MessagesManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col space-y-4 p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
+      <div className="flex flex-col space-y-4 p-4 md:p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Messages</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900">Messages</h2>
             <p className="text-slate-500 text-sm mt-1">Handle visitor inquiries and communications</p>
           </div>
           <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
@@ -232,7 +232,7 @@ export default function MessagesManager() {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-8">
+        <div className="flex flex-wrap justify-center gap-2 mt-8">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <Button
               key={page}

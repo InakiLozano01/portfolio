@@ -3,11 +3,21 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Trash2, Edit, FileText, Send, Search, Eye, ArrowRight, Save, Globe, X } from 'lucide-react'
+import { Plus, Trash2, Edit, FileText, Send, Search, Eye, ArrowRight, Save, Globe, X, AlertCircle } from 'lucide-react'
 import { Blog } from '@/models/BlogClient'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/use-toast'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -56,6 +66,7 @@ export default function BlogManager() {
     // Tags state
     const [pendingTag, setPendingTag] = useState('');
     const tagsInputRef = useRef<HTMLInputElement | null>(null);
+    const [blogToDelete, setBlogToDelete] = useState<Blog | null>(null);
 
     const filteredSubscribers = useMemo(() => {
         const term = recipientSearch.trim().toLowerCase()
@@ -288,10 +299,6 @@ export default function BlogManager() {
 
     const handleDelete = async (id: string, e?: React.MouseEvent) => {
         e?.stopPropagation();
-        const userInput = prompt('Type DELETE to confirm removing this blog post')
-        if (!userInput || userInput.trim().toUpperCase() !== 'DELETE') {
-            return
-        }
         try {
             const response = await fetch(`/api/blogs/${id}`, {
                 method: 'DELETE',
@@ -316,6 +323,12 @@ export default function BlogManager() {
                 variant: 'destructive',
             })
         }
+    }
+
+    const confirmDeleteBlog = async () => {
+        if (!blogToDelete) return
+        await handleDelete(blogToDelete._id!)
+        setBlogToDelete(null)
     }
 
     const openNewsletterModal = (blog: Blog, e?: React.MouseEvent) => {
@@ -368,22 +381,22 @@ export default function BlogManager() {
     }
 
     return (
-        <div className="h-full min-h-0 flex flex-col p-6 gap-6">
+        <div className="h-full min-h-0 flex flex-col p-4 md:p-6 gap-4 md:gap-6">
             {/* Horizontal Blog Rail */}
             <Card className="bg-white border border-slate-200 shadow-sm shrink-0">
                 <CardContent className="py-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-2 pr-3 border-r border-slate-200">
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+                        <div className="flex items-center gap-2 sm:pr-3 sm:border-r border-slate-200">
                             <FileText className="w-5 h-5 text-slate-700" />
                             <span className="text-sm font-semibold text-slate-800">Blogs ({blogs.length})</span>
                         </div>
-                        <div className="relative">
+                        <div className="relative w-full sm:w-auto">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
                             <Input
                                 placeholder="Search blogs..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-64 pl-9 max-w-full h-9 border-slate-200 focus-visible:ring-[#FD4345]"
+                                className="w-full sm:w-64 pl-9 max-w-full h-9 border-slate-200 focus-visible:ring-[#FD4345]"
                             />
                         </div>
                         <div className="flex-1 overflow-x-auto pb-2 lg:pb-0">
@@ -407,27 +420,31 @@ export default function BlogManager() {
                                             >
                                                 <div className="flex flex-col max-w-[160px]">
                                                     <div className="font-semibold line-clamp-1">{blog.title_en || blog.title}</div>
-                                                    <div className="text-[10px] opacity-80 flex items-center gap-1">
+                                                    <div className="text-[10px] opacity-80 flex items-center gap-1.5 mt-0.5">
                                                         <span>{blog.published ? 'Published' : 'Draft'}</span>
-                                                        {/* Send Icon Mini */}
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className={`h-4 w-4 p-0 ml-1 ${isSelected ? 'text-white hover:text-white/80' : 'text-slate-400 hover:text-[#FD4345]'}`}
-                                                            onClick={(e) => openNewsletterModal(blog, e)}
-                                                            title="Send Newsletter"
-                                                        >
-                                                            <Send className="w-3 h-3" />
-                                                        </Button>
                                                     </div>
                                                 </div>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className={`h-6 w-6 ml-1 rounded-full ${isSelected ? 'text-white hover:bg-white/20' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
-                                                    onClick={(e) => handleDelete(blog._id!, e)}
+                                                    className={`h-8 w-8 rounded-full flex-shrink-0 ${isSelected ? 'text-white hover:text-white/80 hover:bg-white/20' : 'text-slate-400 hover:text-[#FD4345] hover:bg-[#FD4345]/10'}`}
+                                                    onClick={(e) => openNewsletterModal(blog, e)}
+                                                    title="Send Newsletter"
+                                                    aria-label="Send newsletter"
                                                 >
-                                                    <Trash2 className="w-3 h-3" />
+                                                    <Send className="w-3.5 h-3.5" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className={`h-8 w-8 rounded-full flex-shrink-0 ${isSelected ? 'text-white hover:bg-white/20' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setBlogToDelete(blog);
+                                                    }}
+                                                    aria-label="Delete blog post"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
                                                 </Button>
                                             </div>
                                         );
@@ -443,9 +460,9 @@ export default function BlogManager() {
 
             {/* Editor Area */}
             <Card className="bg-white border border-slate-200 shadow-md flex-1 flex flex-col overflow-hidden min-h-0" id="blog-editor">
-                <CardHeader className="bg-[#263547] py-4 px-6 border-b border-slate-700 shrink-0">
-                    <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-lg text-white">
+                <CardHeader className="bg-[#263547] py-4 px-4 md:px-6 border-b border-slate-700 shrink-0">
+                    <div className="flex items-center justify-between gap-3">
+                        <CardTitle className="flex items-center gap-2 text-base md:text-lg text-white">
                             {selectedBlog._id ? (
                                 <>
                                     <Edit className="w-5 h-5 text-[#FD4345]" />
@@ -458,11 +475,11 @@ export default function BlogManager() {
                                 </>
                             )}
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 shrink-0">
                              {selectedBlog._id && (
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
                                     className="text-slate-300 hover:text-white hover:bg-white/10"
                                     onClick={handleNewPost}
                                 >
@@ -475,8 +492,8 @@ export default function BlogManager() {
                 
                 <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
                     <form onSubmit={handleSave} className="flex flex-col h-full min-h-0">
-                        <div className="flex-1 overflow-y-auto p-6 min-h-0">
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
                                 {/* English Section */}
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
@@ -598,7 +615,7 @@ export default function BlogManager() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-100 mt-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 pt-6 border-t border-slate-100 mt-6">
                                 <div className="space-y-2">
                                     <Label className="text-slate-700 font-semibold" htmlFor="tags">Tags</Label>
                                     <div className="rounded-md border border-slate-200 bg-white p-2 focus-within:ring-2 focus-within:ring-[#FD4345] focus-within:ring-offset-2 transition-all">
@@ -666,7 +683,7 @@ export default function BlogManager() {
                             )}
                         </div>
 
-                        <div className="sticky bottom-0 bg-white border-t border-slate-200 py-4 px-6 mt-auto z-10 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
+                        <div className="sticky bottom-0 bg-white border-t border-slate-200 py-4 px-4 md:px-6 mt-auto z-10 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
                              <Button
                                 type="button"
                                 variant="ghost"
@@ -836,6 +853,31 @@ export default function BlogManager() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={!!blogToDelete} onOpenChange={() => setBlogToDelete(null)}>
+                <AlertDialogContent className="bg-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-slate-900">
+                            <AlertCircle className="w-5 h-5 text-red-600" />
+                            Delete Blog Post
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-600">
+                            Are you sure you want to delete &quot;{blogToDelete?.title_en || blogToDelete?.title}&quot;? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="border-slate-300 text-slate-600 hover:bg-slate-50">
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDeleteBlog}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

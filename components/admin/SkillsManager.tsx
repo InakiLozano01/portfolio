@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PlusCircle, Plus } from 'lucide-react'
@@ -89,13 +88,13 @@ export default function SkillsManager({ skills, onSave }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
+      <div className="p-4 md:p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Skills Management</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900">Skills Management</h2>
             <p className="text-slate-500 text-sm mt-1">Add and organize your technical skills</p>
           </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <Button
               onClick={() => setIsAddingSkill(true)}
               className="bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-sm"
@@ -103,17 +102,17 @@ export default function SkillsManager({ skills, onSave }: Props) {
               <Plus className="w-4 h-4 mr-2" />
               Add Skill
             </Button>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <Input
                 value={newCategory}
                 onChange={e => setNewCategory(e.target.value)}
                 placeholder="New category name"
-                className="w-48 border-slate-300 focus-visible:ring-[#FD4345] bg-white"
+                className="w-full sm:w-48 border-slate-300 focus-visible:ring-[#FD4345] bg-white"
               />
               <Button
                 onClick={handleAddCategory}
                 variant="outline"
-                className="flex items-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#FD4345] hover:border-[#FD4345]"
+                className="flex items-center justify-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#FD4345] hover:border-[#FD4345]"
               >
                 <PlusCircle className="w-4 h-4" />
                 Add Category
@@ -184,7 +183,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
       )}
 
       <div className="flex items-center justify-between">
-        <div className="w-72">
+        <div className="w-full sm:w-72">
           <Input
             placeholder="Search skills..."
             value={search}
@@ -194,9 +193,8 @@ export default function SkillsManager({ skills, onSave }: Props) {
         </div>
       </div>
       
-      <ScrollArea className="h-[calc(100vh-28rem)] pr-4">
-        <div className="space-y-6 pb-10">
-          {categories.map(category => (
+      <div className="space-y-6 pb-10">
+        {categories.map(category => (
             <Card key={category} className="bg-white shadow-sm border border-slate-200 overflow-hidden">
               <CardHeader className="bg-slate-50 border-b border-slate-200 py-3 px-4">
                 <CardTitle className="capitalize text-slate-700 text-base font-semibold flex items-center gap-2">
@@ -205,12 +203,13 @@ export default function SkillsManager({ skills, onSave }: Props) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50/50 border-b border-slate-200 hover:bg-slate-50/50">
                       <TableHead className="w-16 text-slate-500 font-medium text-xs uppercase tracking-wider">Icon</TableHead>
                       <TableHead className="text-slate-500 font-medium text-xs uppercase tracking-wider">Name</TableHead>
-                      <TableHead className="text-slate-500 font-medium text-xs uppercase tracking-wider">Category</TableHead>
+                      <TableHead className="hidden sm:table-cell text-slate-500 font-medium text-xs uppercase tracking-wider">Category</TableHead>
                       <TableHead className="text-right text-slate-500 font-medium text-xs uppercase tracking-wider">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -241,7 +240,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                                 />
                             ) : skill.name}
                           </TableCell>
-                          <TableCell className="text-slate-600">
+                          <TableCell className="hidden sm:table-cell text-slate-600">
                             <span className="text-sm capitalize">{skill.category}</span>
                           </TableCell>
                           <TableCell className="text-right">
@@ -278,11 +277,11 @@ export default function SkillsManager({ skills, onSave }: Props) {
                       ))}
                   </TableBody>
                 </Table>
+                </div>
               </CardContent>
             </Card>
           ))}
-        </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

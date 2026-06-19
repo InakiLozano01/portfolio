@@ -9,11 +9,21 @@ import { TinyMCE } from '@/components/ui/tinymce';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { IProject } from '@/models/Project';
-import { Plus, Trash2, Save, Edit, Briefcase, Search } from 'lucide-react';
+import { Plus, Trash2, Save, Edit, Briefcase, Search, AlertCircle } from 'lucide-react';
 import { Types } from 'mongoose';
 import Image from 'next/image';
 import { slugify } from '@/lib/utils';
 import { DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION, ProjectThumbnailOptimization } from '@/lib/project-thumbnail-settings';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface ISkill {
   _id: Types.ObjectId;
@@ -68,6 +78,7 @@ export default function ProjectsManager() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ title?: string; subtitle?: string }>({});
   const [search, setSearch] = useState('');
+  const [projectToDelete, setProjectToDelete] = useState<ProjectWithTechnologies | null>(null);
   const autosaveTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -292,10 +303,6 @@ export default function ProjectsManager() {
   };
 
   const handleDelete = async (id: string) => {
-    const userInput = prompt('Type DELETE to confirm project removal')
-    if (!userInput || userInput.trim().toUpperCase() !== 'DELETE') {
-      return
-    }
     try {
       const response = await fetch(`/api/projects/${id}`, {
         method: 'DELETE',
@@ -328,6 +335,12 @@ export default function ProjectsManager() {
     }
   };
 
+  const confirmDelete = async () => {
+    if (!projectToDelete) return;
+    await handleDelete(projectToDelete._id.toString());
+    setProjectToDelete(null);
+  };
+
   const handleTechnologyToggle = (techId: string) => {
     const objectId = new Types.ObjectId(techId);
     const newTechnologies = selectedProject.technologies.some(
@@ -354,22 +367,22 @@ export default function ProjectsManager() {
   }
 
   return (
-    <div className="h-full flex flex-col p-6 gap-6">
+    <div className="h-full flex flex-col p-4 md:p-6 gap-4 md:gap-6">
       {/* Horizontal project rail */}
       <Card className="bg-white border border-slate-200 shadow-sm">
         <CardContent className="py-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 pr-3 border-r border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+            <div className="flex items-center gap-2 sm:pr-3 sm:border-r border-slate-200">
               <Briefcase className="w-5 h-5 text-slate-700" />
               <span className="text-sm font-semibold text-slate-800">Projects ({projects.length})</span>
             </div>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
               <Input
                 placeholder="Search projects..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-64 pl-9 max-w-full h-9 border-slate-200 focus-visible:ring-[#FD4345]"
+                className="w-full sm:w-64 pl-9 max-w-full h-9 border-slate-200 focus-visible:ring-[#FD4345]"
               />
             </div>
             <div className="flex-1 overflow-x-auto pb-2 lg:pb-0">
@@ -413,13 +426,14 @@ export default function ProjectsManager() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className={`h-6 w-6 ml-1 rounded-full ${isSelected ? 'text-white hover:bg-white/20' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
+                          className={`h-8 w-8 ml-1 rounded-full flex-shrink-0 ${isSelected ? 'text-white hover:bg-white/20' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDelete(project._id.toString());
+                            setProjectToDelete(project);
                           }}
+                          aria-label="Delete project"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     );
@@ -435,9 +449,9 @@ export default function ProjectsManager() {
 
       {/* Editing canvas */}
       <Card className="bg-white border border-slate-200 shadow-md flex-1 flex flex-col overflow-hidden min-h-0">
-        <CardHeader className="bg-[#263547] py-4 px-6 border-b border-slate-700">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg text-white">
+        <CardHeader className="bg-[#263547] py-4 px-4 md:px-6 border-b border-slate-700">
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-base md:text-lg text-white">
                 {selectedProject._id ? (
                     <>
                         <Edit className="w-5 h-5 text-[#FD4345]" />
@@ -451,10 +465,10 @@ export default function ProjectsManager() {
                 )}
             </CardTitle>
             {selectedProject._id && (
-                <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-slate-300 hover:text-white hover:bg-white/10"
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-slate-300 hover:text-white hover:bg-white/10 shrink-0"
                     onClick={() => {
                         localStorage.removeItem('projectDraft');
                         setSelectedProject(emptyProject());
@@ -466,9 +480,9 @@ export default function ProjectsManager() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-6 p-6 overflow-y-auto flex-1">
+        <CardContent className="space-y-6 p-4 md:p-6 overflow-y-auto flex-1">
           {/* Two-column language fields */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
             {/* English Column */}
             <div className="space-y-5">
               <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
@@ -553,7 +567,7 @@ export default function ProjectsManager() {
           </div>
 
           {/* Common Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 pt-6 border-t border-slate-100">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">GitHub URL</label>
               <Input
@@ -645,8 +659,8 @@ export default function ProjectsManager() {
 
           <div className="space-y-3">
             <label className="text-sm font-medium text-slate-700">Thumbnail Image</label>
-            <div className="flex gap-6 items-start">
-                <div className="flex-1">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch sm:items-start">
+                <div className="flex-1 min-w-0">
                     <Input
                         type="file"
                         accept="image/*"
@@ -656,7 +670,7 @@ export default function ProjectsManager() {
                     <p className="text-xs text-slate-500 mt-2">Supported formats: JPG, PNG, WebP, AVIF</p>
                 </div>
               {(imagePreview || selectedProject.thumbnail) && (
-                <div className="relative w-40 aspect-video bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+                <div className="relative w-full sm:w-40 aspect-video bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shadow-sm flex-shrink-0">
                   <Image
                     src={imagePreview || selectedProject.thumbnail || ''}
                     alt="Project thumbnail preview"
@@ -728,6 +742,31 @@ export default function ProjectsManager() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
+        <AlertDialogContent className="bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-slate-900">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              Delete Project
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-600">
+              Are you sure you want to delete &quot;{projectToDelete?.title}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-slate-300 text-slate-600 hover:bg-slate-50">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

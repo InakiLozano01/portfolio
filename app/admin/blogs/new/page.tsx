@@ -164,8 +164,9 @@ export default function NewBlogPage() {
     }, [pendingTag, commitPendingTag]);
 
     return (
+        <div className="min-h-screen overflow-y-auto p-4 md:p-6 bg-slate-50">
         <Card className="max-w-7xl mx-auto border-slate-200 shadow-sm bg-white">
-            <CardHeader className="bg-[#263547] py-4 px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardHeader className="bg-[#263547] py-4 px-4 md:px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-2 text-white">
                     <FileText className="w-6 h-6 text-[#FD4345]" />
                     <CardTitle className="text-xl font-semibold">Create New Blog Post</CardTitle>
@@ -179,9 +180,9 @@ export default function NewBlogPage() {
                     <ArrowLeft className="w-4 h-4 mr-2" /> Back to Admin
                 </Button>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-6">
                 <form onSubmit={handleSubmit} className="space-y-8">
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
                         {/* English Section */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
@@ -301,7 +302,7 @@ export default function NewBlogPage() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-100">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 pt-6 border-t border-slate-100">
                         <div className="space-y-2">
                             <Label className="text-slate-700 font-semibold" htmlFor="tags">Tags</Label>
                             <div className="rounded-md border border-slate-200 bg-white p-2 focus-within:ring-2 focus-within:ring-[#FD4345] focus-within:ring-offset-2 transition-all">
@@ -372,7 +373,7 @@ export default function NewBlogPage() {
                         </div>
                     )}
 
-                    <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-slate-100">
                         <Button
                             type="button"
                             variant="outline"
@@ -399,5 +400,6 @@ export default function NewBlogPage() {
                 </form>
             </CardContent>
         </Card>
+        </div>
     );
 }
