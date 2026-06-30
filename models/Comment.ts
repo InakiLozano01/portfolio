@@ -6,6 +6,7 @@ export interface IComment extends mongoose.Document {
   content: string
   ip: string
   status: 'approved' | 'rejected' | 'pending'
+  isOfficial: boolean
   parent?: mongoose.Types.ObjectId | null
   votes: { ip: string; value: number }[]
   createdAt: Date
@@ -18,6 +19,7 @@ const CommentSchema = new mongoose.Schema<IComment>({
   content: { type: String, required: true },
   ip: { type: String, required: true },
   status: { type: String, enum: ['approved', 'rejected', 'pending'], default: 'approved' },
+  isOfficial: { type: Boolean, default: false },
   parent: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', default: null },
   votes: { type: [{ ip: { type: String, required: true }, value: { type: Number, enum: [-1, 1], required: true } }], default: [] },
 }, { timestamps: true })

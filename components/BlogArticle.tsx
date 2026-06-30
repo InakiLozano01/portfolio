@@ -36,6 +36,7 @@ type LanguageCode = 'en' | 'es'
 interface BlogArticleProps {
   blog: BlogLike
   initialLang?: LanguageCode
+  dict?: any
 }
 
 const LANGUAGES: Array<{ code: LanguageCode; label: string; icon: string }> = [
@@ -43,7 +44,7 @@ const LANGUAGES: Array<{ code: LanguageCode; label: string; icon: string }> = [
   { code: 'es', label: 'Español', icon: '/spain.png' }
 ]
 
-export default function BlogArticle({ blog, initialLang }: BlogArticleProps) {
+export default function BlogArticle({ blog, initialLang, dict = {} }: BlogArticleProps) {
   const hasEn = !!(blog.content_en || blog.content)
   const hasEs = !!(blog.content_es || blog.content)
 
@@ -152,6 +153,7 @@ export default function BlogArticle({ blog, initialLang }: BlogArticleProps) {
           <div className="inline-flex border rounded overflow-hidden whitespace-nowrap text-xs sm:text-sm">
           {LANGUAGES.map(({ code, label, icon }) => {
             const disabled = code === 'en' ? !hasEn : !hasEs
+            const srLabel = code === 'en' ? (dict?.langEnglish || label) : (dict?.langSpanish || label)
             return (
               <button
                 key={code}
@@ -176,7 +178,7 @@ export default function BlogArticle({ blog, initialLang }: BlogArticleProps) {
                 <span className="uppercase tracking-wide font-medium text-[11px] sm:text-sm leading-none">
                   {code}
                 </span>
-                <span className="sr-only">{label}</span>
+                <span className="sr-only">{srLabel}</span>
               </button>
             )
           })}
@@ -186,15 +188,15 @@ export default function BlogArticle({ blog, initialLang }: BlogArticleProps) {
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">{current.title}</h1>
           <p className="text-xl text-muted-foreground">{current.subtitle}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {reading} min read
+            {(dict?.minRead || '{minutes} min read').replace('{minutes}', String(reading))}
           </p>
         </div>
       </div>
 
       {(blog.pdf_en || blog.pdf_es) && (
         <div className="mb-4 text-sm">
-          {blog.pdf_en && <a className="text-primary underline mr-4" href={blog.pdf_en} target="_blank" rel="noreferrer">Download PDF (EN)</a>}
-          {blog.pdf_es && <a className="text-primary underline" href={blog.pdf_es} target="_blank" rel="noreferrer">Download PDF (ES)</a>}
+          {blog.pdf_en && <a className="text-primary underline mr-4" href={blog.pdf_en} target="_blank" rel="noreferrer">{dict?.downloadPdfEn || 'Download PDF (EN)'}</a>}
+          {blog.pdf_es && <a className="text-primary underline" href={blog.pdf_es} target="_blank" rel="noreferrer">{dict?.downloadPdfEs || 'Download PDF (ES)'}</a>}
         </div>
       )}
 

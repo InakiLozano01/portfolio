@@ -18,7 +18,12 @@
         "error": "Error",
         "back": "Atrás",
         "next": "Siguiente",
-        "previous": "Anterior"
+        "previous": "Anterior",
+        "errorOccurred": "Ocurrió un error"
+    },
+    "languageSwitcher": {
+        "switchToEnglish": "Cambiar a inglés",
+        "switchToSpanish": "Cambiar a Español"
     },
     "blogSection": {
         "heading": "Blog",
@@ -37,6 +42,195 @@
         "projects": "Proyectos",
         "blog": "Blog",
         "contact": "Contacto"
+    },
+    "about": {
+        "aboutMe": "Sobre mí",
+        "hobbies": "Hobbies e Intereses",
+        "downloadCV": "Descargar CV",
+        "viewCV": "Ver CV",
+        "profileAlt": "Foto de perfil de Iñaki Lozano",
+        "pdfSuffix": "(PDF)",
+        "fetchError": "No se pudo obtener la información sobre mí"
+    },
+    "experience": {
+        "title": "Experiencia",
+        "keyResponsibilities": "Responsabilidades clave:",
+        "fetchError": "No se pudo obtener la información de experiencia"
+    },
+    "education": {
+        "title": "Educación",
+        "fetchError": "No se pudo obtener la información de educación"
+    },
+    "skills": {
+        "heading": "Habilidades y Tecnologías",
+        "descriptionFallback": "Un conjunto integral de habilidades técnicas en diversos dominios",
+        "searchPlaceholder": "Buscar habilidades...",
+        "sortDirAsc": "Ascendente",
+        "sortDirDesc": "Descendente",
+        "all": "Todas",
+        "paginationPrev": "Anterior",
+        "paginationNext": "Siguiente",
+        "ariaSortToggle": "Cambiar dirección de orden",
+        "filterByCategory": "Filtrar habilidades por categoría",
+        "skillsWord": "habilidades",
+        "paginationPrevAria": "Página anterior",
+        "paginationAria": "Paginación",
+        "paginationNextAria": "Página siguiente",
+        "fetchSectionError": "No se pudo obtener la sección de habilidades",
+        "fetchError": "No se pudieron obtener los datos de habilidades",
+        "invalidDataFormat": "Formato de datos de habilidades no válido"
+    },
+    "projects": {
+        "heading": "Proyectos",
+        "all": "Todos",
+        "loadingError": "No se pudieron cargar los proyectos",
+        "filtersLabel": "Filtrar proyectos por tecnología",
+        "viewProject": "Ver proyecto",
+        "visitProject": "Ver proyecto",
+        "thumbnailAlt": "Imagen en miniatura del proyecto",
+        "view": {
+            "backToHome": "Volver al inicio",
+            "viewOnGithub": "Ver en GitHub",
+            "visitLiveSite": "Visitar sitio"
+        }
+    },
+    "blog": {
+        "list": {
+            "heading": "Blog",
+            "descriptionFallback": "Historias, novedades y notas de investigación.",
+            "searchPlaceholder": "Buscar blogs...",
+            "error": "Error",
+            "comingSoonTitle": "¡Próximamente! 🚀",
+            "comingSoonCopy": "Estamos preparando contenido increíble para ti. ¡Mantente atento!",
+            "noResults": "No se encontraron blogs que coincidan con tu búsqueda.",
+            "created": "Creado",
+            "languages": "EN / ES",
+            "filterByTagAria": "Filtrar por etiqueta",
+            "moreTags": "más",
+            "fetchError": "No se pudieron obtener los blogs"
+        },
+        "view": {
+            "backToHome": "Volver al inicio",
+            "minRead": "{minutes} min de lectura",
+            "downloadPdfEn": "Descargar PDF (EN)",
+            "downloadPdfEs": "Descargar PDF (ES)",
+            "published": "Publicado",
+            "updated": "Actualizado",
+            "langEnglish": "Inglés",
+            "langSpanish": "Español"
+        },
+        "comments": {
+            "heading": "Comentarios",
+            "authorBadge": "Autor",
+            "posted": "Comentario publicado",
+            "empty": "Aún no hay comentarios.",
+            "aliasPlaceholder": "Tu alias",
+            "commentPlaceholder": "Tu comentario",
+            "replyPlaceholder": "Tu respuesta",
+            "post": "Publicar comentario",
+            "posting": "Publicando...",
+            "reply": "Responder",
+            "cancel": "Cancelar",
+            "upvote": "Votar a favor",
+            "downvote": "Votar en contra",
+            "errorMissingBlog": "Falta la referencia del blog",
+            "errorSend": "No se pudo enviar el comentario"
+        }
+    },
+    "newsletter": {
+        "success": "¡Suscrito! Recibirás nuevos blogs por correo electrónico.",
+        "confirmPending": "¡Casi listo! Revisa tu bandeja de entrada para confirmar tu suscripción.",
+        "error": "No se pudo completar la suscripción",
+        "emailLabel": "Correo electrónico",
+        "emailPlaceholder": "tu@ejemplo.com",
+        "languageLabel": "Idioma",
+        "langEnglish": "Inglés",
+        "langSpanish": "Español",
+        "submitting": "Enviando...",
+        "subscribe": "Suscribirse",
+        "disclaimer": "Solo enviamos correos cuando se publica un nuevo blog. Cancela tu suscripción cuando quieras."
+    },
+    "share": {
+        "share": "Compartir",
+        "copyLink": "Copiar enlace",
+        "copied": "¡Copiado!",
+        "copyLinkAria": "Copiar enlace",
+        "shareOnTwitter": "Compartir en Twitter",
+        "shareOnLinkedin": "Compartir en LinkedIn"
+    },
+    "contact": {
+        "title": "Ponte en contacto",
+        "contactInfo": "Información de contacto",
+        "sendMessage": "Enviar mensaje",
+        "name": "Nombre",
+        "email": "Email",
+        "message": "Mensaje",
+        "send": "Enviar mensaje",
+        "sending": "Enviando...",
+        "success": "¡Mensaje enviado correctamente!",
+        "errorMsg": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
+        "nameRequired": "El nombre es obligatorio",
+        "emailRequired": "El email es obligatorio",
+        "emailInvalid": "Por favor, ingresa un email válido",
+        "messageRequired": "El mensaje es obligatorio",
+        "sendEmailAria": "Enviar correo",
+        "githubAria": "Visitar perfil de GitHub",
+        "linkedinAria": "Visitar perfil de LinkedIn"
+    },
+    "unsubscribe": {
+        "status": {
+            "success": {
+                "title": "Te has dado de baja",
+                "message": "Te eliminamos del boletín. Puedes volver a suscribirte en cualquier momento desde un artículo del blog."
+            },
+            "invalidToken": {
+                "title": "Este enlace ya se ha utilizado",
+                "message": "No pudimos encontrar una suscripción activa para este enlace. Es posible que ya se haya cancelado."
+            },
+            "missingToken": {
+                "title": "No pudimos procesar esta solicitud",
+                "message": "El enlace para darse de baja está incompleto. Por favor, usa el enlace que aparece en tu correo electrónico."
+            },
+            "error": {
+                "title": "No pudimos darte de baja",
+                "message": "Por favor, inténtalo de nuevo en un momento o contáctanos para ayudarte."
+            }
+        },
+        "resubscribeHint": "Si esto fue un error, puedes volver a suscribirte desde cualquier artículo del blog.",
+        "backToHome": "Volver al inicio",
+        "exploreBlogs": "Explorar blogs"
+    },
+    "subscribeConfirm": {
+        "prompt": {
+            "title": "Confirmá tu suscripción",
+            "message": "Estás a un paso. Confirmá tu correo para empezar a recibir los nuevos artículos.",
+            "button": "Confirmar suscripción"
+        },
+        "status": {
+            "success": {
+                "title": "Suscripción confirmada",
+                "message": "¡Todo listo! Recibirás un correo cada vez que se publique un nuevo artículo."
+            },
+            "invalidToken": {
+                "title": "Este enlace ya no es válido",
+                "message": "Es posible que ya se haya utilizado o que la suscripción se haya cancelado. Puedes volver a suscribirte desde cualquier artículo del blog."
+            },
+            "missingToken": {
+                "title": "No pudimos confirmar tu suscripción",
+                "message": "El enlace de confirmación está incompleto. Por favor, usa el enlace del correo que te enviamos."
+            },
+            "error": {
+                "title": "Algo salió mal",
+                "message": "Por favor, inténtalo de nuevo en un momento o contáctanos para ayudarte."
+            }
+        },
+        "backToHome": "Volver al inicio",
+        "exploreBlogs": "Explorar blogs"
+    },
+    "sectionError": {
+        "title": "Error de sección",
+        "fallback": "Ocurrió un error al cargar esta sección.",
+        "tryAgain": "Intentar de nuevo"
     },
     "seo": {
         "title": "Iñaki F. Lozano | Estudiante de Ingeniería en Computación y Desarrollador de Software",

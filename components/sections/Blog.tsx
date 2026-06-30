@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import BlogSection from './BlogSection'
 
-export default function Blog({ lang = 'en' }: { lang?: 'en' | 'es' }) {
+export default function Blog({ lang = 'en', dictionary = {} }: { lang?: 'en' | 'es'; dictionary?: any }) {
   return (
     <div className="w-full h-full p-8">
       <motion.div
@@ -11,8 +11,8 @@ export default function Blog({ lang = 'en' }: { lang?: 'en' | 'es' }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h2 className="text-3xl font-bold mb-8 text-primary">Blog</h2>
-        <BlogSection lang={lang} />
+        <h2 className="text-3xl font-bold mb-8 text-primary">{dictionary?.blog?.list?.heading || 'Blog'}</h2>
+        <BlogSection lang={lang} dictionary={dictionary} />
       </motion.div>
     </div>
   )

@@ -34,14 +34,14 @@ export async function POST(
             return NextResponse.json({ error: 'Blog not found' }, { status: 404 })
         }
 
-        const subscribers = await Subscriber.find({ _id: { $in: uniqueSubscriberIds }, unsubscribed: false }).lean()
+        const subscribers = await Subscriber.find({ _id: { $in: uniqueSubscriberIds }, unsubscribed: false, confirmed: true }).lean()
         if (!subscribers.length) {
-            return NextResponse.json({ error: 'No active subscribers for selection' }, { status: 400 })
+            return NextResponse.json({ error: 'No active (confirmed) subscribers for selection' }, { status: 400 })
         }
 
         const results = await Promise.all(subscribers.map(async (subscriber) => {
-            const { subject, html, text, attachments } = buildNewsletterEmail(blog, subscriber)
-            const success = await sendNewsletterEmail({ to: subscriber.email, subject, html, text, attachments })
+            const { subject, html, text, attachments, listUnsubscribeUrl } = buildNewsletterEmail(blog, subscriber)
+            const success = await sendNewsletterEmail({ to: subscriber.email, subject, html, text, attachments, listUnsubscribe: listUnsubscribeUrl })
             return { email: subscriber.email, success }
         }))
 

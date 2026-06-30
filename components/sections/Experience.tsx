@@ -22,9 +22,11 @@ interface ExperienceContent {
 
 interface ExperienceProps {
   lang?: 'en' | 'es';
+  dictionary?: any;
 }
 
-export default function Experience({ lang = 'en' }: ExperienceProps) {
+export default function Experience({ lang = 'en', dictionary = {} }: ExperienceProps) {
+  const t = dictionary?.experience || {}
   const [content, setContent] = useState<ExperienceContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -34,12 +36,12 @@ export default function Experience({ lang = 'en' }: ExperienceProps) {
       try {
         const response = await fetch('/api/sections/experience')
         if (!response.ok) {
-          throw new Error('Failed to fetch experience information')
+          throw new Error(t.fetchError || 'Failed to fetch experience information')
         }
         const data = await response.json()
         setContent(data.content)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
+        setError(err instanceof Error ? err.message : (dictionary?.common?.errorOccurred || 'An error occurred'))
       } finally {
         setLoading(false)
       }
@@ -52,8 +54,8 @@ export default function Experience({ lang = 'en' }: ExperienceProps) {
   if (error) return <div role="alert" className="text-center text-red-500">{error}</div>
   if (!content?.experiences) return null
 
-  const title = lang === 'en' ? 'Experience' : 'Experiencia'
-  const keyResponsibilities = lang === 'en' ? 'Key Responsibilities:' : 'Responsabilidades clave:'
+  const title = t.title || 'Experience'
+  const keyResponsibilities = t.keyResponsibilities || 'Key Responsibilities:'
 
   return (
     <div className="w-full">

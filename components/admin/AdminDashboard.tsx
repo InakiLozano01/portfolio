@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import BlogManager from './BlogManager';
 import MessagesManager from './MessagesManager';
+import CommentsManager from './CommentsManager';
 import SectionsManager from './SectionsManager';
 import SkillsManager from './SkillsManager';
 import ProjectsManager from './ProjectsManager';
@@ -24,6 +25,7 @@ import {
   Briefcase,
   Wrench,
   MessageSquare,
+  MessageCircle,
   Menu,
   X,
   ChevronLeft,
@@ -176,6 +178,7 @@ const AdminDashboard: FC = () => {
     { id: 'projects', label: 'Projects', icon: Briefcase },
     { id: 'blogs', label: 'Blog', icon: FileText },
     { id: 'messages', label: 'Messages', icon: MessageSquare },
+    { id: 'comments', label: 'Comments', icon: MessageCircle },
     { id: 'assets', label: 'Assets', icon: ImageIcon },
     { id: 'account', label: 'Account', icon: UserCog },
   ];
@@ -357,6 +360,7 @@ const AdminDashboard: FC = () => {
                 {activeSection === 'projects' && 'Manage Projects'}
                 {activeSection === 'blogs' && 'Manage Blog Posts'}
                 {activeSection === 'messages' && 'Inbox'}
+                {activeSection === 'comments' && 'Moderate Comments'}
                 {activeSection === 'assets' && 'File Manager'}
                 {activeSection === 'account' && 'Settings'}
               </p>
@@ -415,6 +419,7 @@ const AdminDashboard: FC = () => {
                 {activeSection === 'projects' && <ProjectsManager />}
                 {activeSection === 'blogs' && <BlogManager />}
                 {activeSection === 'messages' && <MessagesManager />}
+                {activeSection === 'comments' && <CommentsManager />}
                 {activeSection === 'assets' && <AssetsManager />}
                 {activeSection === 'account' && (
                   <div className="grid gap-6 lg:grid-cols-2">

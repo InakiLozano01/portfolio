@@ -3,13 +3,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Comment from '@/models/Comment'
+import { getClientIp } from '@/lib/client-ip'
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000
 const MAX_VOTE_REQUESTS_PER_WINDOW = 30
+const SWEEP_THRESHOLD = 5000
 const voteAttempts = new Map<string, { count: number; resetAt: number }>()
 
 function isRateLimited(key: string) {
   const now = Date.now()
+  if (voteAttempts.size > SWEEP_THRESHOLD) {
+    for (const [k, v] of voteAttempts) {
+      if (v.resetAt <= now) voteAttempts.delete(k)
+    }
+  }
   const current = voteAttempts.get(key)
   if (!current || current.resetAt <= now) {
     voteAttempts.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
@@ -24,7 +31,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   const { id } = await context.params
   try {
     const { direction } = await req.json() as { direction: 'up' | 'down' | 'clear' }
-    const ip = (req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown').split(',')[0].trim()
+    const ip = getClientIp(req)
     if (isRateLimited(`${ip}:${id}`)) {
       return NextResponse.json({ error: 'Too many vote attempts' }, { status: 429 })
     }

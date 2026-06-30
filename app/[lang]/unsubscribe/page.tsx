@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { connectToDatabase } from '@/lib/mongodb'
 import Subscriber from '@/models/Subscriber'
+import { getDictionary } from '@/lib/dictionary'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -33,6 +34,13 @@ const STATUS_CONTENT: Record<string, { title: string; message: string; icon: str
   }
 }
 
+const STATUS_DICT_KEY: Record<string, 'success' | 'invalidToken' | 'missingToken' | 'error'> = {
+  success: 'success',
+  'invalid-token': 'invalidToken',
+  'missing-token': 'missingToken',
+  error: 'error'
+}
+
 async function resolveStatus(token: string | undefined | null): Promise<'success' | 'invalid-token' | 'missing-token' | 'error'> {
   if (!token) {
     return 'missing-token'
@@ -56,15 +64,22 @@ async function resolveStatus(token: string | undefined | null): Promise<'success
 }
 
 export default async function UnsubscribePage({
+  params,
   searchParams
 }: {
+  params: Promise<{ lang: string }>
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const { lang } = await params
+  const resolvedLang = lang === 'es' ? 'es' : 'en'
+  const dict = await getDictionary(resolvedLang)
+  const u = dict.unsubscribe || ({} as any)
   const resolvedSearchParams = searchParams ? await searchParams : {}
   const rawToken = resolvedSearchParams?.token
   const token = Array.isArray(rawToken) ? rawToken[0] : rawToken
   const status = await resolveStatus(token)
   const content = STATUS_CONTENT[status]
+  const statusDict = u.status?.[STATUS_DICT_KEY[status]] || {}
 
   return (
     <main className="min-h-screen bg-[#101825] flex items-center justify-center px-4 py-24">
@@ -73,22 +88,22 @@ export default async function UnsubscribePage({
           <span role="img" aria-hidden="true">{content.icon}</span>
         </div>
         <div>
-          <h1 className="text-3xl font-semibold text-white mb-2">{content.title}</h1>
-          <p className="text-slate-300 mb-4 leading-relaxed">{content.message}</p>
-          <p className="text-sm text-slate-500">If this was a mistake, you can resubscribe from any blog article.</p>
+          <h1 className="text-3xl font-semibold text-white mb-2">{statusDict.title || content.title}</h1>
+          <p className="text-slate-300 mb-4 leading-relaxed">{statusDict.message || content.message}</p>
+          <p className="text-sm text-slate-500">{u.resubscribeHint || 'If this was a mistake, you can resubscribe from any blog article.'}</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            href="/"
+            href={`/${resolvedLang}`}
             className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-white font-medium hover:bg-primary/90 transition"
           >
-            Back to home
+            {u.backToHome || 'Back to home'}
           </Link>
           <Link
-            href="/blog"
+            href={`/${resolvedLang}#blog`}
             className="inline-flex items-center justify-center rounded-full border border-white/20 px-4 py-2 text-white font-medium hover:bg-white/10 transition"
           >
-            Explore blogs
+            {u.exploreBlogs || 'Explore blogs'}
           </Link>
         </div>
       </div>

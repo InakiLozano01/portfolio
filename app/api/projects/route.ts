@@ -4,7 +4,7 @@ import Project from '@/models/Project';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/cache';
 import { requireAdmin } from '@/lib/admin-auth';
 import { normalizeProjectPayload } from '@/lib/project-normalize';
-import { optimizeExistingProjectThumbnail } from '@/lib/project-thumbnail-optimization';
+import { optimizeExistingProjectThumbnail, ensureProjectThumbnailVariants } from '@/lib/project-thumbnail-optimization';
 
 const PROJECTS_CACHE_KEY = 'projects';
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -50,6 +50,9 @@ export async function POST(request: NextRequest) {
     const data = normalizeProjectPayload(await request.json());
     const optimizedThumbnail = await optimizeExistingProjectThumbnail(data.thumbnail, data.thumbnailOptimization);
     if (optimizedThumbnail) data.thumbnail = optimizedThumbnail;
+    const variants = await ensureProjectThumbnailVariants(data.thumbnail);
+    if (variants.thumbnailSmall) data.thumbnailSmall = variants.thumbnailSmall;
+    if (variants.thumbnailBlur) data.thumbnailBlur = variants.thumbnailBlur;
 
     const project = new Project(data);
     await project.save();
@@ -82,6 +85,9 @@ export async function PUT(request: Request) {
     const data = normalizeProjectPayload(body);
     const optimizedThumbnail = await optimizeExistingProjectThumbnail(data.thumbnail, data.thumbnailOptimization);
     if (optimizedThumbnail) data.thumbnail = optimizedThumbnail;
+    const variants = await ensureProjectThumbnailVariants(data.thumbnail);
+    if (variants.thumbnailSmall) data.thumbnailSmall = variants.thumbnailSmall;
+    if (variants.thumbnailBlur) data.thumbnailBlur = variants.thumbnailBlur;
     await connectToDatabase();
     const project = await Project.findByIdAndUpdate(body._id, data, { new: true, runValidators: true });
     if (!project) {

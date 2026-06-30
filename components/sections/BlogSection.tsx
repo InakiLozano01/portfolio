@@ -11,34 +11,23 @@ import { es as esLocale } from 'date-fns/locale'
 import { formatDate } from '@/lib/utils'
 import NewsletterSignup from '@/components/NewsletterSignup'
 
-const copy = {
-    en: {
-        heading: 'Blog',
-        descriptionFallback: 'Stories, updates, and research notes.',
-        searchPlaceholder: 'Search blogs...',
-        error: 'Error',
-        comingSoonTitle: 'Coming Soon! 🚀',
-        comingSoonCopy: "We're preparing some exciting content for you. Stay tuned!",
-        noResults: 'No blogs found matching your search.',
-        created: 'Created',
-        languages: 'EN / ES',
-    },
-    es: {
-        heading: 'Blog',
-        descriptionFallback: 'Historias, novedades y notas de investigación.',
-        searchPlaceholder: 'Buscar blogs...',
-        error: 'Error',
-        comingSoonTitle: '¡Próximamente! 🚀',
-        comingSoonCopy: 'Estamos preparando contenido increíble para ti. ¡Mantente atento!',
-        noResults: 'No se encontraron blogs que coincidan con tu búsqueda.',
-        created: 'Creado',
-        languages: 'EN / ES',
-    },
-} as const
-
-export default function BlogSection({ lang = 'en' }: { lang?: 'en' | 'es' }) {
+export default function BlogSection({ lang = 'en', dictionary = {} }: { lang?: 'en' | 'es'; dictionary?: any }) {
     const router = useRouter()
-    const t = copy[lang] ?? copy.en
+    const blogListDict = dictionary?.blog?.list || {}
+    const t = {
+        heading: blogListDict.heading || 'Blog',
+        descriptionFallback: blogListDict.descriptionFallback || 'Stories, updates, and research notes.',
+        searchPlaceholder: blogListDict.searchPlaceholder || 'Search blogs...',
+        error: blogListDict.error || 'Error',
+        comingSoonTitle: blogListDict.comingSoonTitle || 'Coming Soon! 🚀',
+        comingSoonCopy: blogListDict.comingSoonCopy || "We're preparing some exciting content for you. Stay tuned!",
+        noResults: blogListDict.noResults || 'No blogs found matching your search.',
+        created: blogListDict.created || 'Created',
+        languages: blogListDict.languages || 'EN / ES',
+        filterByTagAria: blogListDict.filterByTagAria || 'Filter by tag',
+        moreTags: blogListDict.moreTags || 'more',
+        fetchError: blogListDict.fetchError || 'Failed to fetch blogs',
+    }
     const [blogs, setBlogs] = useState<Blog[]>([]);
     const [filteredBlogs, setFilteredBlogs] = useState<Blog[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -73,7 +62,7 @@ export default function BlogSection({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                 }
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch blogs');
+                    throw new Error(t.fetchError || 'Failed to fetch blogs');
                 }
                 const data = await response.json();
                 const publishedBlogs = data
@@ -90,7 +79,7 @@ export default function BlogSection({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                 setBlogs(publishedBlogs);
                 setFilteredBlogs(publishedBlogs);
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'An error occurred');
+                setError(err instanceof Error ? err.message : (dictionary?.common?.errorOccurred || 'An error occurred'));
             } finally {
                 setLoading(false);
             }
@@ -222,7 +211,7 @@ export default function BlogSection({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                     className="max-w-md mx-auto bg-white text-black placeholder:text-gray-500"
                 />
                 <div className="mt-4 max-w-2xl mx-auto">
-                    <NewsletterSignup className="bg-white" lang={lang} />
+                    <NewsletterSignup className="bg-white" lang={lang} dict={dictionary?.newsletter} />
                 </div>
             </div>
             {filteredBlogs.length === 0 ? (
@@ -280,14 +269,14 @@ export default function BlogSection({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                                                                 e.stopPropagation()
                                                                 setSearchQuery(tag)
                                                             }}
-                                                            aria-label={`Filter by tag ${tag}`}
+                                                            aria-label={`${t.filterByTagAria} ${tag}`}
                                                         >
                                                             {highlight(tag)}
                                                         </button>
                                                     ))}
                                                     {hidden.length > 0 && (
                                                         <span className="px-2 py-1 bg-primary/5 text-primary rounded-full text-xs">
-                                                            +{hidden.length} more
+                                                            +{hidden.length} {t.moreTags}
                                                         </span>
                                                     )}
                                                 </>

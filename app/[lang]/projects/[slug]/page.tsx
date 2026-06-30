@@ -5,6 +5,7 @@ import { Github, ArrowLeft, ExternalLink } from 'lucide-react'
 import SkillIcon from '@/components/SkillIcon'
 import DOMPurify from 'isomorphic-dompurify'
 import { getProjectBySlug } from '@/lib/projects'
+import { getDictionary } from '@/lib/dictionary'
 import BackNavigationHandler from '@/components/BackNavigationHandler'
 import ShareActions from '@/components/ShareActions'
 import { redirect } from 'next/navigation'
@@ -158,6 +159,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     }
 
     const resolvedLang = normalizeLang(lang)
+    const dict = await getDictionary(resolvedLang)
     const localized = getLocalizedProjectFields(project, resolvedLang, slug)
     const baseUrl = await resolveBaseUrl()
     const alternateBaseUrl = resolveAlternateBaseUrl(baseUrl)
@@ -255,7 +257,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-6"
                     >
                         <ArrowLeft size={20} />
-                        Back to Home
+                        {dict.projects?.view?.backToHome || 'Back to Home'}
                     </Link>
 
                     <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">
@@ -263,7 +265,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                     </h1>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
                         <p className="text-xl text-muted-foreground">{localized.subtitle}</p>
-                        <ShareActions url={canonicalUrl} title={localized.title || project.title} />
+                        <ShareActions url={canonicalUrl} title={localized.title || project.title} dict={dict.share} />
                     </div>
 
                     {project.thumbnail && (
@@ -303,7 +305,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                                 className="inline-flex items-center gap-2 text-primary hover:text-primary/80"
                             >
                                 <Github size={20} />
-                                View on GitHub
+                                {dict.projects?.view?.viewOnGithub || 'View on GitHub'}
                             </Link>
                         </div>
                     )}
@@ -316,7 +318,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                                 className="inline-flex items-center gap-2 text-primary hover:text-primary/80"
                             >
                                 <ExternalLink size={20} />
-                                Visit live site
+                                {dict.projects?.view?.visitLiveSite || 'Visit live site'}
                             </Link>
                         </div>
                     )}

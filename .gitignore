@@ -18,3 +18,6 @@ public/images/projects/*
 .cache/
 mongodb_data
 redis_data
+
+# Agent content-staging scratch area (blog drafts + source images)
+blogs_for_agent_to_post/

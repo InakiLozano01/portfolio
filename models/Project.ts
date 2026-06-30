@@ -21,6 +21,8 @@ export interface IProject extends mongoose.Document {
   description_es: string;
   technologies: Types.ObjectId[] | Array<{ _id: Types.ObjectId; name: string }>;
   thumbnail?: string;
+  thumbnailSmall?: string;
+  thumbnailBlur?: string;
   thumbnailAlt?: string;
   thumbnailOptimization?: IProjectThumbnailOptimization;
   imageHeight?: number;
@@ -64,6 +66,15 @@ const ProjectSchema = new mongoose.Schema({
   thumbnail: {
     type: String,
     default: '/images/projects/default-project.jpg',
+  },
+  // Small grid-sized webp variant (~640px) used by the projects grid cards.
+  // Optional/additive: the grid falls back to `thumbnail` when absent.
+  thumbnailSmall: {
+    type: String,
+  },
+  // Tiny base64 data-URL used as the next/image blur placeholder.
+  thumbnailBlur: {
+    type: String,
   },
   thumbnailAlt: {
     type: String,

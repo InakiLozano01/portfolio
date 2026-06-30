@@ -20,9 +20,11 @@ interface EducationContent {
 
 interface EducationProps {
   lang?: 'en' | 'es';
+  dictionary?: any;
 }
 
-export default function Education({ lang = 'en' }: EducationProps) {
+export default function Education({ lang = 'en', dictionary = {} }: EducationProps) {
+  const t = dictionary?.education || {}
   const [content, setContent] = useState<EducationContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -32,12 +34,12 @@ export default function Education({ lang = 'en' }: EducationProps) {
       try {
         const response = await fetch('/api/sections/education')
         if (!response.ok) {
-          throw new Error('Failed to fetch education information')
+          throw new Error(t.fetchError || 'Failed to fetch education information')
         }
         const data = await response.json()
         setContent(data.content)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
+        setError(err instanceof Error ? err.message : (dictionary?.common?.errorOccurred || 'An error occurred'))
       } finally {
         setLoading(false)
       }
@@ -50,7 +52,7 @@ export default function Education({ lang = 'en' }: EducationProps) {
   if (error) return <div role="alert" className="text-center text-red-500">{error}</div>
   if (!content?.education) return null
 
-  const title = lang === 'en' ? 'Education' : 'Educación'
+  const title = t.title || 'Education'
 
   return (
     <div className="w-full py-16 md:py-0">

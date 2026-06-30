@@ -42,6 +42,8 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
     const [pdfEnFile, setPdfEnFile] = useState<File | null>(null);
     const [pdfEsFile, setPdfEsFile] = useState<File | null>(null);
     const [pdfUploading, setPdfUploading] = useState(false);
+    const [pdfGenerating, setPdfGenerating] = useState<'en' | 'es' | 'both' | null>(null);
+    const [pdfGenError, setPdfGenError] = useState<string | null>(null);
 
     const [published, setPublished] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
@@ -147,6 +149,24 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
         parts.forEach((part) => commitPendingTag(part));
         setPendingTag(last);
     }, [pendingTag, commitPendingTag]);
+
+    const generatePdf = useCallback(async (lang: 'en' | 'es' | 'both') => {
+        setPdfGenError(null);
+        setPdfGenerating(lang);
+        try {
+            const res = await fetch(`/api/blogs/${id}/pdf/generate?lang=${lang}`, { method: 'POST' });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data?.error || 'Failed to generate PDF');
+            }
+            if (typeof data.pdf_en === 'string') setPdfEn(data.pdf_en);
+            if (typeof data.pdf_es === 'string') setPdfEs(data.pdf_es);
+        } catch (err) {
+            setPdfGenError(err instanceof Error ? err.message : 'Failed to generate PDF');
+        } finally {
+            setPdfGenerating(null);
+        }
+    }, [id]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -405,6 +425,17 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                             >
                                 Upload EN PDF
                             </Button>
+                            <div className="pt-1">
+                                <Button
+                                    type="button"
+                                    disabled={pdfGenerating !== null}
+                                    onClick={() => generatePdf('en')}
+                                    className="w-full bg-[#1a2433] hover:bg-[#263547] text-white"
+                                >
+                                    {pdfGenerating === 'en' ? 'Generating…' : 'Generate PDF (EN)'}
+                                </Button>
+                                <p className="text-xs text-muted-foreground mt-1">Builds a branded PDF from the article content.</p>
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label className="text-gray-900">PDF (ES)</Label>
@@ -438,7 +469,30 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                             >
                                 Upload ES PDF
                             </Button>
+                            <div className="pt-1">
+                                <Button
+                                    type="button"
+                                    disabled={pdfGenerating !== null}
+                                    onClick={() => generatePdf('es')}
+                                    className="w-full bg-[#1a2433] hover:bg-[#263547] text-white"
+                                >
+                                    {pdfGenerating === 'es' ? 'Generating…' : 'Generate PDF (ES)'}
+                                </Button>
+                                <p className="text-xs text-muted-foreground mt-1">Genera un PDF de marca desde el contenido.</p>
+                            </div>
                         </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                        <Button
+                            type="button"
+                            disabled={pdfGenerating !== null}
+                            onClick={() => generatePdf('both')}
+                            className="bg-[#FD4345] hover:bg-[#ff5456] text-white"
+                        >
+                            {pdfGenerating === 'both' ? 'Generating both…' : 'Generate PDFs (EN + ES)'}
+                        </Button>
+                        {pdfGenError && <p className="text-sm text-red-500">{pdfGenError}</p>}
                     </div>
 
                     <div className="flex items-center space-x-2">

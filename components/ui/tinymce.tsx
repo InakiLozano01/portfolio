@@ -47,6 +47,7 @@ export function TinyMCE({ value, onChange, height = 400, disabled = false, id }:
         <Editor
             id={id}
             tinymceScriptSrc="/tinymce/tinymce.min.js"
+            licenseKey="gpl"
             disabled={disabled}
             onInit={(evt: EditorEvent<any>, editor: TinyMCEEditor) => {
                 editorRef.current = editor;

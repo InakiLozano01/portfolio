@@ -18,7 +18,12 @@
         "error": "Error",
         "back": "Back",
         "next": "Next",
-        "previous": "Previous"
+        "previous": "Previous",
+        "errorOccurred": "An error occurred"
+    },
+    "languageSwitcher": {
+        "switchToEnglish": "Switch to English",
+        "switchToSpanish": "Switch to Spanish"
     },
     "blogSection": {
         "heading": "Blog",
@@ -37,5 +42,202 @@
         "projects": "Projects",
         "blog": "Blog",
         "contact": "Contact"
+    },
+    "about": {
+        "aboutMe": "About Me",
+        "hobbies": "Hobbies & Interests",
+        "downloadCV": "Download CV",
+        "viewCV": "View CV",
+        "profileAlt": "Iñaki Lozano's profile picture",
+        "pdfSuffix": "(PDF)",
+        "fetchError": "Failed to fetch about information"
+    },
+    "experience": {
+        "title": "Experience",
+        "keyResponsibilities": "Key Responsibilities:",
+        "fetchError": "Failed to fetch experience information"
+    },
+    "education": {
+        "title": "Education",
+        "fetchError": "Failed to fetch education information"
+    },
+    "skills": {
+        "heading": "Skills & Technologies",
+        "descriptionFallback": "A comprehensive set of technical skills across various domains",
+        "searchPlaceholder": "Search skills...",
+        "sortDirAsc": "Asc",
+        "sortDirDesc": "Desc",
+        "all": "All",
+        "paginationPrev": "Previous",
+        "paginationNext": "Next",
+        "ariaSortToggle": "Toggle sort direction",
+        "filterByCategory": "Filter skills by category",
+        "skillsWord": "skills",
+        "paginationPrevAria": "Previous page",
+        "paginationAria": "Pagination",
+        "paginationNextAria": "Next page",
+        "fetchSectionError": "Failed to fetch skills section",
+        "fetchError": "Failed to fetch skills data",
+        "invalidDataFormat": "Invalid skills data format"
+    },
+    "projects": {
+        "heading": "Projects",
+        "all": "All",
+        "loadingError": "Failed to load projects",
+        "filtersLabel": "Filter projects by technology",
+        "viewProject": "View project",
+        "visitProject": "Visit project",
+        "thumbnailAlt": "Thumbnail image for project",
+        "view": {
+            "backToHome": "Back to Home",
+            "viewOnGithub": "View on GitHub",
+            "visitLiveSite": "Visit live site"
+        }
+    },
+    "blog": {
+        "list": {
+            "heading": "Blog",
+            "descriptionFallback": "Stories, updates, and research notes.",
+            "searchPlaceholder": "Search blogs...",
+            "error": "Error",
+            "comingSoonTitle": "Coming Soon! 🚀",
+            "comingSoonCopy": "We're preparing some exciting content for you. Stay tuned!",
+            "noResults": "No blogs found matching your search.",
+            "created": "Created",
+            "languages": "EN / ES",
+            "filterByTagAria": "Filter by tag",
+            "moreTags": "more",
+            "fetchError": "Failed to fetch blogs"
+        },
+        "view": {
+            "backToHome": "Back to Home",
+            "minRead": "{minutes} min read",
+            "downloadPdfEn": "Download PDF (EN)",
+            "downloadPdfEs": "Download PDF (ES)",
+            "published": "Published",
+            "updated": "Updated",
+            "langEnglish": "English",
+            "langSpanish": "Español"
+        },
+        "comments": {
+            "heading": "Comments",
+            "authorBadge": "Author",
+            "posted": "Comment posted",
+            "empty": "No comments yet.",
+            "aliasPlaceholder": "Your alias",
+            "commentPlaceholder": "Your comment",
+            "replyPlaceholder": "Your reply",
+            "post": "Post Comment",
+            "posting": "Posting...",
+            "reply": "Reply",
+            "cancel": "Cancel",
+            "upvote": "Upvote",
+            "downvote": "Downvote",
+            "errorMissingBlog": "Missing blog reference",
+            "errorSend": "Failed to send comment"
+        }
+    },
+    "newsletter": {
+        "success": "Subscribed! You will receive new blogs via email.",
+        "confirmPending": "Almost there! Check your inbox to confirm your subscription.",
+        "error": "Subscription failed",
+        "emailLabel": "Email",
+        "emailPlaceholder": "you@example.com",
+        "languageLabel": "Language",
+        "langEnglish": "English",
+        "langSpanish": "Español",
+        "submitting": "Submitting...",
+        "subscribe": "Subscribe",
+        "disclaimer": "We only email when a new blog is published. Unsubscribe anytime."
+    },
+    "share": {
+        "share": "Share",
+        "copyLink": "Copy link",
+        "copied": "Copied!",
+        "copyLinkAria": "Copy link",
+        "shareOnTwitter": "Share on Twitter",
+        "shareOnLinkedin": "Share on LinkedIn"
+    },
+    "contact": {
+        "title": "Get in Touch",
+        "contactInfo": "Contact Information",
+        "sendMessage": "Send a Message",
+        "name": "Name",
+        "email": "Email",
+        "message": "Message",
+        "send": "Send Message",
+        "sending": "Sending...",
+        "success": "Message sent successfully!",
+        "errorMsg": "Failed to send message. Please try again.",
+        "nameRequired": "Name is required",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email address",
+        "messageRequired": "Message is required",
+        "sendEmailAria": "Send email",
+        "githubAria": "Visit GitHub profile",
+        "linkedinAria": "Visit LinkedIn profile"
+    },
+    "unsubscribe": {
+        "status": {
+            "success": {
+                "title": "You are unsubscribed",
+                "message": "We removed you from the newsletter. You can rejoin any time from a blog article."
+            },
+            "invalidToken": {
+                "title": "This link has already been used",
+                "message": "We could not find an active subscription for this link. It may have already been cancelled."
+            },
+            "missingToken": {
+                "title": "We could not process this request",
+                "message": "The unsubscribe link is incomplete. Please use the link provided in your email."
+            },
+            "error": {
+                "title": "We could not unsubscribe you",
+                "message": "Please try again in a moment or contact us so we can help."
+            }
+        },
+        "resubscribeHint": "If this was a mistake, you can resubscribe from any blog article.",
+        "backToHome": "Back to home",
+        "exploreBlogs": "Explore blogs"
+    },
+    "subscribeConfirm": {
+        "prompt": {
+            "title": "Confirm your subscription",
+            "message": "You're one step away. Confirm your email to start receiving new articles.",
+            "button": "Confirm subscription"
+        },
+        "status": {
+            "success": {
+                "title": "Subscription confirmed",
+                "message": "You're all set — you'll receive an email whenever a new article is published."
+            },
+            "invalidToken": {
+                "title": "This link is no longer valid",
+                "message": "It may have already been used, or the subscription was cancelled. You can subscribe again from any blog article."
+            },
+            "missingToken": {
+                "title": "We could not confirm your subscription",
+                "message": "The confirmation link is incomplete. Please use the link from the email we sent you."
+            },
+            "error": {
+                "title": "Something went wrong",
+                "message": "Please try again in a moment or contact us so we can help."
+            }
+        },
+        "backToHome": "Back to home",
+        "exploreBlogs": "Explore blogs"
+    },
+    "sectionError": {
+        "title": "Section Error",
+        "fallback": "An error occurred while loading this section.",
+        "tryAgain": "Try again"
+    },
+    "seo": {
+        "title": "Iñaki F. Lozano | Computation Engineering Student & Software Developer",
+        "description": "Driven Computation Engineering student focused on technology and innovation. Researching secure document workflows, building scalable backends, and blending DevOps, AI, and full stack development skills.",
+        "keywords": "Software Developer, Computation Engineering Student, Backend Development, Advanced electronic signatures, DevOps, Tucumán, Argentina",
+        "location": "Tucumán, Argentina",
+        "jobTitle": "Computation Engineering Student & Software Developer",
+        "organization": "Court of Accounts of Tucumán"
     }
 }

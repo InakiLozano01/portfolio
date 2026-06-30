@@ -1,4 +1,5 @@
 import { getBlogBySlug } from '@/lib/blog'
+import { getDictionary } from '@/lib/dictionary'
 import { notFound } from 'next/navigation'
 // content rendering moved to client component
 import Link from 'next/link'
@@ -133,6 +134,7 @@ export default async function BlogPage({ params, searchParams }: BlogPageProps) 
     }
 
     const resolvedLang = normalizeLang(lang)
+    const dict = await getDictionary(resolvedLang)
     const localized = getLocalizedBlogFields(blog, resolvedLang, slug)
     const baseUrl = await resolveBaseUrl()
     const alternateBaseUrl = resolveAlternateBaseUrl(baseUrl)
@@ -256,21 +258,21 @@ export default async function BlogPage({ params, searchParams }: BlogPageProps) 
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-6"
                     >
                         <ArrowLeft size={20} />
-                        Back to Home
+                        {dict.blog?.view?.backToHome || 'Back to Home'}
                     </Link>
 
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-8">
-                        <PublishedInfo createdAt={blog.createdAt} updatedAt={blog.updatedAt} />
-                        <ShareActions url={canonicalUrl} title={localized.title || blog.title} />
+                        <PublishedInfo createdAt={blog.createdAt} updatedAt={blog.updatedAt} lang={resolvedLang} dict={dict.blog?.view} />
+                        <ShareActions url={canonicalUrl} title={localized.title || blog.title} dict={dict.share} />
                     </div>
 
-                    <BlogArticle blog={blog as any} initialLang={initialLang} />
+                    <BlogArticle blog={blog as any} initialLang={initialLang} dict={dict.blog?.view} />
 
                     <div className="my-10">
-                        <NewsletterSignup compact lang={initialLang} />
+                        <NewsletterSignup compact lang={initialLang} dict={dict.newsletter} />
                     </div>
 
-                    <BlogComments blogId={blog._id} />
+                    <BlogComments blogId={blog._id} lang={resolvedLang} dict={dict.blog?.comments} />
                 </article>
             </div>
 

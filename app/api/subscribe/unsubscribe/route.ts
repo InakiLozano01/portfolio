@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Subscriber from '@/models/Subscriber'
+import { localeFromCookie } from '@/lib/public-url'
 
 const FALLBACK_BASE_URL = 'https://inakilozano.com'
 const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '0.0.0.0'])
@@ -56,23 +57,52 @@ const buildRedirectUrl = (req: Request, path: string) => {
 }
 
 export async function GET(req: Request) {
+  // Locale-prefixed target so the Next middleware doesn't strip the ?status query.
+  const lang = localeFromCookie(req)
+  const statusUrl = (status: string) => buildRedirectUrl(req, `/${lang}/subscribe/unsubscribe?status=${status}`)
   try {
     const { searchParams } = new URL(req.url)
     const token = searchParams.get('token')
     if (!token) {
-      return NextResponse.redirect(buildRedirectUrl(req, '/unsubscribe?status=missing-token'), { status: 302 })
+      return NextResponse.redirect(statusUrl('missing-token'), { status: 302 })
     }
     await connectToDatabase()
     const sub = await Subscriber.findOne({ token })
     if (!sub) {
-      return NextResponse.redirect(buildRedirectUrl(req, '/unsubscribe?status=invalid-token'), { status: 302 })
+      return NextResponse.redirect(statusUrl('invalid-token'), { status: 302 })
     }
     sub.unsubscribed = true
     await sub.save()
-    return NextResponse.redirect(buildRedirectUrl(req, '/unsubscribe?status=success'), { status: 302 })
+    return NextResponse.redirect(statusUrl('success'), { status: 302 })
   } catch (err) {
     console.error('Unsubscribe failed', err)
-    return NextResponse.redirect(buildRedirectUrl(req, '/unsubscribe?status=error'), { status: 302 })
+    return NextResponse.redirect(statusUrl('error'), { status: 302 })
+  }
+}
+
+// RFC 8058 one-click unsubscribe: mailbox providers POST here directly (no
+// redirect / no human page). Respond 200 on success.
+export async function POST(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const token = searchParams.get('token')
+    if (!token) {
+      return NextResponse.json({ error: 'missing-token' }, { status: 400 })
+    }
+    await connectToDatabase()
+    const sub = await Subscriber.findOne({ token })
+    if (!sub) {
+      // Already gone / invalid — treat as success so the provider stops retrying.
+      return NextResponse.json({ ok: true }, { status: 200 })
+    }
+    if (!sub.unsubscribed) {
+      sub.unsubscribed = true
+      await sub.save()
+    }
+    return NextResponse.json({ ok: true }, { status: 200 })
+  } catch (err) {
+    console.error('One-click unsubscribe failed', err)
+    return NextResponse.json({ error: 'error' }, { status: 500 })
   }
 }
 

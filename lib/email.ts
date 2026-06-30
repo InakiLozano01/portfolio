@@ -325,20 +325,26 @@ export const emailService = new EmailService();
 export default emailService;
 
 // Newsletter helpers
-export async function sendNewsletterEmail({ to, subject, html, text, attachments }:
-    { to: string; subject: string; html: string; text?: string; attachments?: Array<{ filename: string; path?: string; content?: string; cid?: string }> }) {
+export async function sendNewsletterEmail({ to, subject, html, text, attachments, listUnsubscribe }:
+    { to: string; subject: string; html: string; text?: string; attachments?: Array<{ filename: string; path?: string; content?: string; cid?: string }>; listUnsubscribe?: string }) {
     try {
         const svc = emailService as any
         const transporter: Transporter | null = (svc as any).transporter || null
         if (!transporter) throw new Error('Email transporter not initialized')
         const fromAddress = process.env.CONTACT_MAIL_FROM || process.env.SMTP_USERNAME || 'no-reply@example.com'
+        // RFC 8058 one-click unsubscribe — improves deliverability and is required
+        // by major mailbox providers for bulk senders.
+        const headers = listUnsubscribe
+            ? { 'List-Unsubscribe': `<${listUnsubscribe}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' }
+            : undefined
         const info = await transporter.sendMail({
             from: fromAddress,
             to,
             subject,
             html,
             text: text || html.replace(/<[^>]+>/g, ''),
-            attachments
+            attachments,
+            headers
         })
         console.log('Newsletter email sent:', info.messageId)
         return true

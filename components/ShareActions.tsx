@@ -6,9 +6,10 @@ import { Twitter, Linkedin, Link as LinkIcon } from 'lucide-react'
 interface ShareActionsProps {
     url: string
     title: string
+    dict?: any
 }
 
-export default function ShareActions({ url, title }: ShareActionsProps) {
+export default function ShareActions({ url, title, dict = {} }: ShareActionsProps) {
     const [copied, setCopied] = useState(false)
 
     const shareOnTwitter = useCallback(() => {
@@ -36,23 +37,23 @@ export default function ShareActions({ url, title }: ShareActionsProps) {
             <button
                 onClick={shareOnTwitter}
                 className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
-                aria-label="Share on Twitter"
+                aria-label={dict?.shareOnTwitter || 'Share on Twitter'}
             >
-                <Twitter size={16} /> Share
+                <Twitter size={16} /> {dict?.share || 'Share'}
             </button>
             <button
                 onClick={shareOnLinkedIn}
                 className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
-                aria-label="Share on LinkedIn"
+                aria-label={dict?.shareOnLinkedin || 'Share on LinkedIn'}
             >
-                <Linkedin size={16} /> Share
+                <Linkedin size={16} /> {dict?.share || 'Share'}
             </button>
             <button
                 onClick={copyLink}
                 className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
-                aria-label="Copy link"
+                aria-label={dict?.copyLinkAria || 'Copy link'}
             >
-                <LinkIcon size={16} /> {copied ? 'Copied!' : 'Copy link'}
+                <LinkIcon size={16} /> {copied ? (dict?.copied || 'Copied!') : (dict?.copyLink || 'Copy link')}
             </button>
         </div>
     )

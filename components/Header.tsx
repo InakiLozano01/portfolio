@@ -15,6 +15,7 @@ interface HeaderProps {
   currentIndex?: number;
   onSectionChange?: (index: number) => void;
   dictionary?: any;
+  languageSwitcherDict?: any;
   lang?: string;
 }
 
@@ -23,6 +24,7 @@ export default function Header({
   currentIndex = 0,
   onSectionChange = () => { },
   dictionary = {},
+  languageSwitcherDict = {},
   lang = 'en'
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -119,11 +121,11 @@ export default function Header({
             aria-label={`Iñaki F. Lozano ${dictionary.home || 'Home'}`}
           >
             <Image
-              src="/inakilozanodotcomlogo.png"
-              alt="Logo"
-              width={24}
-              height={24}
-              className="rounded-sm"
+              src="/il-logo-mark.png"
+              alt="Iñaki F. Lozano logo"
+              width={26}
+              height={26}
+              priority
             />
             Iñaki F. Lozano
           </a>
@@ -149,7 +151,7 @@ export default function Header({
             </div>
 
             <div className="hidden md:block">
-              <LanguageSwitcher lang={lang} />
+              <LanguageSwitcher lang={lang} dict={languageSwitcherDict} />
             </div>
 
             {/* Mobile menu button */}
@@ -199,7 +201,7 @@ export default function Header({
                   )
                 })}
                 <div className="py-4 border-t border-gray-700 mt-2">
-                  <LanguageSwitcher lang={lang} />
+                  <LanguageSwitcher lang={lang} dict={languageSwitcherDict} />
                 </div>
               </nav>
             </>

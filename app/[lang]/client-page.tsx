@@ -185,6 +185,7 @@ export default function ClientPage({ lang, dictionary, initialSections, initialY
                 currentIndex={currentIndex}
                 onSectionChange={updateSection}
                 dictionary={dictionary.header}
+                languageSwitcherDict={dictionary.languageSwitcher}
                 lang={lang}
             />
 
@@ -222,7 +223,7 @@ export default function ClientPage({ lang, dictionary, initialSections, initialY
                                 >
                                     <div className={getSectionContainerClasses(id)}>
                                         <div className={getInnerWrapperClasses(id)}>
-                                            <Component lang={lang} initialContent={content} />
+                                            <Component lang={lang} initialContent={content} dictionary={dictionary} />
                                         </div>
                                     </div>
                                 </section>

@@ -33,7 +33,14 @@ const TONE_ICON: Record<'success' | 'info' | 'error', string> = {
   error: '⚠️'
 }
 
-export function UnsubscribeStatusView() {
+const STATUS_DICT_KEY: Record<string, 'success' | 'invalidToken' | 'missingToken' | 'error'> = {
+  success: 'success',
+  'invalid-token': 'invalidToken',
+  'missing-token': 'missingToken',
+  error: 'error'
+}
+
+export function UnsubscribeStatusView({ dict = {}, lang = 'en' }: { dict?: any; lang?: 'en' | 'es' }) {
   const searchParams = useSearchParams()
   const status = searchParams?.get('status') ?? 'success'
 
@@ -41,29 +48,31 @@ export function UnsubscribeStatusView() {
     return STATUS_CONTENT[status] ?? STATUS_CONTENT.success
   }, [status])
 
+  const statusDict = dict?.status?.[STATUS_DICT_KEY[status] ?? 'success'] || {}
+
   return (
-    <main className="min-h-screen bg-[#101825] flex items-center justify-center px-4 py-24">
+    <main lang={lang} className="min-h-screen bg-[#101825] flex items-center justify-center px-4 py-24">
       <div className="max-w-md w-full space-y-6 text-center">
         <div className="mx-auto h-16 w-16 rounded-full bg-white/10 flex items-center justify-center text-3xl">
           <span role="img" aria-hidden="true">{TONE_ICON[content.tone]}</span>
         </div>
         <div>
-          <h1 className="text-3xl font-semibold text-white mb-2">{content.title}</h1>
-          <p className="text-slate-300 mb-4 leading-relaxed">{content.message}</p>
-          <p className="text-sm text-slate-500">If this was a mistake, you can resubscribe from any blog article.</p>
+          <h1 className="text-3xl font-semibold text-white mb-2">{statusDict.title || content.title}</h1>
+          <p className="text-slate-300 mb-4 leading-relaxed">{statusDict.message || content.message}</p>
+          <p className="text-sm text-slate-500">{dict?.resubscribeHint || 'If this was a mistake, you can resubscribe from any blog article.'}</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            href="/"
+            href={`/${lang}`}
             className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-white font-medium hover:bg-primary/90 transition"
           >
-            Back to home
+            {dict?.backToHome || 'Back to home'}
           </Link>
           <Link
-            href="/blog"
+            href={`/${lang}#blog`}
             className="inline-flex items-center justify-center rounded-full border border-white/20 px-4 py-2 text-white font-medium hover:bg-white/10 transition"
           >
-            Explore blogs
+            {dict?.exploreBlogs || 'Explore blogs'}
           </Link>
         </div>
       </div>

@@ -7,9 +7,11 @@ import type { ContactContent } from '@/models/Section'
 
 interface ContactSectionProps {
   lang?: 'en' | 'es';
+  dictionary?: any;
 }
 
-export default function ContactSection({ lang = 'en' }: ContactSectionProps) {
+export default function ContactSection({ lang = 'en', dictionary = {} }: ContactSectionProps) {
+  const t = dictionary?.contact || {}
   const [content, setContent] = useState<ContactContent>({
     email: 'inakilozano01@gmail.com',
     city: 'San Miguel de Tucumán, Argentina',
@@ -34,20 +36,20 @@ export default function ContactSection({ lang = 'en' }: ContactSectionProps) {
 
   // Labels
   const labels = {
-    title: lang === 'en' ? 'Get in Touch' : 'Ponte en contacto',
-    contactInfo: lang === 'en' ? 'Contact Information' : 'Información de contacto',
-    sendMessage: lang === 'en' ? 'Send a Message' : 'Enviar mensaje',
-    name: lang === 'en' ? 'Name' : 'Nombre',
-    email: 'Email',
-    message: lang === 'en' ? 'Message' : 'Mensaje',
-    send: lang === 'en' ? 'Send Message' : 'Enviar mensaje',
-    sending: lang === 'en' ? 'Sending...' : 'Enviando...',
-    success: lang === 'en' ? 'Message sent successfully!' : '¡Mensaje enviado correctamente!',
-    errorMsg: lang === 'en' ? 'Failed to send message. Please try again.' : 'No se pudo enviar el mensaje. Inténtalo de nuevo.',
-    nameRequired: lang === 'en' ? 'Name is required' : 'El nombre es obligatorio',
-    emailRequired: lang === 'en' ? 'Email is required' : 'El email es obligatorio',
-    emailInvalid: lang === 'en' ? 'Please enter a valid email address' : 'Por favor, ingresa un email válido',
-    messageRequired: lang === 'en' ? 'Message is required' : 'El mensaje es obligatorio'
+    title: t.title || 'Get in Touch',
+    contactInfo: t.contactInfo || 'Contact Information',
+    sendMessage: t.sendMessage || 'Send a Message',
+    name: t.name || 'Name',
+    email: t.email || 'Email',
+    message: t.message || 'Message',
+    send: t.send || 'Send Message',
+    sending: t.sending || 'Sending...',
+    success: t.success || 'Message sent successfully!',
+    errorMsg: t.errorMsg || 'Failed to send message. Please try again.',
+    nameRequired: t.nameRequired || 'Name is required',
+    emailRequired: t.emailRequired || 'Email is required',
+    emailInvalid: t.emailInvalid || 'Please enter a valid email address',
+    messageRequired: t.messageRequired || 'Message is required'
   }
 
   useEffect(() => {
@@ -152,7 +154,7 @@ export default function ContactSection({ lang = 'en' }: ContactSectionProps) {
               <a
                 href={`mailto:${content.email}`}
                 className="text-gray-600 hover:text-[#FD4345]"
-                aria-label="Send email"
+                aria-label={t.sendEmailAria || 'Send email'}
               >
                 {content.email}
               </a>
@@ -168,7 +170,7 @@ export default function ContactSection({ lang = 'en' }: ContactSectionProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-[#FD4345]"
-                aria-label="Visit GitHub profile"
+                aria-label={t.githubAria || 'Visit GitHub profile'}
               >
                 GitHub
               </a>
@@ -180,7 +182,7 @@ export default function ContactSection({ lang = 'en' }: ContactSectionProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-[#FD4345]"
-                aria-label="Visit LinkedIn profile"
+                aria-label={t.linkedinAria || 'Visit LinkedIn profile'}
               >
                 LinkedIn
               </a>

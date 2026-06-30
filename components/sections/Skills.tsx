@@ -16,31 +16,6 @@ interface Skill {
   icon: string;
 }
 
-const copy = {
-  en: {
-    heading: 'Skills & Technologies',
-    descriptionFallback: 'A comprehensive set of technical skills across various domains',
-    searchPlaceholder: 'Search skills...',
-    sortDirAsc: 'Asc',
-    sortDirDesc: 'Desc',
-    all: 'All',
-    paginationPrev: 'Previous',
-    paginationNext: 'Next',
-    ariaSortToggle: 'Toggle sort direction',
-  },
-  es: {
-    heading: 'Habilidades y Tecnologías',
-    descriptionFallback: 'Un conjunto integral de habilidades técnicas en diversos dominios',
-    searchPlaceholder: 'Buscar habilidades...',
-    sortDirAsc: 'Ascendente',
-    sortDirDesc: 'Descendente',
-    all: 'Todas',
-    paginationPrev: 'Anterior',
-    paginationNext: 'Siguiente',
-    ariaSortToggle: 'Cambiar dirección de orden',
-  },
-} as const
-
 function coerceSkill(raw: any): Skill {
   return {
     _id: raw._id,
@@ -53,9 +28,11 @@ function coerceSkill(raw: any): Skill {
 export default function Skills({
   lang = 'en',
   initialContent,
+  dictionary = {},
 }: {
   lang?: 'en' | 'es'
   initialContent?: Record<string, any>
+  dictionary?: any
 }) {
   const [titleBase, setTitleBase] = useState<string>(() => String(initialContent?.title || ''))
   const [titleEn, setTitleEn] = useState<string>(() => String(initialContent?.title_en || initialContent?.title || ''))
@@ -75,7 +52,26 @@ export default function Skills({
   const gridRef = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion()
 
-  const t = copy[lang] ?? copy.en
+  const skillsDict = dictionary?.skills || {}
+  const t = {
+    heading: skillsDict.heading || 'Skills & Technologies',
+    descriptionFallback: skillsDict.descriptionFallback || 'A comprehensive set of technical skills across various domains',
+    searchPlaceholder: skillsDict.searchPlaceholder || 'Search skills...',
+    sortDirAsc: skillsDict.sortDirAsc || 'Asc',
+    sortDirDesc: skillsDict.sortDirDesc || 'Desc',
+    all: skillsDict.all || 'All',
+    paginationPrev: skillsDict.paginationPrev || 'Previous',
+    paginationNext: skillsDict.paginationNext || 'Next',
+    ariaSortToggle: skillsDict.ariaSortToggle || 'Toggle sort direction',
+    filterByCategory: skillsDict.filterByCategory || 'Filter skills by category',
+    skillsWord: skillsDict.skillsWord || 'skills',
+    paginationPrevAria: skillsDict.paginationPrevAria || 'Previous page',
+    paginationAria: skillsDict.paginationAria || 'Pagination',
+    paginationNextAria: skillsDict.paginationNextAria || 'Next page',
+    fetchSectionError: skillsDict.fetchSectionError || 'Failed to fetch skills section',
+    fetchError: skillsDict.fetchError || 'Failed to fetch skills data',
+    invalidDataFormat: skillsDict.invalidDataFormat || 'Invalid skills data format',
+  }
   const heading = lang === 'es'
     ? (titleEs || t.heading)
     : (titleEn || titleBase || t.heading)
@@ -100,7 +96,7 @@ export default function Skills({
         if (!initialContent) {
           const sectionResponse = await fetch('/api/sections/skills')
           if (!sectionResponse.ok) {
-            throw new Error('Failed to fetch skills section')
+            throw new Error(t.fetchSectionError || 'Failed to fetch skills section')
           }
           const sectionData = await sectionResponse.json()
 
@@ -116,7 +112,7 @@ export default function Skills({
 
         const skillsResponse = await fetch('/api/skills')
         if (!skillsResponse.ok) {
-          throw new Error('Failed to fetch skills data')
+          throw new Error(t.fetchError || 'Failed to fetch skills data')
         }
         const skillsData = await skillsResponse.json()
 
@@ -127,11 +123,11 @@ export default function Skills({
           setContent(normalizedSkills)
         } else {
           console.error('[Skills Component] Invalid skills data format:', skillsData)
-          setError('Invalid skills data format')
+          setError(t.invalidDataFormat || 'Invalid skills data format')
         }
       } catch (err) {
         console.error('[Skills Component] Error:', err)
-        setError(err instanceof Error ? err.message : 'An error occurred')
+        setError(err instanceof Error ? err.message : (dictionary?.common?.errorOccurred || 'An error occurred'))
       } finally {
         setLoading(false)
       }
@@ -235,7 +231,7 @@ export default function Skills({
           <div
             className="flex flex-wrap gap-2 items-center"
             role="tablist"
-            aria-label={lang === 'es' ? 'Filtrar habilidades por categoría' : 'Filter skills by category'}
+            aria-label={t.filterByCategory}
           >
             <button
               onClick={() => setSelectedCategory('all')}
@@ -288,8 +284,8 @@ export default function Skills({
         id={`${selectedCategory}-panel`}
         aria-label={
           selectedCategory === 'all'
-            ? `${t.all} ${lang === 'es' ? 'habilidades' : 'skills'}`
-            : `${selectedCategory} ${lang === 'es' ? 'habilidades' : 'skills'}`
+            ? `${t.all} ${t.skillsWord}`
+            : `${selectedCategory} ${t.skillsWord}`
         }
       >
         {paginatedSkills.map((skill, index) => {
@@ -343,11 +339,11 @@ export default function Skills({
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
             className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            aria-label="Previous page"
+            aria-label={t.paginationPrevAria}
           >
             {t.paginationPrev}
           </button>
-          <div className="flex items-center gap-1" aria-label="Pagination">
+          <div className="flex items-center gap-1" aria-label={t.paginationAria}>
             {Array.from({ length: totalPages }).map((_, i) => (
               <button
                 key={i}
@@ -363,7 +359,7 @@ export default function Skills({
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
             className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            aria-label="Next page"
+            aria-label={t.paginationNextAria}
           >
             {t.paginationNext}
           </button>

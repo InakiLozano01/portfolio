@@ -8,9 +8,11 @@ import LoadingSpinner from '@/components/ui/loading-spinner'
 
 interface AboutProps {
   lang?: 'en' | 'es';
+  dictionary?: any;
 }
 
-export default function About({ lang = 'en' }: AboutProps) {
+export default function About({ lang = 'en', dictionary = {} }: AboutProps) {
+  const t = dictionary?.about || {}
   const [content, setContent] = useState<AboutContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,12 +23,12 @@ export default function About({ lang = 'en' }: AboutProps) {
       try {
         const response = await fetch('/api/sections/about')
         if (!response.ok) {
-          throw new Error('Failed to fetch about information')
+          throw new Error(t.fetchError || 'Failed to fetch about information')
         }
         const data = await response.json()
         setContent(data.content)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
+        setError(err instanceof Error ? err.message : (dictionary?.common?.errorOccurred || 'An error occurred'))
       } finally {
         setLoading(false)
       }
@@ -45,10 +47,10 @@ export default function About({ lang = 'en' }: AboutProps) {
 
   // Labels
   const labels = {
-    aboutMe: lang === 'en' ? 'About Me' : 'Sobre mí',
-    hobbies: lang === 'en' ? 'Hobbies & Interests' : 'Hobbies e Intereses',
-    downloadCV: lang === 'en' ? 'Download CV' : 'Descargar CV',
-    viewCV: lang === 'en' ? 'View CV' : 'Ver CV'
+    aboutMe: t.aboutMe || 'About Me',
+    hobbies: t.hobbies || 'Hobbies & Interests',
+    downloadCV: t.downloadCV || 'Download CV',
+    viewCV: t.viewCV || 'View CV'
   }
 
   return (
@@ -62,7 +64,7 @@ export default function About({ lang = 'en' }: AboutProps) {
         >
           <Image
             src="/pfp.jpg"
-            alt="Iñaki Lozano's profile picture"
+            alt={t.profileAlt || "Iñaki Lozano's profile picture"}
             fill
             sizes="(max-width: 768px) 200px, 300px"
             priority
@@ -94,7 +96,7 @@ export default function About({ lang = 'en' }: AboutProps) {
             href="/CV.pdf"
             download
             className="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-full font-semibold hover:bg-accent transition-colors duration-200"
-            aria-label={`${labels.downloadCV} (PDF)`}
+            aria-label={`${labels.downloadCV} ${t.pdfSuffix || '(PDF)'}`}
           >
             <span>{labels.downloadCV}</span>
           </a>

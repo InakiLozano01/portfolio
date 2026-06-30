@@ -2,9 +2,10 @@ import Link from 'next/link'
 
 interface LanguageSwitcherProps {
     lang: string
+    dict?: any
 }
 
-export default function LanguageSwitcher({ lang }: LanguageSwitcherProps) {
+export default function LanguageSwitcher({ lang, dict = {} }: LanguageSwitcherProps) {
     return (
         <div className="flex items-center gap-2 ml-4">
             <Link
@@ -14,7 +15,7 @@ export default function LanguageSwitcher({ lang }: LanguageSwitcherProps) {
                         ? 'text-[#FF5456]'
                         : 'text-gray-400 hover:text-white'
                     }`}
-                aria-label="Switch to English"
+                aria-label={dict?.switchToEnglish || 'Switch to English'}
             >
                 EN
             </Link>
@@ -26,7 +27,7 @@ export default function LanguageSwitcher({ lang }: LanguageSwitcherProps) {
                         ? 'text-[#FF5456]'
                         : 'text-gray-400 hover:text-white'
                     }`}
-                aria-label="Cambiar a Español"
+                aria-label={dict?.switchToSpanish || 'Switch to Spanish'}
             >
                 ES
             </Link>

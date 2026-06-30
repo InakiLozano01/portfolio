@@ -44,6 +44,15 @@ const cleanImagePath = (value: unknown) => {
   return undefined
 }
 
+const blurDataUrlPattern = /^data:image\/(?:png|webp|jpeg|avif);base64,[A-Za-z0-9+/=]+$/
+
+const cleanBlurDataUrl = (value: unknown) => {
+  const str = cleanString(value)
+  if (!str) return undefined
+  if (str.length <= 4000 && blurDataUrlPattern.test(str)) return str
+  return undefined
+}
+
 export function normalizeProjectPayload(payload: Record<string, unknown>) {
   const title = cleanString(payload.title || payload.title_en)
   const subtitle = cleanString(payload.subtitle || payload.subtitle_en)
@@ -69,6 +78,8 @@ export function normalizeProjectPayload(payload: Record<string, unknown>) {
     description_es: cleanOptionalString(payload.description_es),
     technologies: parsedTechnologies,
     thumbnail: cleanImagePath(payload.thumbnail),
+    thumbnailSmall: cleanImagePath(payload.thumbnailSmall),
+    thumbnailBlur: cleanBlurDataUrl(payload.thumbnailBlur),
     thumbnailAlt: cleanOptionalString(payload.thumbnailAlt),
     thumbnailOptimization: normalizeProjectThumbnailOptimization(payload.thumbnailOptimization),
     imageWidth: cleanPositiveNumber(payload.imageWidth),

@@ -11,6 +11,7 @@ import { invalidateCache } from '@/lib/cache';
 import { requireAdmin } from '@/lib/admin-auth';
 import {
     optimizeProjectThumbnailToWebp,
+    generateProjectThumbnailVariantBuffers,
 } from '@/lib/project-thumbnail-optimization';
 import { normalizeProjectThumbnailOptimization } from '@/lib/project-thumbnail-settings';
 
@@ -318,6 +319,32 @@ export async function POST(request: Request) {
             const processedMetadata = await sharp(processedImage).metadata();
             console.log('Final image metadata:', processedMetadata);
 
+            // Additively generate the lightweight grid variants (small webp +
+            // blur placeholder) next to the large image. Fully resilient: any
+            // failure leaves the large `thumbnail` as the grid fallback and
+            // never breaks the upload.
+            let thumbnailSmall: string | undefined;
+            let thumbnailBlur: string | undefined;
+            try {
+                const smallFilename = filename.replace(/\.[^.]+$/, '-small.webp');
+                const variants = await generateProjectThumbnailVariantBuffers(processedImage);
+
+                if (canonicalFilePath) {
+                    await persistImage(APP_PUBLIC_IMAGES_DIR, smallFilename, variants.small);
+                }
+                if (!symlinkActive) {
+                    await persistImage(runtimeImagesDir, smallFilename, variants.small);
+                }
+
+                thumbnailSmall = `/${path.posix.join('images', 'projects', smallFilename)}`;
+                thumbnailBlur = variants.blurDataURL;
+                console.log('Generated grid thumbnail variants', { smallFilename });
+            } catch (variantError) {
+                console.warn('Failed to generate grid thumbnail variants', {
+                    error: variantError instanceof Error ? variantError.message : variantError,
+                });
+            }
+
             // Invalidate relevant caches after upload
             try {
                 // Invalidate projects cache to ensure new images are displayed
@@ -330,6 +357,8 @@ export async function POST(request: Request) {
 
             return NextResponse.json({
                 path: `/${responsePath}`,
+                thumbnailSmall,
+                thumbnailBlur,
                 width: processedMetadata.width,
                 height: processedMetadata.height,
                 optimized: thumbnailOptimization.enabled,

@@ -23,23 +23,17 @@ interface ProjectWithTechnologies extends Omit<IProject, 'technologies'> {
   technologies: Skill[];
 }
 
-const copy = {
-    en: {
-        heading: 'Projects',
-        all: 'All',
-        loadingError: 'Failed to load projects',
-        filtersLabel: 'Filter projects by technology',
-    },
-    es: {
-        heading: 'Proyectos',
-        all: 'Todos',
-        loadingError: 'No se pudieron cargar los proyectos',
-        filtersLabel: 'Filtrar proyectos por tecnología',
-    },
-} as const
-
-export default function Projects({ lang = 'en' }: { lang?: 'en' | 'es' }) {
-    const t = copy[lang] ?? copy.en
+export default function Projects({ lang = 'en', dictionary = {} }: { lang?: 'en' | 'es'; dictionary?: any }) {
+    const projectsDict = dictionary?.projects || {}
+    const t = {
+        heading: projectsDict.heading || 'Projects',
+        all: projectsDict.all || 'All',
+        loadingError: projectsDict.loadingError || 'Failed to load projects',
+        filtersLabel: projectsDict.filtersLabel || 'Filter projects by technology',
+        viewProject: projectsDict.viewProject || 'View project',
+        visitProject: projectsDict.visitProject || 'Visit project',
+        thumbnailAlt: projectsDict.thumbnailAlt || 'Thumbnail image for project',
+    }
     const [projects, setProjects] = useState<ProjectWithTechnologies[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -72,7 +66,7 @@ export default function Projects({ lang = 'en' }: { lang?: 'en' | 'es' }) {
         }
 
         fetchProjects()
-    }, [t])
+    }, [t.loadingError])
 
     if (isLoading) {
         return (
@@ -176,19 +170,20 @@ export default function Projects({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                                 <Link
                                     href={projectHref}
                                     prefetch={false}
-                                    aria-label={`${lang === 'es' ? 'Ver proyecto' : 'View project'} ${title}`}
+                                    aria-label={`${t.viewProject} ${title}`}
                                     className="absolute inset-0 z-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
                                 />
                                 <div className="relative aspect-video w-full">
                                     <Image
-                                        src={project.thumbnail || '/images/projects/default-project.jpg'}
-                                        alt={`Thumbnail image for project ${pickLang(project.title_en || project.title, project.title_es || project.title, project.title)}`}
+                                        src={project.thumbnailSmall || project.thumbnail || '/images/projects/default-project.jpg'}
+                                        alt={`${t.thumbnailAlt} ${pickLang(project.title_en || project.title, project.title_es || project.title, project.title)}`}
                                         fill
                                         sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
                                         className="object-cover rounded-t-lg"
+                                        loading="lazy"
                                         priority={false}
                                         placeholder="blur"
-                                        blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNjQwJyBoZWlnaHQ9JzM2MCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCBmaWxsPSIjZWVlIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+PC9zdmc+"
+                                        blurDataURL={project.thumbnailBlur || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNjQwJyBoZWlnaHQ9JzM2MCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCBmaWxsPSIjZWVlIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+PC9zdmc+"}
                                     />
                                 </div>
                                 <CardHeader className="flex-grow">
@@ -208,7 +203,7 @@ export default function Projects({ lang = 'en' }: { lang?: 'en' | 'es' }) {
                                             onKeyDown={(e) => e.stopPropagation()}
                                         >
                                             <ExternalLink className="w-4 h-4" />
-                                            {lang === 'es' ? 'Ver proyecto' : 'Visit project'}
+                                            {t.visitProject}
                                         </a>
                                     )}
                                 </CardHeader>
