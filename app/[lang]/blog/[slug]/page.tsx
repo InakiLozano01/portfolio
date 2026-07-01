@@ -68,6 +68,7 @@ export async function generateMetadata({
             : 'Blog article on the Iñaki F. Lozano portfolio.')
     const pageTitle = title ? `${title} | Iñaki F. Lozano` : `Blog | Iñaki F. Lozano`
     const tags = Array.isArray(blog?.tags) ? blog.tags : []
+    const shareImage = `${canonicalBase}/og-${resolvedLang === 'es' ? 'es' : 'en'}.png`
 
     return {
         metadataBase: new URL(canonicalBase),
@@ -92,7 +93,7 @@ export async function generateMetadata({
             siteName: 'Iñaki F. Lozano Portfolio',
             images: [
                 {
-                    url: `${canonicalBase}/pfp.jpg`,
+                    url: shareImage,
                     width: 1200,
                     height: 630,
                     alt: 'Iñaki F. Lozano'
@@ -105,7 +106,7 @@ export async function generateMetadata({
             card: 'summary_large_image',
             title: pageTitle,
             description,
-            images: [`${canonicalBase}/pfp.jpg`],
+            images: [shareImage],
             creator: '@inakilozano',
             site: '@inakilozano'
         }

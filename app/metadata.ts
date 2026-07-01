@@ -109,11 +109,11 @@ export const buildEnglishMetadata = (
             siteName: 'Iñaki F. Lozano Portfolio',
             images: [
                 {
-                    url: '/pfp.jpg',
+                    url: '/og-en.png',
                     width: 1200,
                     height: 630,
                     alt: 'Iñaki F. Lozano - Computation Engineering Student & Software Developer',
-                    type: 'image/jpeg'
+                    type: 'image/png'
                 }
             ]
         },
@@ -122,7 +122,7 @@ export const buildEnglishMetadata = (
             title: 'Iñaki F. Lozano | Computation Engineering Student & Software Developer',
             description:
                 'Driven technologist researching secure document signing standards, building scalable APIs, and honing AI and DevOps skills.',
-            images: ['/pfp.jpg'],
+            images: ['/og-en.png'],
             creator: '@inakilozano',
             site: '@inakilozano'
         },
@@ -225,11 +225,11 @@ export const buildSpanishMetadata = (
             siteName: 'Iñaki F. Lozano Portfolio',
             images: [
                 {
-                    url: '/pfp.jpg',
+                    url: '/og-es.png',
                     width: 1200,
                     height: 630,
                     alt: 'Iñaki F. Lozano - Estudiante de Ingeniería en Computación y Desarrollador de Software',
-                    type: 'image/jpeg'
+                    type: 'image/png'
                 }
             ]
         },
@@ -238,7 +238,7 @@ export const buildSpanishMetadata = (
             title: 'Iñaki F. Lozano | Estudiante de Ingeniería en Computación y Desarrollador de Software',
             description:
                 'Tecnólogo impulsado investigando estándares de firma de documentos seguros, construyendo APIs escalables y perfeccionando habilidades de IA y DevOps.',
-            images: ['/pfp.jpg'],
+            images: ['/og-es.png'],
             creator: '@inakilozano',
             site: '@inakilozano'
         },

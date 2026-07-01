@@ -131,7 +131,7 @@ export function StructuredData({ lang = 'en', baseUrl, alternateBaseUrl }: Struc
         url: canonicalBase,
         sameAs,
         alternateName,
-        logo: `${canonicalBase}/pfp.jpg`,
+        logo: `${canonicalBase}/inakilozanodotcomlogo.png`,
         founder: {
             '@type': 'Person',
             name: 'Iñaki F. Lozano'
