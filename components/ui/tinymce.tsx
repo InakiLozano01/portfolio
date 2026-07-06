@@ -1,7 +1,7 @@
 'use client';
 
 import { Editor } from '@tinymce/tinymce-react';
-import { useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import type { Editor as TinyMCEEditor, EditorEvent } from 'tinymce';
 
 // List of all free plugins from TinyMCE Community
@@ -17,7 +17,6 @@ const FREE_PLUGINS = [
     'searchreplace',
     'visualblocks',
     'code',
-    'fullscreen',
     'insertdatetime',
     'media',
     'table',
@@ -39,8 +38,85 @@ interface TinyMCEProps {
     id?: string;
 }
 
-export function TinyMCE({ value, onChange, height = 400, disabled = false, id }: TinyMCEProps) {
+export interface TinyMCEHandle {
+    uploadImages: () => Promise<string>;
+    getContent: () => string;
+    hasEmbeddedImages: () => boolean;
+}
+
+const hasEmbeddedImages = (html: string) => /data:image\/[a-z0-9.+-]+;base64,/i.test(html);
+
+type TinyMCEUploadResult = {
+    status: boolean;
+    removed?: boolean;
+    uploadUri?: string;
+};
+
+const uploadTinyMCEImage = async (blobInfo: any, progress: (value: number) => void): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', blobInfo.blob(), blobInfo.filename());
+    progress(10);
+
+    const response = await fetch('/api/upload/blog-image', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+    });
+
+    progress(90);
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+        throw {
+            message: typeof data?.error === 'string' ? data.error : `Image upload failed (${response.status})`,
+            remove: false,
+        };
+    }
+
+    if (typeof data?.location !== 'string') {
+        throw {
+            message: 'Image upload completed without a file location',
+            remove: false,
+        };
+    }
+
+    progress(100);
+    return data.location;
+};
+
+export const TinyMCE = forwardRef<TinyMCEHandle, TinyMCEProps>(function TinyMCE(
+    { value, onChange, height = 400, disabled = false, id },
+    ref
+) {
     const editorRef = useRef<TinyMCEEditor | null>(null);
+
+    useImperativeHandle(ref, () => ({
+        async uploadImages() {
+            const editor = editorRef.current;
+            if (!editor) return value;
+
+            const results = await (editor as TinyMCEEditor & { uploadImages: () => Promise<TinyMCEUploadResult[]> }).uploadImages();
+            const failedUpload = results.find((result) => result.status !== true);
+            if (failedUpload) {
+                throw new Error('One or more images could not be uploaded. Check the image and try saving again.');
+            }
+
+            const content = editor.getContent();
+            onChange(content);
+
+            if (hasEmbeddedImages(content)) {
+                throw new Error('One or more pasted images are still uploading. Wait a moment, then save again.');
+            }
+
+            return content;
+        },
+        getContent() {
+            return editorRef.current?.getContent() ?? value;
+        },
+        hasEmbeddedImages() {
+            return hasEmbeddedImages(editorRef.current?.getContent() ?? value);
+        },
+    }), [onChange, value]);
 
     return (
         <div style={{ height, minHeight: height, maxHeight: height }} className="overflow-hidden">
@@ -62,62 +138,48 @@ export function TinyMCE({ value, onChange, height = 400, disabled = false, id }:
                 convert_urls: false, // Don't convert data URLs
 
                 // Menu configuration
-                menubar: 'file edit view insert format tools table help',
+                menubar: 'edit insert format table view tools help',
                 menu: {
-                    file: {
-                        title: 'File',
-                        items: 'newdocument restoredraft | preview | export print | deleteallconversations'
-                    },
                     edit: {
                         title: 'Edit',
                         items: 'undo redo | cut copy paste pastetext | selectall | searchreplace'
                     },
                     view: {
                         title: 'View',
-                        items: 'code | visualaid visualchars visualblocks | spellchecker | preview fullscreen | showcomments'
+                        items: 'code | visualaid visualchars visualblocks | preview'
                     },
                     insert: {
                         title: 'Insert',
-                        items: 'image link media addcomment pageembed template codesample inserttable | charmap emoticons hr | pagebreak nonbreaking anchor tableofcontents | insertdatetime'
+                        items: 'image link media inserttable | charmap emoticons hr | nonbreaking anchor insertdatetime'
                     },
                     format: {
                         title: 'Format',
-                        items: 'bold italic underline strikethrough superscript subscript codeformat | styles blocks fontfamily fontsize align lineheight | forecolor backcolor | language | removeformat'
+                        items: 'bold italic underline strikethrough superscript subscript codeformat | blocks align lineheight | forecolor backcolor | removeformat'
                     },
                     tools: {
                         title: 'Tools',
-                        items: 'spellchecker spellcheckerlanguage | a11ycheck code wordcount'
+                        items: 'code wordcount'
                     },
                     table: {
                         title: 'Table',
-                        items: 'inserttable | cell row column | advtablesort | tableprops deletetable'
+                        items: 'inserttable | cell row column | tableprops deletetable'
                     },
                 },
 
                 // Toolbar configuration
-                toolbar1: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | forecolor backcolor | code fullscreen',
+                toolbar1: 'undo redo | blocks | bold italic underline | bullist numlist blockquote | alignleft aligncenter alignright alignjustify | link image media table | forecolor backcolor | code',
+                toolbar_mode: 'sliding',
+                resize: false,
                 block_formats: 'Paragraph=p; Heading 2=h2; Heading 3=h3; Heading 4=h4; Quote=blockquote',
 
                 // Plugin configuration
                 plugins: FREE_PLUGINS,
 
                 // Image settings
-                automatic_uploads: false, // Disable automatic uploads
+                automatic_uploads: true,
                 paste_data_images: true,
-                images_file_types: 'jpg,jpeg,png,gif,webp',
-
-                // Custom image upload handler for the image dialog
-                images_upload_handler: async function (blobInfo: any, _progress: any) {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            const base64 = reader.result as string;
-                            resolve(base64);
-                        };
-                        reader.onerror = () => reject(reader.error);
-                        reader.readAsDataURL(blobInfo.blob());
-                    });
-                },
+                images_file_types: 'jpg,jpeg,png,webp,avif',
+                images_upload_handler: uploadTinyMCEImage,
 
                 // Table settings
                 table_appearance_options: true,
@@ -172,4 +234,4 @@ export function TinyMCE({ value, onChange, height = 400, disabled = false, id }:
         />
         </div>
     );
-}
+});

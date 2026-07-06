@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { TinyMCE } from '@/components/ui/tinymce';
+import { TinyMCE, type TinyMCEHandle } from '@/components/ui/tinymce';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import { AlertCircle, ArrowLeft, FileText, Globe, Loader2, Save, X } from 'lucid
 import { Badge } from '@/components/ui/badge';
 
 const requiredField = (value: string) => value.trim();
+type SaveStep = 'uploading' | 'saving' | null;
 
 export default function NewBlogPage() {
     const router = useRouter();
@@ -35,7 +36,16 @@ export default function NewBlogPage() {
     const [published, setPublished] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [saveStep, setSaveStep] = useState<SaveStep>(null);
     const [error, setError] = useState<string | null>(null);
+    const contentEnEditorRef = useRef<TinyMCEHandle | null>(null);
+    const contentEsEditorRef = useRef<TinyMCEHandle | null>(null);
+
+    const saveStatusLabel = saveStep === 'uploading'
+        ? 'Uploading images…'
+        : saveStep === 'saving'
+        ? 'Saving post…'
+        : null;
 
     const handleBack = () => {
         router.push('/admin#blogs');
@@ -46,6 +56,7 @@ export default function NewBlogPage() {
         e.preventDefault();
         setError(null);
         setIsSubmitting(true);
+        setSaveStep('uploading');
 
         const englishTitle = requiredField(titleEn);
         const englishSubtitle = requiredField(subtitleEn);
@@ -57,29 +68,37 @@ export default function NewBlogPage() {
         const englishBibliography = bibliographyEn.trim();
         const spanishBibliography = bibliographyEs.trim();
 
-        const blogData = {
-            title_en: englishTitle,
-            title_es: spanishTitle,
-            subtitle_en: englishSubtitle,
-            subtitle_es: spanishSubtitle,
-            content_en: contentEn,
-            content_es: contentEs,
-            footer_en: englishFooter || undefined,
-            footer_es: spanishFooter || undefined,
-            bibliography_en: englishBibliography || undefined,
-            bibliography_es: spanishBibliography || undefined,
-            published,
-            slug: slugify(englishTitle || spanishTitle),
-            tags,
-            // Legacy fallbacks for existing consumers
-            title: englishTitle || spanishTitle,
-            subtitle: englishSubtitle || spanishSubtitle,
-            content: contentEn || contentEs,
-            footer: englishFooter || spanishFooter || undefined,
-            bibliography: englishBibliography || spanishBibliography || undefined,
-        };
-
         try {
+            const [uploadedContentEn, uploadedContentEs] = await Promise.all([
+                contentEnEditorRef.current?.uploadImages(),
+                contentEsEditorRef.current?.uploadImages(),
+            ]);
+            setSaveStep('saving');
+            const finalContentEn = uploadedContentEn ?? contentEn;
+            const finalContentEs = uploadedContentEs ?? contentEs;
+
+            const blogData = {
+                title_en: englishTitle,
+                title_es: spanishTitle,
+                subtitle_en: englishSubtitle,
+                subtitle_es: spanishSubtitle,
+                content_en: finalContentEn,
+                content_es: finalContentEs,
+                footer_en: englishFooter || undefined,
+                footer_es: spanishFooter || undefined,
+                bibliography_en: englishBibliography || undefined,
+                bibliography_es: spanishBibliography || undefined,
+                published,
+                slug: slugify(englishTitle || spanishTitle),
+                tags,
+                // Legacy fallbacks for existing consumers
+                title: englishTitle || spanishTitle,
+                subtitle: englishSubtitle || spanishSubtitle,
+                content: finalContentEn || finalContentEs,
+                footer: englishFooter || spanishFooter || undefined,
+                bibliography: englishBibliography || spanishBibliography || undefined,
+            };
+
             BlogSchema.parse(blogData);
 
             await saveBlogRequest('/api/blogs', 'POST', blogData);
@@ -91,10 +110,13 @@ export default function NewBlogPage() {
                 setError(err.issues[0]?.message ?? 'Please review the highlighted fields');
             } else if (err instanceof Error) {
                 setError(err.message);
+            } else if (err && typeof err === 'object' && 'message' in err) {
+                setError(String((err as { message: unknown }).message));
             } else {
                 setError('An error occurred while saving the blog');
             }
         } finally {
+            setSaveStep(null);
             setIsSubmitting(false);
         }
     };
@@ -209,7 +231,7 @@ export default function NewBlogPage() {
                                 <div className="space-y-2">
                                     <Label className="text-slate-700 font-semibold" htmlFor="content-en">Content</Label>
                                     <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
-                                        <TinyMCE id="content-en" value={contentEn} onChange={setContentEn} disabled={isSubmitting} />
+                                        <TinyMCE ref={contentEnEditorRef} id="content-en" value={contentEn} onChange={setContentEn} disabled={isSubmitting} />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
@@ -272,7 +294,7 @@ export default function NewBlogPage() {
                                 <div className="space-y-2">
                                     <Label className="text-slate-700 font-semibold" htmlFor="content-es">Contenido</Label>
                                     <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
-                                        <TinyMCE id="content-es" value={contentEs} onChange={setContentEs} disabled={isSubmitting} />
+                                        <TinyMCE ref={contentEsEditorRef} id="content-es" value={contentEs} onChange={setContentEs} disabled={isSubmitting} />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
@@ -317,9 +339,9 @@ export default function NewBlogPage() {
                                                 type="button"
                                                 onClick={() => removeTag(tag)}
                                                 disabled={isSubmitting}
+                                                aria-label={`Remove ${tag} tag`}
                                                 className="ml-1 rounded-full hover:bg-slate-300 p-0.5 transition-colors"
                                             >
-                                                <span className="sr-only">Remove</span>
                                                 <X className="h-3 w-3" />
                                             </button>
                                         </Badge>
@@ -371,7 +393,12 @@ export default function NewBlogPage() {
                         </div>
                     )}
 
-                    <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-slate-100">
+                    <div className="sticky bottom-0 -mx-4 md:-mx-6 -mb-4 md:-mb-6 bg-white border-t border-slate-200 px-4 md:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 z-10">
+                        {saveStatusLabel && (
+                            <p role="status" aria-live="polite" className="text-sm font-medium text-slate-600 sm:mr-auto">
+                                {saveStatusLabel}
+                            </p>
+                        )}
                         <Button
                             type="button"
                             variant="outline"
@@ -385,12 +412,11 @@ export default function NewBlogPage() {
                             type="submit"
                             disabled={isSubmitting}
                             className="bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-md transition-all"
-                            aria-live="polite"
                         >
                             {isSubmitting ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Saving post...
+                                    {saveStatusLabel || 'Saving post…'}
                                 </>
                             ) : (
                                 <>

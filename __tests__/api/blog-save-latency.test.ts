@@ -38,11 +38,11 @@ const validPayload = {
   tags: ['ops'],
 }
 
-const createJsonRequest = (method: 'POST' | 'PUT') =>
+const createJsonRequest = (method: 'POST' | 'PUT', payload = validPayload) =>
   new Request('http://localhost/api/blogs', {
     method,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(validPayload),
+    body: JSON.stringify(payload),
   })
 
 const expectFastResponse = async (responsePromise: Promise<Response>) => {
@@ -71,6 +71,30 @@ describe('blog save latency', () => {
 
     await expectFastResponse(POST(createJsonRequest('POST')))
     expect(notifyBlogSubscribers).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects embedded editor images before writing to MongoDB', async () => {
+    const response = await POST(createJsonRequest('POST', {
+      ...validPayload,
+      content_en: '<p><img src="data:image/png;base64,AAAA" alt="embedded"></p>',
+    }))
+    const data = await response.json()
+
+    expect(response.status).toBe(413)
+    expect(data.error).toContain('Images are still embedded')
+    expect(BlogModel.create).not.toHaveBeenCalled()
+  })
+
+  it('returns a specific oversized-blog error if MongoDB BSON serialization fails', async () => {
+    const error = new RangeError('The value of "offset" is out of range')
+    ;(error as Error & { code: string }).code = 'ERR_OUT_OF_RANGE'
+    ;(BlogModel.create as jest.Mock).mockRejectedValue(error)
+
+    const response = await POST(createJsonRequest('POST'))
+    const data = await response.json()
+
+    expect(response.status).toBe(413)
+    expect(data.error).toContain('too large to save')
   })
 
   it('updates a newly published blog without waiting for newsletter delivery', async () => {

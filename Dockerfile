@@ -54,7 +54,7 @@ COPY --from=builder /app/tsconfig*.json ./
 COPY --from=builder /app/package*.json ./
 # permissions
 RUN chmod +x /app/scripts/entrypoint.sh || true
-RUN mkdir -p ./public/images/projects && chown -R nextjs:nodejs ./public/images && chmod -R 755 ./public/images
+RUN mkdir -p ./public/images/projects ./public/images/blogs && chown -R nextjs:nodejs ./public/images && chmod -R 755 ./public/images
 RUN chown -R nextjs:nodejs ./data ./scripts ./lib ./models
 RUN chown -R nextjs:nodejs ./public && chmod -R 755 ./public
 

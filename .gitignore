@@ -12,6 +12,7 @@ next
 .env.test.local
 .env.mongo
 public/images/projects/*
+public/images/blogs/*
 
 .package-lock.json
 *.tsbuildinfo

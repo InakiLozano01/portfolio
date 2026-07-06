@@ -86,27 +86,6 @@ const AdminDashboard: FC = () => {
     }
   };
 
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyOverflow = body.style.overflow;
-    const prevHtmlHeight = html.style.height;
-    const prevBodyHeight = body.style.height;
-
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-    html.style.height = '100%';
-    body.style.height = '100%';
-
-    return () => {
-      html.style.overflow = prevHtmlOverflow;
-      body.style.overflow = prevBodyOverflow;
-      html.style.height = prevHtmlHeight;
-      body.style.height = prevBodyHeight;
-    };
-  }, []);
-
   // Start with the sidebar closed on small screens (mobile drawer pattern).
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -288,6 +267,8 @@ const AdminDashboard: FC = () => {
                     }
                   }}
                   variant="ghost"
+                  aria-label={item.label}
+                  title={sidebarOpen ? undefined : item.label}
                   className={`w-full justify-start h-11 px-3 relative transition-all duration-200 ${
                     isActive
                       ? 'bg-[#FD4345] text-white shadow-md hover:bg-[#FD4345] hover:text-white'
@@ -422,22 +403,27 @@ const AdminDashboard: FC = () => {
                         return (
                           <Card
                             key={item.id}
-                            className="group cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100 hover:border-[#FD4345]/20 overflow-hidden"
-                            onClick={() => selectSection(item.id)}
+                            className="group hover:shadow-xl transition-all duration-300 border-slate-100 hover:border-[#FD4345]/20 overflow-hidden"
                           >
-                            <CardContent className="p-4 md:p-6 flex flex-col items-center text-center gap-3 md:gap-4">
-                              <div className="p-3 md:p-4 rounded-full bg-slate-50 text-slate-600 group-hover:bg-[#FD4345] group-hover:text-white transition-colors duration-300">
-                                <Icon className="w-6 h-6" />
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-slate-900 group-hover:text-[#FD4345] transition-colors">
-                                  {item.label}
-                                </h3>
-                                <p className="text-xs text-slate-500 mt-1">
-                                  Manage {item.label.toLowerCase()}
-                                </p>
-                              </div>
-                            </CardContent>
+                            <button
+                              type="button"
+                              onClick={() => selectSection(item.id)}
+                              className="block w-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2"
+                            >
+                              <CardContent className="p-4 md:p-6 flex flex-col items-center text-center gap-3 md:gap-4">
+                                <div className="p-3 md:p-4 rounded-full bg-slate-50 text-slate-600 group-hover:bg-[#FD4345] group-hover:text-white transition-colors duration-300">
+                                  <Icon className="w-6 h-6" />
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-slate-900 group-hover:text-[#FD4345] transition-colors">
+                                    {item.label}
+                                  </h3>
+                                  <p className="text-xs text-slate-500 mt-1">
+                                    Manage {item.label.toLowerCase()}
+                                  </p>
+                                </div>
+                              </CardContent>
+                            </button>
                           </Card>
                         );
                       })}

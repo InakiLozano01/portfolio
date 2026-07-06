@@ -4,6 +4,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import BlogModel from '@/models/Blog';
 import { normalizeBlogPayload } from '@/lib/blog-normalize';
+import {
+    assertBlogPayloadCanBeSaved,
+    BLOG_DOCUMENT_TOO_LARGE_MESSAGE,
+    isBlogPayloadError,
+    isMongoDocumentSizeError,
+} from '@/lib/blog-payload-guard';
 import { notifyBlogSubscribers } from '@/lib/server/blog-newsletter';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -60,6 +66,7 @@ export async function PUT(
 
         const raw = await request.json();
         const body = normalizeBlogPayload(raw);
+        assertBlogPayloadCanBeSaved(body);
 
         await connectToDatabase();
         const previous = await BlogModel.findById(id).lean();
@@ -86,6 +93,18 @@ export async function PUT(
 
         return NextResponse.json(blog);
     } catch (error) {
+        if (isBlogPayloadError(error)) {
+            return NextResponse.json(
+                { error: error.message },
+                { status: error.status }
+            );
+        }
+        if (isMongoDocumentSizeError(error)) {
+            return NextResponse.json(
+                { error: BLOG_DOCUMENT_TOO_LARGE_MESSAGE },
+                { status: 413 }
+            );
+        }
         console.error('Failed to update blog:', error);
         return NextResponse.json(
             { error: 'Failed to update blog' },

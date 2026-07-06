@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { TinyMCE } from '@/components/ui/tinymce';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { IProject } from '@/models/Project';
-import { Plus, Trash2, Save, Edit, Briefcase, Search, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Save, Edit, Briefcase, Search, AlertCircle, ArrowLeft } from 'lucide-react';
 import { Types } from 'mongoose';
 import Image from 'next/image';
 import { slugify } from '@/lib/utils';
@@ -42,9 +42,11 @@ type EditableProject = Partial<ProjectWithId> & {
   thumbnailOptimization: ProjectThumbnailOptimization;
 };
 
-type ProjectWithTechnologies = ProjectWithId & {
+type ProjectWithTechnologies = Omit<ProjectWithId, 'technologies'> & {
   technologies: ISkill[];
 };
+
+type ManagerView = 'list' | 'editor';
 
 const emptyProject = (): EditableProject => ({
   title: '',
@@ -78,8 +80,19 @@ export default function ProjectsManager() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ title?: string; subtitle?: string }>({});
   const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<ManagerView>('list');
   const [projectToDelete, setProjectToDelete] = useState<ProjectWithTechnologies | null>(null);
   const autosaveTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const filteredProjects = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return projects;
+    return projects.filter((project) =>
+      (project.title || '').toLowerCase().includes(q) ||
+      (project.subtitle || '').toLowerCase().includes(q) ||
+      (project.subtitle_en || '').toLowerCase().includes(q)
+    );
+  }, [projects, search]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -140,6 +153,7 @@ export default function ProjectsManager() {
               ...(draft.thumbnailOptimization || {}),
             },
           });
+          setViewMode('editor');
         }
       }
     } catch { }
@@ -284,6 +298,7 @@ export default function ProjectsManager() {
         ...emptyProject(),
       });
       setImagePreview(null);
+      setViewMode('list');
 
       const projectSlug = slugify(savedProject.title || selectedProject.title || '');
       toast({
@@ -317,6 +332,7 @@ export default function ProjectsManager() {
         setSelectedProject({
           ...emptyProject(),
         });
+        setViewMode('list');
       }
 
       toast({
@@ -355,6 +371,40 @@ export default function ProjectsManager() {
     });
   };
 
+  const handleNewProject = () => {
+    localStorage.removeItem('projectDraft');
+    setSelectedProject(emptyProject());
+    setImagePreview(null);
+    setErrors({});
+    setViewMode('editor');
+  };
+
+  const handleSelectProject = (project: ProjectWithTechnologies) => {
+    setSelectedProject({
+      ...project,
+      title_es: project.title_es || '',
+      subtitle_en: project.subtitle_en || project.subtitle || '',
+      subtitle: project.subtitle || '',
+      subtitle_es: project.subtitle_es || '',
+      description_en: project.description_en || project.description || '',
+      description_es: project.description_es || '',
+      publicUrl: project.publicUrl || '',
+      technologies: project.technologies.map((tech) => tech._id),
+      thumbnailOptimization: {
+        ...DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION,
+        ...(project.thumbnailOptimization || {}),
+      },
+    });
+    setImagePreview(null);
+    setErrors({});
+    setViewMode('editor');
+  };
+
+  const handleBackToList = () => {
+    setErrors({});
+    setViewMode('list');
+  };
+
   if (isLoading) {
     return (
       <div className="p-4">
@@ -367,90 +417,109 @@ export default function ProjectsManager() {
   }
 
   return (
-    <div className="h-full flex flex-col p-4 md:p-6 gap-4 md:gap-6">
-      {/* Horizontal project rail */}
-      <Card className="bg-white border border-slate-200 shadow-sm">
-        <CardContent className="py-4">
-          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
-            <div className="flex items-center gap-2 sm:pr-3 sm:border-r border-slate-200">
-              <Briefcase className="w-5 h-5 text-slate-700" />
-              <span className="text-sm font-semibold text-slate-800">Projects ({projects.length})</span>
-            </div>
-            <div className="relative w-full sm:w-auto">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search projects..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full sm:w-64 pl-9 max-w-full h-9 border-slate-200 focus-visible:ring-[#FD4345]"
-              />
-            </div>
-            <div className="flex-1 overflow-x-auto pb-2 lg:pb-0">
-              <div className="flex gap-3 min-w-fit px-1">
-                {projects
-                  .filter((p) =>
-                    (p.title || '').toLowerCase().includes(search.toLowerCase()) ||
-                    (p.subtitle || '').toLowerCase().includes(search.toLowerCase())
-                  )
-                  .map((project) => {
-                    const isSelected = selectedProject._id?.toString() === project._id.toString();
-                    return (
-                      <div
-                        key={project._id.toString()}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-all duration-200 shadow-sm group cursor-pointer ${isSelected
-                          ? 'bg-[#263547] text-white border-[#263547]'
-                          : 'bg-white text-slate-600 border-slate-200 hover:border-[#FD4345]/50 hover:text-slate-900'
-                          }`}
-                        onClick={() => {
-                           setSelectedProject({
-                             ...project,
-                             title_es: project.title_es || '',
-                             subtitle_en: project.subtitle_en || project.subtitle || '',
-                             subtitle: project.subtitle || '',
-                             subtitle_es: project.subtitle_es || '',
-                             description_en: project.description_en || project.description || '',
-                             description_es: project.description_es || '',
-                             publicUrl: project.publicUrl || '',
-                             technologies: project.technologies.map((tech) => tech._id),
-                             thumbnailOptimization: {
-                               ...DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION,
-                               ...(project.thumbnailOptimization || {}),
-                             },
-                           });
-                           setImagePreview(null);
-                        }}
-                      >
-                        <div className="flex flex-col">
-                            <div className="font-semibold line-clamp-1 max-w-[120px]">{project.title}</div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-8 w-8 ml-1 rounded-full flex-shrink-0 ${isSelected ? 'text-white hover:bg-white/20' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setProjectToDelete(project);
-                          }}
-                          aria-label="Delete project"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    );
-                  })}
-                {projects.length === 0 && (
-                  <span className="text-sm text-slate-500 italic px-2">No projects found</span>
-                )}
+    <div className="h-full min-h-0 flex flex-col p-4 md:p-6 gap-4 md:gap-6">
+      {viewMode === 'list' && (
+        <Card className="bg-white border border-slate-200 shadow-sm flex-1 flex flex-col min-h-0">
+          <CardHeader className="py-4 px-4 md:px-6 border-b border-slate-200 shrink-0">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
+                  <Briefcase className="w-5 h-5 text-[#FD4345]" />
+                  Project Library
+                </CardTitle>
+                <p className="mt-1 text-sm text-slate-500">
+                  {projects.length} total projects
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative w-full sm:w-72">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                  <Input
+                    aria-label="Search projects"
+                    placeholder="Search title or subtitle..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-9 h-9 border-slate-200 focus-visible:ring-[#FD4345]"
+                  />
+                </div>
+                <Button type="button" onClick={handleNewProject} className="bg-[#FD4345] hover:bg-[#ff5456] text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Project
+                </Button>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 overflow-y-auto min-h-0">
+            {filteredProjects.length > 0 ? (
+              <div className="divide-y divide-slate-100">
+                {filteredProjects.map((project) => (
+                  <div key={project._id.toString()} className="grid gap-4 px-4 py-4 transition-colors hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:px-6">
+                    <div className="flex min-w-0 gap-4">
+                      <div className="relative hidden h-16 w-24 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100 sm:block">
+                        {project.thumbnail ? (
+                          <Image src={project.thumbnail} alt="" fill className="object-cover" />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-slate-300">
+                            <Briefcase className="h-5 w-5" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 space-y-2">
+                        <h3 className="truncate text-sm font-semibold text-slate-900">
+                          {project.title || 'Untitled project'}
+                        </h3>
+                        <p className="line-clamp-2 text-sm text-slate-500">
+                          {project.subtitle || project.subtitle_en || 'No subtitle yet'}
+                        </p>
+                        {project.technologies?.length ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {project.technologies.slice(0, 5).map((tech) => (
+                              <span key={tech._id.toString()} className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                                {tech.name}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 md:justify-end">
+                      <Button type="button" variant="outline" size="sm" onClick={() => handleSelectProject(project)} className="border-slate-200">
+                        <Edit className="w-3.5 h-3.5 mr-2" />
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={() => setProjectToDelete(project)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex h-full min-h-[320px] flex-col items-center justify-center px-6 text-center">
+                <Briefcase className="mb-3 h-10 w-10 text-slate-300" />
+                <p className="text-sm font-semibold text-slate-800">
+                  {projects.length === 0 ? 'No projects yet' : 'No matching projects'}
+                </p>
+                <p className="mt-1 max-w-sm text-sm text-slate-500">
+                  {projects.length === 0 ? 'Create your first project from here.' : 'Adjust the search term or clear the filter.'}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Editing canvas */}
+      {viewMode === 'editor' && (
       <Card className="bg-white border border-slate-200 shadow-md flex-1 flex flex-col overflow-hidden min-h-0">
         <CardHeader className="bg-[#263547] py-4 px-4 md:px-6 border-b border-slate-700">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="flex items-center gap-2 text-base md:text-lg text-white">
                 {selectedProject._id ? (
                     <>
@@ -464,20 +533,28 @@ export default function ProjectsManager() {
                     </>
                 )}
             </CardTitle>
-            {selectedProject._id && (
+            <div className="flex flex-wrap justify-end gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-slate-300 hover:text-white hover:bg-white/10 shrink-0"
+                onClick={handleBackToList}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" /> Library
+              </Button>
+              {selectedProject._id && (
                 <Button
+                    type="button"
                     variant="ghost"
                     size="sm"
                     className="text-slate-300 hover:text-white hover:bg-white/10 shrink-0"
-                    onClick={() => {
-                        localStorage.removeItem('projectDraft');
-                        setSelectedProject(emptyProject());
-                        setImagePreview(null);
-                    }}
+                    onClick={handleNewProject}
                 >
                     <Plus className="w-4 h-4 mr-2" /> New
                 </Button>
-            )}
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6 p-4 md:p-6 overflow-y-auto flex-1">
@@ -721,11 +798,7 @@ export default function ProjectsManager() {
 
           <div className="sticky bottom-0 bg-white border-t border-slate-200 py-4 mt-6 z-10 flex flex-col sm:flex-row justify-end gap-3">
             <Button
-              onClick={() => {
-                localStorage.removeItem('projectDraft');
-                setSelectedProject(emptyProject());
-                setImagePreview(null);
-              }}
+              onClick={handleNewProject}
               variant="ghost"
               className="text-slate-500 hover:text-slate-700"
             >
@@ -742,6 +815,7 @@ export default function ProjectsManager() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
         <AlertDialogContent className="bg-white">

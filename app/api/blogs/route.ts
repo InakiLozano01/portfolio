@@ -4,6 +4,12 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import BlogModel from '@/models/Blog';
 import { normalizeBlogPayload } from '@/lib/blog-normalize';
+import {
+    assertBlogPayloadCanBeSaved,
+    BLOG_DOCUMENT_TOO_LARGE_MESSAGE,
+    isBlogPayloadError,
+    isMongoDocumentSizeError,
+} from '@/lib/blog-payload-guard';
 import { notifyBlogSubscribers } from '@/lib/server/blog-newsletter';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -32,6 +38,7 @@ export async function POST(request: Request) {
 
         const raw = await request.json();
         const body = normalizeBlogPayload(raw);
+        assertBlogPayloadCanBeSaved(body);
 
         await connectToDatabase();
         const blog = await BlogModel.create(body);
@@ -46,6 +53,18 @@ export async function POST(request: Request) {
 
         return NextResponse.json(blog);
     } catch (error) {
+        if (isBlogPayloadError(error)) {
+            return NextResponse.json(
+                { error: error.message },
+                { status: error.status }
+            );
+        }
+        if (isMongoDocumentSizeError(error)) {
+            return NextResponse.json(
+                { error: BLOG_DOCUMENT_TOO_LARGE_MESSAGE },
+                { status: 413 }
+            );
+        }
         console.error('Failed to create blog:', error);
         return NextResponse.json(
             { error: 'Failed to create blog' },

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Trash2, Edit, FileText, Send, Search, Eye, ArrowRight, Save, Globe, X, AlertCircle, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Edit, FileText, Send, Search, Eye, ArrowRight, Save, Globe, X, AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
 import { Blog } from '@/models/BlogClient'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/use-toast'
@@ -22,7 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { TinyMCE } from '@/components/ui/tinymce'
+import { TinyMCE, type TinyMCEHandle } from '@/components/ui/tinymce'
 import { buildNewsletterEmail } from '@/lib/blog-newsletter'
 import type { ISubscriber } from '@/models/Subscriber'
 import { slugify } from '@/lib/utils'
@@ -31,12 +31,16 @@ import { ZodError } from 'zod'
 
 const requiredField = (value: string) => value.trim();
 const NEWSLETTER_SEND_TIMEOUT_MS = 45_000;
+type SaveStep = 'uploading' | 'saving' | null;
+type ManagerView = 'list' | 'editor';
 
 export default function BlogManager() {
     const { toast } = useToast()
     const [blogs, setBlogs] = useState<Blog[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
+    const [fetchError, setFetchError] = useState<string | null>(null)
+    const [viewMode, setViewMode] = useState<ManagerView>('list')
     
     // Newsletter state
     const [subscribers, setSubscribers] = useState<ISubscriber[]>([])
@@ -63,12 +67,15 @@ export default function BlogManager() {
         published: false
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [saveStep, setSaveStep] = useState<SaveStep>(null)
     const [formError, setFormError] = useState<string | null>(null)
     
     // Tags state
     const [pendingTag, setPendingTag] = useState('');
     const tagsInputRef = useRef<HTMLInputElement | null>(null);
     const [blogToDelete, setBlogToDelete] = useState<Blog | null>(null);
+    const contentEnEditorRef = useRef<TinyMCEHandle | null>(null);
+    const contentEsEditorRef = useRef<TinyMCEHandle | null>(null);
 
     const filteredSubscribers = useMemo(() => {
         const term = recipientSearch.trim().toLowerCase()
@@ -79,6 +86,21 @@ export default function BlogManager() {
             return email.includes(term) || language.includes(term)
         })
     }, [recipientSearch, subscribers])
+
+    const filteredBlogs = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return blogs;
+        return blogs.filter((blog) =>
+            (blog.title_en || blog.title || '').toLowerCase().includes(q) ||
+            (blog.subtitle_en || blog.subtitle || '').toLowerCase().includes(q)
+        );
+    }, [blogs, search]);
+
+    const saveStatusLabel = saveStep === 'uploading'
+        ? 'Uploading images…'
+        : saveStep === 'saving'
+        ? 'Saving post…'
+        : null;
 
     useEffect(() => {
         if (!newsletterBlog) {
@@ -106,6 +128,8 @@ export default function BlogManager() {
     }, [])
 
     async function fetchBlogs() {
+        setFetchError(null)
+        setLoading(true)
         try {
             const response = await fetch('/api/blogs')
             if (!response.ok) {
@@ -115,6 +139,7 @@ export default function BlogManager() {
             setBlogs(data)
         } catch (err) {
             console.error('Failed to fetch blogs', err)
+            setFetchError(err instanceof Error ? err.message : 'Failed to fetch blogs')
         } finally {
             setLoading(false)
         }
@@ -149,6 +174,8 @@ export default function BlogManager() {
             published: false
         })
         setFormError(null)
+        setPendingTag('')
+        setViewMode('editor')
     }
 
     const handleSelectBlog = (blog: Blog) => {
@@ -167,11 +194,14 @@ export default function BlogManager() {
             tags: blog.tags || [],
         })
         setFormError(null)
-        // Scroll to editor
-        const editorElement = document.getElementById('blog-editor');
-        if (editorElement) {
-            editorElement.scrollIntoView({ behavior: 'smooth' });
-        }
+        setPendingTag('')
+        setViewMode('editor')
+    }
+
+    const handleBackToList = () => {
+        setFormError(null)
+        setPendingTag('')
+        setViewMode('list')
     }
 
     const commitPendingTag = useCallback((raw?: string) => {
@@ -230,28 +260,38 @@ export default function BlogManager() {
         e.preventDefault();
         setFormError(null);
         setIsSubmitting(true);
+        setSaveStep('uploading');
 
         const englishTitle = requiredField(selectedBlog.title_en || '');
         const englishSubtitle = requiredField(selectedBlog.subtitle_en || '');
         const spanishTitle = requiredField(selectedBlog.title_es || '');
         const spanishSubtitle = requiredField(selectedBlog.subtitle_es || '');
 
-        const blogData = {
-            ...selectedBlog,
-            title_en: englishTitle,
-            title_es: spanishTitle,
-            subtitle_en: englishSubtitle,
-            subtitle_es: spanishSubtitle,
-            slug: slugify(englishTitle || spanishTitle),
-            // Legacy fallbacks
-            title: englishTitle || spanishTitle,
-            subtitle: englishSubtitle || spanishSubtitle,
-            content: selectedBlog.content_en || selectedBlog.content_es,
-            footer: selectedBlog.footer_en || selectedBlog.footer_es,
-            bibliography: selectedBlog.bibliography_en || selectedBlog.bibliography_es,
-        };
-
         try {
+            const [uploadedContentEn, uploadedContentEs] = await Promise.all([
+                contentEnEditorRef.current?.uploadImages(),
+                contentEsEditorRef.current?.uploadImages(),
+            ]);
+            setSaveStep('saving');
+            const finalContentEn = uploadedContentEn ?? selectedBlog.content_en ?? '';
+            const finalContentEs = uploadedContentEs ?? selectedBlog.content_es ?? '';
+            const blogData = {
+                ...selectedBlog,
+                title_en: englishTitle,
+                title_es: spanishTitle,
+                subtitle_en: englishSubtitle,
+                subtitle_es: spanishSubtitle,
+                content_en: finalContentEn,
+                content_es: finalContentEs,
+                slug: slugify(englishTitle || spanishTitle),
+                // Legacy fallbacks
+                title: englishTitle || spanishTitle,
+                subtitle: englishSubtitle || spanishSubtitle,
+                content: finalContentEn || finalContentEs,
+                footer: selectedBlog.footer_en || selectedBlog.footer_es,
+                bibliography: selectedBlog.bibliography_en || selectedBlog.bibliography_es,
+            };
+
             // Validate loosely first since we might be in draft
             // BlogSchema.parse(blogData); 
 
@@ -271,17 +311,20 @@ export default function BlogManager() {
                 description: `Blog post ${method === 'POST' ? 'created' : 'updated'} successfully.`,
             });
 
-            // Update selection to the saved blog
             handleSelectBlog(savedBlog);
+            setViewMode('list');
         } catch (err) {
             if (err instanceof ZodError) {
                 setFormError(err.issues[0]?.message ?? 'Please review the highlighted fields');
             } else if (err instanceof Error) {
                 setFormError(err.message);
+            } else if (err && typeof err === 'object' && 'message' in err) {
+                setFormError(String((err as { message: unknown }).message));
             } else {
                 setFormError('An error occurred while saving the blog');
             }
         } finally {
+            setSaveStep(null);
             setIsSubmitting(false);
         }
     };
@@ -299,6 +342,7 @@ export default function BlogManager() {
             
             if (selectedBlog._id === id) {
                 handleNewPost();
+                setViewMode('list');
             }
 
             toast({
@@ -385,91 +429,114 @@ export default function BlogManager() {
 
     return (
         <div className="h-full min-h-0 flex flex-col p-4 md:p-6 gap-4 md:gap-6">
-            {/* Horizontal Blog Rail */}
-            <Card className="bg-white border border-slate-200 shadow-sm shrink-0">
-                <CardContent className="py-4">
-                    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
-                        <div className="flex items-center gap-2 sm:pr-3 sm:border-r border-slate-200">
-                            <FileText className="w-5 h-5 text-slate-700" />
-                            <span className="text-sm font-semibold text-slate-800">Blogs ({blogs.length})</span>
-                        </div>
-                        <div className="relative w-full sm:w-auto">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                            <Input
-                                placeholder="Search blogs..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="w-full sm:w-64 pl-9 max-w-full h-9 border-slate-200 focus-visible:ring-[#FD4345]"
-                            />
-                        </div>
-                        <div className="flex-1 overflow-x-auto pb-2 lg:pb-0">
-                            <div className="flex gap-3 min-w-fit px-1">
-                                {blogs
-                                    .filter((b) => {
-                                        const q = search.toLowerCase();
-                                        return (b.title_en || b.title || '').toLowerCase().includes(q) || 
-                                               (b.subtitle_en || b.subtitle || '').toLowerCase().includes(q);
-                                    })
-                                    .map((blog) => {
-                                        const isSelected = selectedBlog._id === blog._id;
-                                        return (
-                                            <div
-                                                key={blog._id}
-                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-all duration-200 shadow-sm group cursor-pointer ${isSelected
-                                                    ? 'bg-[#263547] text-white border-[#263547]'
-                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-[#FD4345]/50 hover:text-slate-900'
-                                                }`}
-                                            >
-                                                <button
-                                                    type="button"
-                                                    className="flex flex-col max-w-[160px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2 rounded-sm"
-                                                    onClick={() => handleSelectBlog(blog)}
-                                                    aria-pressed={isSelected}
-                                                    aria-label={`Edit ${blog.title_en || blog.title}`}
-                                                >
-                                                    <div className="font-semibold line-clamp-1">{blog.title_en || blog.title}</div>
-                                                    <div className="text-[10px] opacity-80 flex items-center gap-1.5 mt-0.5">
-                                                        <span>{blog.published ? 'Published' : 'Draft'}</span>
-                                                    </div>
-                                                </button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className={`h-8 w-8 rounded-full flex-shrink-0 ${isSelected ? 'text-white hover:text-white/80 hover:bg-white/20' : 'text-slate-400 hover:text-[#FD4345] hover:bg-[#FD4345]/10'}`}
-                                                    onClick={(e) => openNewsletterModal(blog, e)}
-                                                    title="Send Newsletter"
-                                                    aria-label="Send newsletter"
-                                                >
-                                                    <Send className="w-3.5 h-3.5" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className={`h-8 w-8 rounded-full flex-shrink-0 ${isSelected ? 'text-white hover:bg-white/20' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setBlogToDelete(blog);
-                                                    }}
-                                                    aria-label="Delete blog post"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
-                                            </div>
-                                        );
-                                    })}
-                                {blogs.length === 0 && (
-                                    <span className="text-sm text-slate-500 italic px-2">No blogs found</span>
-                                )}
+            {viewMode === 'list' && (
+                <Card className="bg-white border border-slate-200 shadow-sm flex-1 flex flex-col min-h-0">
+                    <CardHeader className="py-4 px-4 md:px-6 border-b border-slate-200 shrink-0">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="min-w-0">
+                                <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
+                                    <FileText className="w-5 h-5 text-[#FD4345]" />
+                                    Blog Library
+                                </CardTitle>
+                                <p className="mt-1 text-sm text-slate-500">
+                                    {blogs.length} total posts, {blogs.filter((blog) => blog.published).length} published
+                                </p>
+                            </div>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <div className="relative w-full sm:w-72">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                                    <Input
+                                        aria-label="Search blogs"
+                                        placeholder="Search title or subtitle..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        className="w-full pl-9 h-9 border-slate-200 focus-visible:ring-[#FD4345]"
+                                    />
+                                </div>
+                                <Button type="button" onClick={handleNewPost} className="bg-[#FD4345] hover:bg-[#ff5456] text-white">
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    New Post
+                                </Button>
                             </div>
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardHeader>
+                    <CardContent className="p-0 flex-1 overflow-y-auto min-h-0">
+                        {fetchError ? (
+                            <div className="m-4 flex items-center gap-3 rounded-md border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                <AlertCircle className="h-4 w-4 shrink-0" />
+                                <span className="flex-1">{fetchError}</span>
+                                <Button type="button" variant="ghost" size="sm" className="h-8 text-red-700 hover:bg-red-100" onClick={fetchBlogs}>
+                                    Retry
+                                </Button>
+                            </div>
+                        ) : filteredBlogs.length > 0 ? (
+                            <div className="divide-y divide-slate-100">
+                                {filteredBlogs.map((blog) => (
+                                    <div key={blog._id} className="grid gap-3 px-4 py-4 transition-colors hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:px-6">
+                                        <div className="min-w-0 space-y-2">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <h3 className="truncate text-sm font-semibold text-slate-900">
+                                                    {blog.title_en || blog.title || 'Untitled blog'}
+                                                </h3>
+                                                <Badge className={blog.published ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-50' : 'bg-slate-100 text-slate-700 hover:bg-slate-100'}>
+                                                    {blog.published ? 'Published' : 'Draft'}
+                                                </Badge>
+                                            </div>
+                                            <p className="line-clamp-2 text-sm text-slate-500">
+                                                {blog.subtitle_en || blog.subtitle || 'No subtitle yet'}
+                                            </p>
+                                            {blog.tags?.length ? (
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {blog.tags.slice(0, 5).map((tag) => (
+                                                        <span key={tag} className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 md:justify-end">
+                                            <Button type="button" variant="outline" size="sm" onClick={() => handleSelectBlog(blog)} className="border-slate-200">
+                                                <Edit className="w-3.5 h-3.5 mr-2" />
+                                                Edit
+                                            </Button>
+                                            <Button type="button" variant="outline" size="sm" onClick={(e) => openNewsletterModal(blog, e)} className="border-slate-200">
+                                                <Send className="w-3.5 h-3.5 mr-2" />
+                                                Newsletter
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                onClick={() => setBlogToDelete(blog)}
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5 mr-2" />
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex h-full min-h-[320px] flex-col items-center justify-center px-6 text-center">
+                                <FileText className="mb-3 h-10 w-10 text-slate-300" />
+                                <p className="text-sm font-semibold text-slate-800">
+                                    {blogs.length === 0 ? 'No blog posts yet' : 'No matching blog posts'}
+                                </p>
+                                <p className="mt-1 max-w-sm text-sm text-slate-500">
+                                    {blogs.length === 0 ? 'Create your first bilingual post from here.' : 'Adjust the search term or clear the filter.'}
+                                </p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
-            {/* Editor Area */}
+            {viewMode === 'editor' && (
             <Card className="bg-white border border-slate-200 shadow-md flex-1 flex flex-col overflow-hidden min-h-0" id="blog-editor">
                 <CardHeader className="bg-[#263547] py-4 px-4 md:px-6 border-b border-slate-700 shrink-0">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <CardTitle className="flex items-center gap-2 text-base md:text-lg text-white">
                             {selectedBlog._id ? (
                                 <>
@@ -483,13 +550,25 @@ export default function BlogManager() {
                                 </>
                             )}
                         </CardTitle>
-                        <div className="flex gap-2 shrink-0">
-                             {selectedBlog._id && (
+                        <div className="flex flex-wrap justify-end gap-2 shrink-0">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-slate-300 hover:text-white hover:bg-white/10"
+                                onClick={handleBackToList}
+                                disabled={isSubmitting}
+                            >
+                                <ArrowLeft className="w-4 h-4 mr-2" /> Library
+                            </Button>
+                            {selectedBlog._id && (
                                 <Button
+                                    type="button"
                                     variant="ghost"
                                     size="sm"
                                     className="text-slate-300 hover:text-white hover:bg-white/10"
                                     onClick={handleNewPost}
+                                    disabled={isSubmitting}
                                 >
                                     <Plus className="w-4 h-4 mr-2" /> New Post
                                 </Button>
@@ -536,6 +615,7 @@ export default function BlogManager() {
                                             <Label className="text-slate-700 font-semibold" htmlFor="manager-content-en">Content</Label>
                                             <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
                                                 <TinyMCE 
+                                                    ref={contentEnEditorRef}
                                                     id="manager-content-en"
                                                     value={selectedBlog.content_en || ''} 
                                                     onChange={(val) => setSelectedBlog({...selectedBlog, content_en: val})} 
@@ -602,6 +682,7 @@ export default function BlogManager() {
                                             <Label className="text-slate-700 font-semibold" htmlFor="manager-content-es">Contenido</Label>
                                             <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
                                                 <TinyMCE 
+                                                    ref={contentEsEditorRef}
                                                     id="manager-content-es"
                                                     value={selectedBlog.content_es || ''} 
                                                     onChange={(val) => setSelectedBlog({...selectedBlog, content_es: val})} 
@@ -651,9 +732,9 @@ export default function BlogManager() {
                                                         type="button"
                                                         onClick={() => removeTag(tag)}
                                                         disabled={isSubmitting}
+                                                        aria-label={`Remove ${tag} tag`}
                                                         className="ml-1 rounded-full hover:bg-slate-300 p-0.5 transition-colors"
                                                     >
-                                                        <span className="sr-only">Remove</span>
                                                         <X className="h-3 w-3" />
                                                     </button>
                                                 </Badge>
@@ -706,7 +787,12 @@ export default function BlogManager() {
                             )}
                         </div>
 
-                        <div className="sticky bottom-0 bg-white border-t border-slate-200 py-4 px-4 md:px-6 mt-auto z-10 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
+                        <div className="sticky bottom-0 bg-white border-t border-slate-200 py-4 px-4 md:px-6 mt-auto z-10 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 shrink-0">
+                            {saveStatusLabel && (
+                                <p role="status" aria-live="polite" className="text-sm font-medium text-slate-600 sm:mr-auto">
+                                    {saveStatusLabel}
+                                </p>
+                            )}
                              <Button
                                 type="button"
                                 variant="ghost"
@@ -720,12 +806,11 @@ export default function BlogManager() {
                                 type="submit"
                                 disabled={isSubmitting}
                                 className="bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-md transition-all min-w-[140px]"
-                                aria-live="polite"
                             >
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Saving post...
+                                        {saveStatusLabel || 'Saving post…'}
                                     </>
                                 ) : (
                                     <>
@@ -738,6 +823,7 @@ export default function BlogManager() {
                     </form>
                 </CardContent>
             </Card>
+            )}
 
             {/* Newsletter Modal (unchanged logic, just re-inserted) */}
             <Dialog open={newsletterModalOpen} onOpenChange={(open) => {
@@ -788,7 +874,8 @@ export default function BlogManager() {
                                     <Input
                                         value={recipientSearch}
                                         onChange={(e) => setRecipientSearch(e.target.value)}
-                                        placeholder="Filter subscribers..."
+                                        aria-label="Filter subscribers"
+                                        placeholder="Filter subscribers…"
                                         className="h-8 pl-8 text-xs bg-white"
                                     />
                                 </div>
