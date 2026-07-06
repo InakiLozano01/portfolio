@@ -19,7 +19,6 @@ import { parse, HTMLElement, Node, NodeType } from 'node-html-parser'
 // Brand palette
 // ---------------------------------------------------------------------------
 const NAVY = '#1a2433'
-const NAVY_DEEP = '#0a1628'
 const MAROON = '#800020'
 const RED = '#ef4444'
 const BODY = '#1f2937'

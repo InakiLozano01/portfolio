@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Trash2, Edit, FileText, Send, Search, Eye, ArrowRight, Save, Globe, X, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, Edit, FileText, Send, Search, Eye, ArrowRight, Save, Globe, X, AlertCircle, Loader2 } from 'lucide-react'
 import { Blog } from '@/models/BlogClient'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/use-toast'
@@ -26,9 +26,11 @@ import { TinyMCE } from '@/components/ui/tinymce'
 import { buildNewsletterEmail } from '@/lib/blog-newsletter'
 import type { ISubscriber } from '@/models/Subscriber'
 import { slugify } from '@/lib/utils'
+import { saveBlogRequest } from '@/lib/admin-blog-save'
 import { ZodError } from 'zod'
 
 const requiredField = (value: string) => value.trim();
+const NEWSLETTER_SEND_TIMEOUT_MS = 45_000;
 
 export default function BlogManager() {
     const { toast } = useToast()
@@ -256,20 +258,7 @@ export default function BlogManager() {
             const url = selectedBlog._id ? `/api/blogs/${selectedBlog._id}` : '/api/blogs';
             const method = selectedBlog._id ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(blogData),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to save blog');
-            }
-
-            const savedBlog = await response.json();
+            const savedBlog = await saveBlogRequest<Blog>(url, method, blogData);
 
             if (method === 'POST') {
                 setBlogs([savedBlog, ...blogs]);
@@ -346,21 +335,35 @@ export default function BlogManager() {
             return
         }
         setIsSending(true)
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), NEWSLETTER_SEND_TIMEOUT_MS)
         try {
             const response = await fetch(`/api/blogs/${newsletterBlog._id}/send-newsletter`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ subscriberIds: selectedRecipients })
+                body: JSON.stringify({ subscriberIds: selectedRecipients }),
+                signal: controller.signal,
             })
-            const data = await response.json()
+            const data = await response.json().catch(() => null)
             if (!response.ok) {
                 throw new Error(data?.error || 'Failed to send newsletter')
             }
-            toast({ title: 'Newsletter sent', description: `Sent to ${data.sent} subscribers.` })
+            const failedCount = Array.isArray(data?.failed) ? data.failed.length : 0
+            toast({
+                title: failedCount > 0 ? 'Newsletter partially sent' : 'Newsletter sent',
+                description: failedCount > 0
+                    ? `Sent to ${data.sent} subscribers. ${failedCount} failed.`
+                    : `Sent to ${data.sent} subscribers.`,
+                variant: failedCount > 0 ? 'destructive' : undefined,
+            })
             setNewsletterModalOpen(false)
         } catch (err) {
-            toast({ title: 'Send failed', description: err instanceof Error ? err.message : 'Failed to send newsletter', variant: 'destructive' })
+            const message = err instanceof Error && err.name === 'AbortError'
+                ? 'Sending took too long. Check subscribers before retrying.'
+                : err instanceof Error ? err.message : 'Failed to send newsletter'
+            toast({ title: 'Send failed', description: message, variant: 'destructive' })
         } finally {
+            clearTimeout(timeout)
             setIsSending(false)
         }
     }
@@ -416,14 +419,19 @@ export default function BlogManager() {
                                                     ? 'bg-[#263547] text-white border-[#263547]'
                                                     : 'bg-white text-slate-600 border-slate-200 hover:border-[#FD4345]/50 hover:text-slate-900'
                                                 }`}
-                                                onClick={() => handleSelectBlog(blog)}
                                             >
-                                                <div className="flex flex-col max-w-[160px]">
+                                                <button
+                                                    type="button"
+                                                    className="flex flex-col max-w-[160px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2 rounded-sm"
+                                                    onClick={() => handleSelectBlog(blog)}
+                                                    aria-pressed={isSelected}
+                                                    aria-label={`Edit ${blog.title_en || blog.title}`}
+                                                >
                                                     <div className="font-semibold line-clamp-1">{blog.title_en || blog.title}</div>
                                                     <div className="text-[10px] opacity-80 flex items-center gap-1.5 mt-0.5">
                                                         <span>{blog.published ? 'Published' : 'Draft'}</span>
                                                     </div>
-                                                </div>
+                                                </button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -491,7 +499,7 @@ export default function BlogManager() {
                 </CardHeader>
                 
                 <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
-                    <form onSubmit={handleSave} className="flex flex-col h-full min-h-0">
+                    <form onSubmit={handleSave} className="flex flex-col h-full min-h-0" aria-busy={isSubmitting}>
                         <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
                                 {/* English Section */}
@@ -510,6 +518,7 @@ export default function BlogManager() {
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, title_en: e.target.value})}
                                                 placeholder="Enter English title"
                                                 className="focus-visible:ring-[#FD4345]"
+                                                disabled={isSubmitting}
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -520,14 +529,17 @@ export default function BlogManager() {
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, subtitle_en: e.target.value})}
                                                 placeholder="Enter English subtitle"
                                                 className="focus-visible:ring-[#FD4345]"
+                                                disabled={isSubmitting}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-slate-700 font-semibold">Content</Label>
+                                            <Label className="text-slate-700 font-semibold" htmlFor="manager-content-en">Content</Label>
                                             <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
                                                 <TinyMCE 
+                                                    id="manager-content-en"
                                                     value={selectedBlog.content_en || ''} 
                                                     onChange={(val) => setSelectedBlog({...selectedBlog, content_en: val})} 
+                                                    disabled={isSubmitting}
                                                 />
                                             </div>
                                         </div>
@@ -539,6 +551,7 @@ export default function BlogManager() {
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, footer_en: e.target.value})}
                                                 placeholder="Optional English footer"
                                                 className="focus-visible:ring-[#FD4345]"
+                                                disabled={isSubmitting}
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -549,6 +562,7 @@ export default function BlogManager() {
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, bibliography_en: e.target.value})}
                                                 placeholder="Optional English bibliography"
                                                 className="focus-visible:ring-[#FD4345]"
+                                                disabled={isSubmitting}
                                             />
                                         </div>
                                     </div>
@@ -570,6 +584,7 @@ export default function BlogManager() {
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, title_es: e.target.value})}
                                                 placeholder="Introduce el título en español"
                                                 className="focus-visible:ring-[#FD4345]"
+                                                disabled={isSubmitting}
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -580,14 +595,17 @@ export default function BlogManager() {
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, subtitle_es: e.target.value})}
                                                 placeholder="Introduce el subtítulo en español"
                                                 className="focus-visible:ring-[#FD4345]"
+                                                disabled={isSubmitting}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-slate-700 font-semibold">Contenido</Label>
+                                            <Label className="text-slate-700 font-semibold" htmlFor="manager-content-es">Contenido</Label>
                                             <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
                                                 <TinyMCE 
+                                                    id="manager-content-es"
                                                     value={selectedBlog.content_es || ''} 
                                                     onChange={(val) => setSelectedBlog({...selectedBlog, content_es: val})} 
+                                                    disabled={isSubmitting}
                                                 />
                                             </div>
                                         </div>
@@ -599,6 +617,7 @@ export default function BlogManager() {
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, footer_es: e.target.value})}
                                                 placeholder="Pie de página opcional"
                                                 className="focus-visible:ring-[#FD4345]"
+                                                disabled={isSubmitting}
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -609,6 +628,7 @@ export default function BlogManager() {
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, bibliography_es: e.target.value})}
                                                 placeholder="Bibliografía opcional"
                                                 className="focus-visible:ring-[#FD4345]"
+                                                disabled={isSubmitting}
                                             />
                                         </div>
                                     </div>
@@ -630,6 +650,7 @@ export default function BlogManager() {
                                                     <button
                                                         type="button"
                                                         onClick={() => removeTag(tag)}
+                                                        disabled={isSubmitting}
                                                         className="ml-1 rounded-full hover:bg-slate-300 p-0.5 transition-colors"
                                                     >
                                                         <span className="sr-only">Remove</span>
@@ -646,6 +667,7 @@ export default function BlogManager() {
                                                 onKeyDown={handleTagInputKeyDown}
                                                 placeholder={selectedBlog.tags?.length ? '' : 'Add tags (press Enter)...'}
                                                 className="flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none min-w-[120px]"
+                                                disabled={isSubmitting}
                                             />
                                         </div>
                                     </div>
@@ -662,6 +684,7 @@ export default function BlogManager() {
                                             onCheckedChange={(checked) => setSelectedBlog({...selectedBlog, published: checked})}
                                             id="published"
                                             className="data-[state=checked]:bg-[#FD4345]"
+                                            disabled={isSubmitting}
                                         />
                                         <div className="flex flex-col">
                                             <Label htmlFor="published" className="font-medium text-slate-900 cursor-pointer">
@@ -676,7 +699,7 @@ export default function BlogManager() {
                             </div>
 
                             {formError && (
-                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center gap-2 text-sm mt-6">
+                                <div role="alert" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center gap-2 text-sm mt-6">
                                     <X className="w-4 h-4 shrink-0" />
                                     {formError}
                                 </div>
@@ -688,6 +711,7 @@ export default function BlogManager() {
                                 type="button"
                                 variant="ghost"
                                 onClick={handleNewPost}
+                                disabled={isSubmitting}
                                 className="text-slate-500 hover:text-slate-700"
                             >
                                 Reset Form
@@ -696,9 +720,13 @@ export default function BlogManager() {
                                 type="submit"
                                 disabled={isSubmitting}
                                 className="bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-md transition-all min-w-[140px]"
+                                aria-live="polite"
                             >
                                 {isSubmitting ? (
-                                    <>Saving...</>
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Saving post...
+                                    </>
                                 ) : (
                                     <>
                                         <Save className="w-4 h-4 mr-2" />

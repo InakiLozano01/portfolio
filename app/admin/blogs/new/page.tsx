@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { BlogSchema } from '@/models/BlogClient';
 import { slugify } from '@/lib/utils';
+import { saveBlogRequest } from '@/lib/admin-blog-save';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ZodError } from 'zod';
-import { ArrowLeft, Save, FileText, Globe } from 'lucide-react';
+import { AlertCircle, ArrowLeft, FileText, Globe, Loader2, Save, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const requiredField = (value: string) => value.trim();
@@ -37,7 +38,7 @@ export default function NewBlogPage() {
     const [error, setError] = useState<string | null>(null);
 
     const handleBack = () => {
-        router.push('/admin#blog');
+        router.push('/admin#blogs');
         router.refresh();
     };
 
@@ -81,19 +82,9 @@ export default function NewBlogPage() {
         try {
             BlogSchema.parse(blogData);
 
-            const response = await fetch('/api/blogs', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(blogData),
-            });
+            await saveBlogRequest('/api/blogs', 'POST', blogData);
 
-            if (!response.ok) {
-                throw new Error('Failed to create blog');
-            }
-
-            router.push('/admin');
+            router.push('/admin#blogs');
             router.refresh();
         } catch (err) {
             if (err instanceof ZodError) {
@@ -181,7 +172,7 @@ export default function NewBlogPage() {
                 </Button>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
-                <form onSubmit={handleSubmit} className="space-y-8">
+                <form onSubmit={handleSubmit} className="space-y-8" aria-busy={isSubmitting}>
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
                         {/* English Section */}
                         <div className="space-y-6">
@@ -200,6 +191,7 @@ export default function NewBlogPage() {
                                         placeholder="Enter English title"
                                         className="focus-visible:ring-[#FD4345]"
                                         required
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -211,12 +203,13 @@ export default function NewBlogPage() {
                                         placeholder="Enter English subtitle"
                                         className="focus-visible:ring-[#FD4345]"
                                         required
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-slate-700 font-semibold">Content</Label>
+                                    <Label className="text-slate-700 font-semibold" htmlFor="content-en">Content</Label>
                                     <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
-                                        <TinyMCE value={contentEn} onChange={setContentEn} />
+                                        <TinyMCE id="content-en" value={contentEn} onChange={setContentEn} disabled={isSubmitting} />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
@@ -227,6 +220,7 @@ export default function NewBlogPage() {
                                         onChange={(e) => setFooterEn(e.target.value)}
                                         placeholder="Optional English footer"
                                         className="focus-visible:ring-[#FD4345]"
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -237,6 +231,7 @@ export default function NewBlogPage() {
                                         onChange={(e) => setBibliographyEn(e.target.value)}
                                         placeholder="Optional English bibliography"
                                         className="focus-visible:ring-[#FD4345]"
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                             </div>
@@ -259,6 +254,7 @@ export default function NewBlogPage() {
                                         placeholder="Introduce el título en español"
                                         className="focus-visible:ring-[#FD4345]"
                                         required
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -270,12 +266,13 @@ export default function NewBlogPage() {
                                         placeholder="Introduce el subtítulo en español"
                                         className="focus-visible:ring-[#FD4345]"
                                         required
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-slate-700 font-semibold">Contenido</Label>
+                                    <Label className="text-slate-700 font-semibold" htmlFor="content-es">Contenido</Label>
                                     <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
-                                        <TinyMCE value={contentEs} onChange={setContentEs} />
+                                        <TinyMCE id="content-es" value={contentEs} onChange={setContentEs} disabled={isSubmitting} />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
@@ -286,6 +283,7 @@ export default function NewBlogPage() {
                                         onChange={(e) => setFooterEs(e.target.value)}
                                         placeholder="Pie de página opcional"
                                         className="focus-visible:ring-[#FD4345]"
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -296,6 +294,7 @@ export default function NewBlogPage() {
                                         onChange={(e) => setBibliographyEs(e.target.value)}
                                         placeholder="Bibliografía opcional"
                                         className="focus-visible:ring-[#FD4345]"
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                             </div>
@@ -317,12 +316,11 @@ export default function NewBlogPage() {
                                             <button
                                                 type="button"
                                                 onClick={() => removeTag(tag)}
+                                                disabled={isSubmitting}
                                                 className="ml-1 rounded-full hover:bg-slate-300 p-0.5 transition-colors"
                                             >
                                                 <span className="sr-only">Remove</span>
-                                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
+                                                <X className="h-3 w-3" />
                                             </button>
                                         </Badge>
                                     ))}
@@ -335,6 +333,7 @@ export default function NewBlogPage() {
                                         onKeyDown={handleTagInputKeyDown}
                                         placeholder={tags.length ? '' : 'Add tags (press Enter)...'}
                                         className="flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none min-w-[120px]"
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                             </div>
@@ -351,6 +350,7 @@ export default function NewBlogPage() {
                                     onCheckedChange={setPublished}
                                     id="published"
                                     className="data-[state=checked]:bg-[#FD4345]"
+                                    disabled={isSubmitting}
                                 />
                                 <div className="flex flex-col">
                                     <Label htmlFor="published" className="font-medium text-slate-900 cursor-pointer">
@@ -365,10 +365,8 @@ export default function NewBlogPage() {
                     </div>
 
                     {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center gap-2 text-sm">
-                            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                        <div role="alert" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center gap-2 text-sm">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
                             {error}
                         </div>
                     )}
@@ -378,6 +376,7 @@ export default function NewBlogPage() {
                             type="button"
                             variant="outline"
                             onClick={handleBack}
+                            disabled={isSubmitting}
                             className="border-slate-200 text-slate-700 hover:bg-slate-50"
                         >
                             Cancel
@@ -386,9 +385,13 @@ export default function NewBlogPage() {
                             type="submit"
                             disabled={isSubmitting}
                             className="bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-md transition-all"
+                            aria-live="polite"
                         >
                             {isSubmitting ? (
-                                <>Saving...</>
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Saving post...
+                                </>
                             ) : (
                                 <>
                                     <Save className="w-4 h-4 mr-2" />

@@ -36,9 +36,12 @@ export async function POST(request: Request) {
         await connectToDatabase();
         const blog = await BlogModel.create(body);
 
-        // If published, notify subscribers (best effort)
+        // If published, notify subscribers in the background. Saving the post is
+        // the primary admin action; newsletter delivery must not hold the UI open.
         if (blog?.published) {
-            await notifyBlogSubscribers(blog);
+            void notifyBlogSubscribers(blog).catch((error) => {
+                console.error('Newsletter dispatch failed after blog create:', error);
+            });
         }
 
         return NextResponse.json(blog);

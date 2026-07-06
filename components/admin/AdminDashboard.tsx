@@ -45,13 +45,46 @@ interface Skill {
   icon: string;
 }
 
+const sidebarItems = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'sections', label: 'Sections', icon: Activity },
+  { id: 'skills', label: 'Skills', icon: Wrench },
+  { id: 'projects', label: 'Projects', icon: Briefcase },
+  { id: 'blogs', label: 'Blog', icon: FileText },
+  { id: 'messages', label: 'Messages', icon: MessageSquare },
+  { id: 'comments', label: 'Comments', icon: MessageCircle },
+  { id: 'assets', label: 'Assets', icon: ImageIcon },
+  { id: 'account', label: 'Account', icon: UserCog },
+];
+
+const sectionIds = new Set(sidebarItems.map((item) => item.id));
+
+function getSectionFromHash() {
+  if (typeof window === 'undefined') return 'overview';
+  const hash = window.location.hash.replace(/^#/, '');
+  return sectionIds.has(hash) ? hash : 'overview';
+}
+
 const AdminDashboard: FC = () => {
-  const [activeSection, setActiveSection] = useState('overview');
+  const [activeSection, setActiveSection] = useState(getSectionFromHash);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedCacheType, setSelectedCacheType] = useState('all');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { toast } = useToast();
+
+  const selectSection = (sectionId: string) => {
+    setActiveSection(sectionId);
+    if (typeof window === 'undefined') return;
+
+    const target = sectionId === 'overview'
+      ? window.location.pathname
+      : `${window.location.pathname}#${sectionId}`;
+
+    if (`${window.location.pathname}${window.location.hash}` !== target) {
+      window.history.replaceState(null, '', target);
+    }
+  };
 
   useEffect(() => {
     const html = document.documentElement;
@@ -79,6 +112,16 @@ const AdminDashboard: FC = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       setSidebarOpen(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const syncSectionFromHash = () => {
+      setActiveSection(getSectionFromHash());
+    };
+
+    syncSectionFromHash();
+    window.addEventListener('hashchange', syncSectionFromHash);
+    return () => window.removeEventListener('hashchange', syncSectionFromHash);
   }, []);
 
   // Load skills so SkillsManager shows existing items
@@ -171,18 +214,6 @@ const AdminDashboard: FC = () => {
     }
   };
 
-  const sidebarItems = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'sections', label: 'Sections', icon: Activity },
-    { id: 'skills', label: 'Skills', icon: Wrench },
-    { id: 'projects', label: 'Projects', icon: Briefcase },
-    { id: 'blogs', label: 'Blog', icon: FileText },
-    { id: 'messages', label: 'Messages', icon: MessageSquare },
-    { id: 'comments', label: 'Comments', icon: MessageCircle },
-    { id: 'assets', label: 'Assets', icon: ImageIcon },
-    { id: 'account', label: 'Account', icon: UserCog },
-  ];
-
   return (
     <div className="flex h-full min-h-0 bg-[#F8F9FA] overflow-hidden">
       {/* Mobile backdrop */}
@@ -251,7 +282,7 @@ const AdminDashboard: FC = () => {
                 <Button
                   key={item.id}
                   onClick={() => {
-                    setActiveSection(item.id);
+                    selectSection(item.id);
                     if (typeof window !== 'undefined' && window.innerWidth < 768) {
                       setSidebarOpen(false);
                     }
@@ -392,7 +423,7 @@ const AdminDashboard: FC = () => {
                           <Card
                             key={item.id}
                             className="group cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100 hover:border-[#FD4345]/20 overflow-hidden"
-                            onClick={() => setActiveSection(item.id)}
+                            onClick={() => selectSection(item.id)}
                           >
                             <CardContent className="p-4 md:p-6 flex flex-col items-center text-center gap-3 md:gap-4">
                               <div className="p-3 md:p-4 rounded-full bg-slate-50 text-slate-600 group-hover:bg-[#FD4345] group-hover:text-white transition-colors duration-300">

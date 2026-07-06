@@ -88,7 +88,7 @@ export async function proxy(request: NextRequest) {
 
       if (pathname !== '/admin/login' && !token) {
         const loginUrl = new URL('/admin/login', request.url)
-        loginUrl.searchParams.set('callbackUrl', pathname)
+        loginUrl.searchParams.set('callbackUrl', pathname === '/admin/blog' ? '/admin#blogs' : pathname)
         return NextResponse.redirect(loginUrl)
       }
 

@@ -76,12 +76,17 @@ class EmailService {
         try {
             const port = parseInt(process.env.SMTP_PORT || '465')
             const isSsl = (process.env.SMTP_ENCRYPT || '').toUpperCase() === 'SSL' || port === 465
+            const parsedSmtpTimeout = parseInt(process.env.SMTP_TIMEOUT_MS || '15000')
+            const smtpTimeout = Number.isFinite(parsedSmtpTimeout) ? parsedSmtpTimeout : 15000
 
             this.transporter = nodemailer.createTransport({
                 host: process.env.SMTP_SERVER,
                 port,
                 secure: isSsl,
                 requireTLS: !isSsl, // for 587/TLS
+                connectionTimeout: smtpTimeout,
+                greetingTimeout: smtpTimeout,
+                socketTimeout: smtpTimeout,
                 pool: true,
                 auth: {
                     user: process.env.SMTP_USERNAME || process.env.CONTACT_MAIL_FROM,

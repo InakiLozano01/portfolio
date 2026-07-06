@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 
 // Check if MONGODB_URI is defined, if not use default development URI
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/portfolio';
+const parsedMongoTimeout = parseInt(process.env.MONGODB_TIMEOUT_MS || '10000', 10);
+const mongoTimeoutMs = Number.isFinite(parsedMongoTimeout) ? parsedMongoTimeout : 10000;
 
 interface GlobalMongoose {
   conn: typeof mongoose | null
@@ -25,6 +27,9 @@ export async function connectToDatabase() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      serverSelectionTimeoutMS: mongoTimeoutMs,
+      connectTimeoutMS: mongoTimeoutMs,
+      socketTimeoutMS: mongoTimeoutMs,
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
@@ -41,4 +46,4 @@ export async function connectToDatabase() {
   }
 }
 
-export default mongoose; 
+export default mongoose;

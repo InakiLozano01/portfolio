@@ -9,9 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { BlogSchema } from '@/models/BlogClient';
 import { slugify } from '@/lib/utils';
+import { saveBlogRequest } from '@/lib/admin-blog-save';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ZodError } from 'zod';
-import { ArrowLeft } from 'lucide-react';
+import { AlertCircle, ArrowLeft, FileText, Globe, Loader2, Save, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface EditBlogPageProps {
     params: Promise<{
@@ -44,6 +46,7 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
     const [pdfUploading, setPdfUploading] = useState(false);
     const [pdfGenerating, setPdfGenerating] = useState<'en' | 'es' | 'both' | null>(null);
     const [pdfGenError, setPdfGenError] = useState<string | null>(null);
+    const [pdfUploadError, setPdfUploadError] = useState<string | null>(null);
 
     const [published, setPublished] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
@@ -168,6 +171,36 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
         }
     }, [id]);
 
+    const uploadPdf = useCallback(async (lang: 'en' | 'es', file: File | null) => {
+        if (!file) return;
+        setPdfUploadError(null);
+        setPdfUploading(true);
+        try {
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('lang', lang);
+            const res = await fetch(`/api/blogs/${id}/pdf`, { method: 'POST', body: fd });
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                throw new Error(typeof data?.error === 'string' ? data.error : `Failed to upload ${lang.toUpperCase()} PDF`);
+            }
+            if (typeof data?.path !== 'string') {
+                throw new Error('PDF upload completed without a file path');
+            }
+            if (lang === 'en') {
+                setPdfEn(data.path);
+                setPdfEnFile(null);
+            } else {
+                setPdfEs(data.path);
+                setPdfEsFile(null);
+            }
+        } catch (err) {
+            setPdfUploadError(err instanceof Error ? err.message : 'Failed to upload PDF');
+        } finally {
+            setPdfUploading(false);
+        }
+    }, [id]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -207,19 +240,9 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
         try {
             BlogSchema.parse(blogData);
 
-            const response = await fetch(`/api/blogs/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(blogData),
-            });
+            await saveBlogRequest(`/api/blogs/${id}`, 'PUT', blogData);
 
-            if (!response.ok) {
-                throw new Error('Failed to update blog');
-            }
-
-            router.push('/admin');
+            router.push('/admin#blogs');
             router.refresh();
         } catch (err) {
             if (err instanceof ZodError) {
@@ -235,7 +258,7 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
     };
 
     const handleBack = () => {
-        router.push('/admin#blog');
+        router.push('/admin#blogs');
         router.refresh();
     };
 
@@ -253,9 +276,12 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
 
     return (
         <div className="min-h-screen overflow-y-auto p-4 md:p-6 bg-slate-50">
-        <Card className="max-w-5xl mx-auto border-slate-200 shadow-sm bg-white">
+        <Card className="max-w-7xl mx-auto border-slate-200 shadow-sm bg-white">
             <CardHeader className="bg-[#263547] py-4 px-4 md:px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <CardTitle className="text-lg md:text-xl font-semibold text-white">Edit Blog</CardTitle>
+                <div className="flex items-center gap-2 text-white">
+                    <FileText className="w-6 h-6 text-[#FD4345]" />
+                    <CardTitle className="text-lg md:text-xl font-semibold text-white">Edit Blog Post</CardTitle>
+                </div>
                 <Button
                     type="button"
                     variant="ghost"
@@ -266,113 +292,145 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                 </Button>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 className="font-semibold mb-2">English</h3>
+                <form onSubmit={handleSubmit} className="space-y-8" aria-busy={isSubmitting}>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                                <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-0 uppercase tracking-wider font-bold px-2.5">English</Badge>
+                                <Globe className="w-4 h-4 text-slate-400" />
+                            </div>
+                            <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="title-en">Title (EN)</Label>
+                                <Label className="text-slate-700 font-semibold" htmlFor="title-en">Title <span className="text-red-500">*</span></Label>
                                 <Input
                                     id="title-en"
                                     value={titleEn}
                                     onChange={(e) => setTitleEn(e.target.value)}
                                     placeholder="Enter English title"
+                                    className="focus-visible:ring-[#FD4345]"
                                     required
+                                    disabled={isSubmitting}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="subtitle-en">Subtitle (EN)</Label>
+                                <Label className="text-slate-700 font-semibold" htmlFor="subtitle-en">Subtitle <span className="text-red-500">*</span></Label>
                                 <Input
                                     id="subtitle-en"
                                     value={subtitleEn}
                                     onChange={(e) => setSubtitleEn(e.target.value)}
                                     placeholder="Enter English subtitle"
+                                    className="focus-visible:ring-[#FD4345]"
                                     required
+                                    disabled={isSubmitting}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-gray-900">Content (EN)</Label>
-                                <TinyMCE value={contentEn} onChange={setContentEn} />
+                                <Label className="text-slate-700 font-semibold" htmlFor="edit-content-en">Content</Label>
+                                <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
+                                    <TinyMCE id="edit-content-en" value={contentEn} onChange={setContentEn} disabled={isSubmitting} />
+                                </div>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="footer-en">Footer (EN)</Label>
+                                <Label className="text-slate-700 font-semibold" htmlFor="footer-en">Footer</Label>
                                 <Input
                                     id="footer-en"
                                     value={footerEn}
                                     onChange={(e) => setFooterEn(e.target.value)}
                                     placeholder="Optional English footer"
+                                    className="focus-visible:ring-[#FD4345]"
+                                    disabled={isSubmitting}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="bibliography-en">Bibliography (EN)</Label>
+                                <Label className="text-slate-700 font-semibold" htmlFor="bibliography-en">Bibliography</Label>
                                 <Input
                                     id="bibliography-en"
                                     value={bibliographyEn}
                                     onChange={(e) => setBibliographyEn(e.target.value)}
                                     placeholder="Optional English bibliography"
+                                    className="focus-visible:ring-[#FD4345]"
+                                    disabled={isSubmitting}
                                 />
                             </div>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="font-semibold mb-2">Español</h3>
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                                <Badge className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-0 uppercase tracking-wider font-bold px-2.5">Español</Badge>
+                                <Globe className="w-4 h-4 text-slate-400" />
+                            </div>
+                            <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="title-es">Título (ES)</Label>
+                                <Label className="text-slate-700 font-semibold" htmlFor="title-es">Título <span className="text-red-500">*</span></Label>
                                 <Input
                                     id="title-es"
                                     value={titleEs}
                                     onChange={(e) => setTitleEs(e.target.value)}
                                     placeholder="Introduce el título en español"
+                                    className="focus-visible:ring-[#FD4345]"
                                     required
+                                    disabled={isSubmitting}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="subtitle-es">Subtítulo (ES)</Label>
+                                <Label className="text-slate-700 font-semibold" htmlFor="subtitle-es">Subtítulo <span className="text-red-500">*</span></Label>
                                 <Input
                                     id="subtitle-es"
                                     value={subtitleEs}
                                     onChange={(e) => setSubtitleEs(e.target.value)}
                                     placeholder="Introduce el subtítulo en español"
+                                    className="focus-visible:ring-[#FD4345]"
                                     required
+                                    disabled={isSubmitting}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-gray-900">Contenido (ES)</Label>
-                                <TinyMCE value={contentEs} onChange={setContentEs} />
+                                <Label className="text-slate-700 font-semibold" htmlFor="edit-content-es">Contenido</Label>
+                                <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
+                                    <TinyMCE id="edit-content-es" value={contentEs} onChange={setContentEs} disabled={isSubmitting} />
+                                </div>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="footer-es">Pie (ES)</Label>
+                                <Label className="text-slate-700 font-semibold" htmlFor="footer-es">Pie</Label>
                                 <Input
                                     id="footer-es"
                                     value={footerEs}
                                     onChange={(e) => setFooterEs(e.target.value)}
                                     placeholder="Pie de página opcional"
+                                    className="focus-visible:ring-[#FD4345]"
+                                    disabled={isSubmitting}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-gray-900" htmlFor="bibliography-es">Bibliografía (ES)</Label>
+                                <Label className="text-slate-700 font-semibold" htmlFor="bibliography-es">Bibliografía</Label>
                                 <Input
                                     id="bibliography-es"
                                     value={bibliographyEs}
                                     onChange={(e) => setBibliographyEs(e.target.value)}
                                     placeholder="Bibliografía opcional"
+                                    className="focus-visible:ring-[#FD4345]"
+                                    disabled={isSubmitting}
                                 />
+                            </div>
                             </div>
                         </div>
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 pt-6 border-t border-slate-100">
                     <div className="space-y-2">
-                        <Label className="text-gray-900" htmlFor="tags">Tags (comma-separated)</Label>
-                        <div className="rounded-md border border-gray-300 bg-white px-2 py-2">
+                        <Label className="text-slate-700 font-semibold" htmlFor="tags">Tags</Label>
+                        <div className="rounded-md border border-slate-200 bg-white p-2 focus-within:ring-2 focus-within:ring-[#FD4345] focus-within:ring-offset-2 transition-all">
                             <div className="flex flex-wrap gap-2">
                                 {tags.map((tag) => (
                                     <button
                                         key={tag}
                                         type="button"
                                         onClick={() => removeTag(tag)}
-                                        className="flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-200"
+                                        disabled={isSubmitting}
+                                        className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-200"
                                     >
                                         {tag}
-                                        <span className="ml-1 text-gray-500">×</span>
+                                        <X className="ml-1 h-3 w-3 text-slate-500" />
                                     </button>
                                 ))}
                                 <input
@@ -383,13 +441,36 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                     onBlur={() => commitPendingTag()}
                                     onKeyDown={handleTagInputKeyDown}
                                     placeholder={tags.length ? '' : 'ai, llms, machine-learning'}
-                                    className="min-w-[120px] flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+                                    className="min-w-[120px] flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                                    disabled={isSubmitting}
                                 />
                             </div>
                         </div>
                         <p className="text-sm text-muted-foreground">
                             Separate with commas or press enter to add. Click a tag to remove.
                         </p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-slate-700 font-semibold mb-2 block">Status</Label>
+                        <div className="flex items-center space-x-3 p-3 rounded-md border border-slate-200 bg-slate-50">
+                            <Switch
+                                checked={published}
+                                onCheckedChange={setPublished}
+                                id="published"
+                                className="data-[state=checked]:bg-[#FD4345]"
+                                disabled={isSubmitting}
+                            />
+                            <div className="flex flex-col">
+                                <Label htmlFor="published" className="font-medium text-slate-900 cursor-pointer">
+                                    {published ? 'Published' : 'Draft'}
+                                </Label>
+                                <span className="text-xs text-slate-500">
+                                    {published ? 'Visible to all visitors' : 'Only visible to admins'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -404,31 +485,19 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                 type="file"
                                 accept="application/pdf"
                                 onChange={(e) => setPdfEnFile(e.target.files?.[0] || null)}
+                                disabled={pdfUploading || isSubmitting}
                             />
                             <Button
                                 type="button"
-                                disabled={!pdfEnFile || pdfUploading}
-                                onClick={async () => {
-                                    if (!pdfEnFile) return;
-                                    setPdfUploading(true);
-                                    const fd = new FormData();
-                                    fd.append('file', pdfEnFile);
-                                    fd.append('lang', 'en');
-                                    const res = await fetch(`/api/blogs/${id}/pdf`, { method: 'POST', body: fd });
-                                    setPdfUploading(false);
-                                    if (res.ok) {
-                                        const data = await res.json();
-                                        setPdfEn(data.path);
-                                        setPdfEnFile(null);
-                                    }
-                                }}
+                                disabled={!pdfEnFile || pdfUploading || isSubmitting}
+                                onClick={() => uploadPdf('en', pdfEnFile)}
                             >
-                                Upload EN PDF
+                                {pdfUploading && pdfEnFile ? 'Uploading...' : 'Upload EN PDF'}
                             </Button>
                             <div className="pt-1">
                                 <Button
                                     type="button"
-                                    disabled={pdfGenerating !== null}
+                                    disabled={pdfGenerating !== null || isSubmitting}
                                     onClick={() => generatePdf('en')}
                                     className="w-full bg-[#1a2433] hover:bg-[#263547] text-white"
                                 >
@@ -448,31 +517,19 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                                 type="file"
                                 accept="application/pdf"
                                 onChange={(e) => setPdfEsFile(e.target.files?.[0] || null)}
+                                disabled={pdfUploading || isSubmitting}
                             />
                             <Button
                                 type="button"
-                                disabled={!pdfEsFile || pdfUploading}
-                                onClick={async () => {
-                                    if (!pdfEsFile) return;
-                                    setPdfUploading(true);
-                                    const fd = new FormData();
-                                    fd.append('file', pdfEsFile);
-                                    fd.append('lang', 'es');
-                                    const res = await fetch(`/api/blogs/${id}/pdf`, { method: 'POST', body: fd });
-                                    setPdfUploading(false);
-                                    if (res.ok) {
-                                        const data = await res.json();
-                                        setPdfEs(data.path);
-                                        setPdfEsFile(null);
-                                    }
-                                }}
+                                disabled={!pdfEsFile || pdfUploading || isSubmitting}
+                                onClick={() => uploadPdf('es', pdfEsFile)}
                             >
-                                Upload ES PDF
+                                {pdfUploading && pdfEsFile ? 'Uploading...' : 'Upload ES PDF'}
                             </Button>
                             <div className="pt-1">
                                 <Button
                                     type="button"
-                                    disabled={pdfGenerating !== null}
+                                    disabled={pdfGenerating !== null || isSubmitting}
                                     onClick={() => generatePdf('es')}
                                     className="w-full bg-[#1a2433] hover:bg-[#263547] text-white"
                                 >
@@ -486,33 +543,29 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                         <Button
                             type="button"
-                            disabled={pdfGenerating !== null}
+                            disabled={pdfGenerating !== null || isSubmitting}
                             onClick={() => generatePdf('both')}
                             className="bg-[#FD4345] hover:bg-[#ff5456] text-white"
                         >
                             {pdfGenerating === 'both' ? 'Generating both…' : 'Generate PDFs (EN + ES)'}
                         </Button>
                         {pdfGenError && <p className="text-sm text-red-500">{pdfGenError}</p>}
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                        <Switch
-                            checked={published}
-                            onCheckedChange={setPublished}
-                            id="published"
-                        />
-                        <Label htmlFor="published" className="text-gray-900">Published</Label>
+                        {pdfUploadError && <p role="alert" className="text-sm text-red-500">{pdfUploadError}</p>}
                     </div>
 
                     {error && (
-                        <p className="text-sm text-red-500">{error}</p>
+                        <div role="alert" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center gap-2 text-sm">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            {error}
+                        </div>
                     )}
 
-                    <div className="flex flex-col sm:flex-row justify-end gap-3">
+                    <div className="sticky bottom-0 bg-white border-t border-slate-200 py-4 flex flex-col sm:flex-row justify-end gap-3">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={handleBack}
+                            disabled={isSubmitting}
                             className="border-slate-200 text-slate-700 hover:bg-slate-50"
                         >
                             Cancel
@@ -521,8 +574,19 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
                             type="submit"
                             disabled={isSubmitting}
                             className="bg-[#FD4345] hover:bg-[#ff5456] text-white"
+                            aria-live="polite"
                         >
-                            {isSubmitting ? 'Saving...' : 'Save Blog'}
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Saving post...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4 mr-2" />
+                                    Save Blog
+                                </>
+                            )}
                         </Button>
                     </div>
                 </form>

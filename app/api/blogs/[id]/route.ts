@@ -76,9 +76,12 @@ export async function PUT(
             );
         }
 
-        // Notify subscribers if just published
+        // Notify subscribers in the background if just published. Saving the post is
+        // the primary admin action; newsletter delivery must not hold the UI open.
         if (previous && blog && previous.published === false && blog.published === true) {
-            await notifyBlogSubscribers(blog);
+            void notifyBlogSubscribers(blog).catch((error) => {
+                console.error('Newsletter dispatch failed after blog publish:', error);
+            });
         }
 
         return NextResponse.json(blog);

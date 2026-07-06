@@ -7,6 +7,8 @@ import { buildNewsletterEmail } from '@/lib/newsletter-template'
 import { requireAdmin } from '@/lib/admin-auth'
 
 const MAX_MANUAL_NEWSLETTER_RECIPIENTS = 100
+const MANUAL_NEWSLETTER_CONCURRENCY = 3
+const MANUAL_NEWSLETTER_DEADLINE_MS = 30_000
 
 export async function POST(
     request: NextRequest,
@@ -33,17 +35,36 @@ export async function POST(
         if (!blog) {
             return NextResponse.json({ error: 'Blog not found' }, { status: 404 })
         }
+        const newsletterBlog = blog as Record<string, any>
 
         const subscribers = await Subscriber.find({ _id: { $in: uniqueSubscriberIds }, unsubscribed: false, confirmed: true }).lean()
         if (!subscribers.length) {
             return NextResponse.json({ error: 'No active (confirmed) subscribers for selection' }, { status: 400 })
         }
 
-        const results = await Promise.all(subscribers.map(async (subscriber) => {
-            const { subject, html, text, attachments, listUnsubscribeUrl } = buildNewsletterEmail(blog, subscriber)
-            const success = await sendNewsletterEmail({ to: subscriber.email, subject, html, text, attachments, listUnsubscribe: listUnsubscribeUrl })
-            return { email: subscriber.email, success }
-        }))
+        const deadline = Date.now() + MANUAL_NEWSLETTER_DEADLINE_MS
+        const results: Array<{ email: string; success: boolean; error?: string }> = []
+        let nextIndex = 0
+
+        async function worker() {
+            while (nextIndex < subscribers.length) {
+                const subscriber = subscribers[nextIndex]
+                nextIndex += 1
+
+                if (Date.now() > deadline) {
+                    results.push({ email: subscriber.email, success: false, error: 'deadline_exceeded' })
+                    continue
+                }
+
+                const { subject, html, text, attachments, listUnsubscribeUrl } = buildNewsletterEmail(newsletterBlog, subscriber)
+                const success = await sendNewsletterEmail({ to: subscriber.email, subject, html, text, attachments, listUnsubscribe: listUnsubscribeUrl })
+                results.push({ email: subscriber.email, success })
+            }
+        }
+
+        await Promise.all(
+            Array.from({ length: Math.min(MANUAL_NEWSLETTER_CONCURRENCY, subscribers.length) }, () => worker())
+        )
 
         const failed = results.filter((r) => !r.success)
 
