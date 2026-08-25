@@ -181,18 +181,4 @@
   "name": "Google Cloud",
   "category": "devops",
   "icon": "SiGooglecloud"
-},
-{
-  "_id": {
-    "$oid": "67805ea315869c88fed19e07"
-  },
-  "name": "ChatGPT",
-  "category": "ai",
-  "icon": "SiOpenai",
-  "createdAt": {
-    "$date": "2025-01-10T00:07:22.870Z"
-  },
-  "updatedAt": {
-    "$date": "2025-01-10T00:07:22.870Z"
-  }
 }]

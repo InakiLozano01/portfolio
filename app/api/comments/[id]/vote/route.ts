@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Comment from '@/models/Comment'
 import { getClientIp } from '@/lib/client-ip'
+import { isValidObjectId } from '@/lib/comments'
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000
 const MAX_VOTE_REQUESTS_PER_WINDOW = 30
@@ -38,6 +39,10 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
 
     if (!['up', 'down', 'clear'].includes(direction)) {
       return NextResponse.json({ error: 'Invalid vote' }, { status: 400 })
+    }
+
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ error: 'Invalid comment id' }, { status: 400 })
     }
 
     await connectToDatabase()

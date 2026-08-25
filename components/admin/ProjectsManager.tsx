@@ -198,7 +198,6 @@ export default function ProjectsManager() {
       // Try uploading the file
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('thumbnailOptimizationEnabled', String(selectedProject.thumbnailOptimization.enabled));
       formData.append('thumbnailOptimizationQuality', String(selectedProject.thumbnailOptimization.quality));
       formData.append('thumbnailOptimizationEffort', String(selectedProject.thumbnailOptimization.effort));
 
@@ -670,26 +669,7 @@ export default function ProjectsManager() {
           </div>
 
           <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <label className="text-sm font-medium text-slate-700">Thumbnail optimization</label>
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                <input
-                  type="checkbox"
-                  checked={selectedProject.thumbnailOptimization.enabled}
-                  onChange={(e) =>
-                    setSelectedProject({
-                      ...selectedProject,
-                      thumbnailOptimization: {
-                        ...selectedProject.thumbnailOptimization,
-                        enabled: e.target.checked,
-                      },
-                    })
-                  }
-                  className="h-4 w-4 rounded border-slate-300 text-[#FD4345] focus:ring-[#FD4345]"
-                />
-                Convert uploads to WebP
-              </label>
-            </div>
+            <p className="text-sm font-medium text-slate-700">Thumbnails are converted to WebP on upload.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="text-xs font-medium text-slate-600">
                 Quality
@@ -698,7 +678,6 @@ export default function ProjectsManager() {
                   min={50}
                   max={95}
                   value={selectedProject.thumbnailOptimization.quality}
-                  disabled={!selectedProject.thumbnailOptimization.enabled}
                   onChange={(e) =>
                     setSelectedProject({
                       ...selectedProject,
@@ -718,7 +697,6 @@ export default function ProjectsManager() {
                   min={0}
                   max={6}
                   value={selectedProject.thumbnailOptimization.effort}
-                  disabled={!selectedProject.thumbnailOptimization.enabled}
                   onChange={(e) =>
                     setSelectedProject({
                       ...selectedProject,

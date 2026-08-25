@@ -118,11 +118,86 @@ const CONFIRM_STRINGS: Record<'en' | 'es', ConfirmStrings> = {
   },
 }
 
-const absolutizeImages = (html: string): string =>
-  html.replace(/(<img\b[^>]*\bsrc=")\/([^"]*)"/gi, `$1${baseUrl}/$2"`)
+const absolutizeUrl = (value: string): string => {
+  const raw = stringOrEmpty(value).trim()
+  if (!raw) return raw
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('cid:') || raw.startsWith('data:')) return raw
+  if (raw.startsWith('//')) return `https:${raw}`
+  return `${baseUrl}${raw.startsWith('/') ? '' : '/'}${raw}`
+}
 
-// Sanitize TinyMCE article HTML for email: keep semantic prose, drop anything
-// email clients can't render (scripts, iframes/video, embedded math, inline styles).
+const absolutizeImages = (html: string): string =>
+  html
+    .replace(/(<img\b[^>]*\bsrc=")([^"]*)(")/gi, (_m, pre, src, post) => `${pre}${absolutizeUrl(src)}${post}`)
+    .replace(/(<a\b[^>]*\bhref=")(\/[^"]*)(")/gi, (_m, pre, href, post) => `${pre}${absolutizeUrl(href)}${post}`)
+
+// Keep only email-safe CSS declarations from TinyMCE (alignment, spacing, color).
+const sanitizeInlineStyle = (style: string): string => {
+  const allowed = new Set([
+    'text-align',
+    'display',
+    'margin',
+    'margin-top',
+    'margin-right',
+    'margin-bottom',
+    'margin-left',
+    'padding',
+    'padding-top',
+    'padding-right',
+    'padding-bottom',
+    'padding-left',
+    'width',
+    'max-width',
+    'height',
+    'max-height',
+    'color',
+    'background-color',
+    'font-style',
+    'font-weight',
+    'font-size',
+    'line-height',
+    'border',
+    'border-left',
+    'border-radius',
+  ])
+  return stringOrEmpty(style)
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const idx = part.indexOf(':')
+      if (idx === -1) return ''
+      const prop = part.slice(0, idx).trim().toLowerCase()
+      const val = part.slice(idx + 1).trim()
+      if (!allowed.has(prop) || !val) return ''
+      // Block urls/expressions in styles (images use src=, not background url()).
+      if (/url\s*\(|expression\s*\(|javascript:/i.test(val)) return ''
+      return `${prop}: ${val}`
+    })
+    .filter(Boolean)
+    .join('; ')
+}
+
+const enhanceEmailImages = (html: string): string =>
+  html.replace(/<img\b([^>]*)>/gi, (_m, attrs: string) => {
+    const srcMatch = attrs.match(/\bsrc=(["'])(.*?)\1/i)
+    const altMatch = attrs.match(/\balt=(["'])(.*?)\1/i)
+    const styleMatch = attrs.match(/\bstyle=(["'])(.*?)\1/i)
+    const widthMatch = attrs.match(/\bwidth=(["'])?(.*?)\1?(?:\s|>|$)/i)
+    const src = srcMatch ? absolutizeUrl(srcMatch[2]) : ''
+    if (!src) return ''
+    const alt = altMatch ? altMatch[2] : ''
+    const width = widthMatch ? widthMatch[2].replace(/["']/g, '').trim() : ''
+    const existing = sanitizeInlineStyle(styleMatch ? styleMatch[2] : '')
+    const baseStyle =
+      'display:block;max-width:100%;height:auto;margin:18px auto;border-radius:8px;'
+    const style = existing ? `${baseStyle}${existing}` : baseStyle
+    const widthAttr = width && /^\d+$/.test(width) ? ` width="${width}"` : ''
+    return `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}"${widthAttr} style="${escapeHtml(style)}" />`
+  })
+
+// Sanitize TinyMCE article HTML for email: keep semantic prose + safe inline styles
+// (justify/center) and images. Drop scripts, iframes, video, math.
 const sanitizeArticleHtml = (html: string): string => {
   const clean = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
@@ -132,11 +207,21 @@ const sanitizeArticleHtml = (html: string): string => {
       'img', 'figure', 'figcaption',
       'table', 'thead', 'tbody', 'tr', 'th', 'td',
     ],
-    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'colspan', 'rowspan'],
-    FORBID_TAGS: ['style', 'script', 'iframe', 'video', 'audio', 'source', 'math'],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'colspan', 'rowspan', 'width', 'height', 'style'],
+    FORBID_TAGS: ['script', 'iframe', 'video', 'audio', 'source', 'math'],
     ALLOW_DATA_ATTR: false,
   })
-  return absolutizeImages(clean)
+
+  // Re-sanitize every style= after DOMPurify (defense in depth).
+  const withSafeStyles = clean.replace(
+    /\sstyle=(["'])(.*?)\1/gi,
+    (_m, _q, style: string) => {
+      const safe = sanitizeInlineStyle(style)
+      return safe ? ` style="${safe}"` : ''
+    }
+  )
+
+  return enhanceEmailImages(absolutizeImages(withSafeStyles))
 }
 
 const computeReadingMinutes = (html: string): number => {
@@ -164,16 +249,24 @@ const formatDate = (value: unknown, lang: 'en' | 'es'): string => {
 // Outlook desktop, etc.). Gmail strips it but inherits the inline body styles,
 // so prose still reads cleanly everywhere.
 const ARTICLE_STYLE = `
-    .il-article { color:#1f2937; font-size:16px; line-height:1.7; }
-    .il-article p { margin:0 0 16px; }
-    .il-article h1,.il-article h2,.il-article h3,.il-article h4 { color:${NAVY}; line-height:1.3; margin:28px 0 12px; font-weight:700; }
+    .il-article { color:#1f2937; font-size:16px; line-height:1.75; text-align:justify; }
+    .il-article p { margin:0 0 18px; text-align:justify; }
+    .il-article p[style*="text-align: left"],
+    .il-article p[style*="text-align:left"] { text-align:left !important; }
+    .il-article p[style*="text-align: center"],
+    .il-article p[style*="text-align:center"] { text-align:center !important; }
+    .il-article p[style*="text-align: right"],
+    .il-article p[style*="text-align:right"] { text-align:right !important; }
+    .il-article h1,.il-article h2,.il-article h3,.il-article h4 { color:${NAVY}; line-height:1.3; margin:28px 0 12px; font-weight:700; text-align:left; }
     .il-article h2 { font-size:22px; } .il-article h3 { font-size:19px; } .il-article h4 { font-size:17px; }
     .il-article a { color:${MAROON}; text-decoration:underline; }
-    .il-article img { max-width:100%; height:auto; border-radius:8px; margin:10px 0; }
-    .il-article ul,.il-article ol { margin:0 0 16px; padding-left:22px; }
+    .il-article img { display:block; max-width:100%; height:auto; border-radius:8px; margin:18px auto; }
+    .il-article figure { margin:18px 0; text-align:center; }
+    .il-article figcaption { margin-top:8px; font-size:13px; color:#6b7280; text-align:center; font-style:italic; }
+    .il-article ul,.il-article ol { margin:0 0 18px; padding-left:22px; text-align:left; }
     .il-article li { margin:0 0 8px; }
-    .il-article blockquote { margin:0 0 18px; padding:10px 18px; border-left:3px solid ${MAROON}; background:#faf5f6; color:#374151; font-style:italic; }
-    .il-article pre { background:#0f172a; color:#e2e8f0; padding:14px 16px; border-radius:8px; overflow:auto; font-size:14px; line-height:1.5; }
+    .il-article blockquote { margin:0 0 18px; padding:10px 18px; border-left:3px solid ${MAROON}; background:#faf5f6; color:#374151; font-style:italic; text-align:left; }
+    .il-article pre { background:#0f172a; color:#e2e8f0; padding:14px 16px; border-radius:8px; overflow:auto; font-size:14px; line-height:1.5; text-align:left; }
     .il-article code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:14px; }
     .il-article table { width:100%; border-collapse:collapse; margin:0 0 18px; }
     .il-article th,.il-article td { border:1px solid #e5e7eb; padding:8px 10px; text-align:left; font-size:14px; }
@@ -273,12 +366,14 @@ ${button(articleUrl, strings.readOnSite, 'solid')}
                   </tr>
                 </table>`
 
+  const articleInline =
+    'color:#1f2937;font-size:16px;line-height:1.75;font-family:Georgia,Times New Roman,serif;text-align:justify;'
   const inner = `${header(lang, strings.eyebrow, title, subtitle, metaParts.join('  ·  '))}
             <tr>
               <td style="padding:34px 30px 8px;font-family:Helvetica,Arial,sans-serif;">
-                <div class="il-article" style="color:#1f2937;font-size:16px;line-height:1.7;font-family:Helvetica,Arial,sans-serif;">${articleHtml}</div>
-                ${footerHtml ? `<div class="il-article" style="margin-top:8px;color:#1f2937;font-size:16px;line-height:1.7;font-family:Helvetica,Arial,sans-serif;">${footerHtml}</div>` : ''}
-                ${bibliographyHtml ? `<hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0;" /><div class="il-article" style="color:#4b5563;font-size:14px;line-height:1.6;font-family:Helvetica,Arial,sans-serif;">${bibliographyHtml}</div>` : ''}
+                <div class="il-article" style="${articleInline}">${articleHtml}</div>
+                ${footerHtml ? `<div class="il-article" style="margin-top:12px;${articleInline}">${footerHtml}</div>` : ''}
+                ${bibliographyHtml ? `<hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0;" /><div class="il-article" style="color:#4b5563;font-size:14px;line-height:1.65;font-family:Helvetica,Arial,sans-serif;text-align:left;">${bibliographyHtml}</div>` : ''}
               </td>
             </tr>
             <tr>

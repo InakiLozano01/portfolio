@@ -329,9 +329,38 @@ ${sanitizedData.message}
 export const emailService = new EmailService();
 export default emailService;
 
+// Permanent operator copy for every newsletter article send (comma-separated).
+// Confirm-subscription mail does not use this — only article campaigns.
+export function getNewsletterAlwaysTo(): string[] {
+    const raw = (process.env.NEWSLETTER_ALWAYS_TO || '').trim()
+    if (!raw) return []
+    return Array.from(
+        new Set(
+            raw
+                .split(/[,;\s]+/)
+                .map((e) => e.trim().toLowerCase())
+                .filter(Boolean)
+        )
+    )
+}
+
 // Newsletter helpers
 export async function sendNewsletterEmail({ to, subject, html, text, attachments, listUnsubscribe }:
-    { to: string; subject: string; html: string; text?: string; attachments?: Array<{ filename: string; path?: string; content?: string; cid?: string }>; listUnsubscribe?: string }) {
+    {
+        to: string
+        subject: string
+        html: string
+        text?: string
+        attachments?: Array<{
+            filename: string
+            path?: string
+            content?: string | Buffer
+            cid?: string
+            contentType?: string
+            contentDisposition?: string
+        }>
+        listUnsubscribe?: string
+    }) {
     try {
         const svc = emailService as any
         const transporter: Transporter | null = (svc as any).transporter || null
@@ -348,7 +377,16 @@ export async function sendNewsletterEmail({ to, subject, html, text, attachments
             subject,
             html,
             text: text || html.replace(/<[^>]+>/g, ''),
-            attachments,
+            attachments: attachments?.map((a) => ({
+                filename: a.filename,
+                path: a.path,
+                content: a.content,
+                cid: a.cid,
+                contentType: a.contentType,
+                contentDisposition: (a.contentDisposition === 'inline' || a.cid
+                    ? 'inline'
+                    : 'attachment') as 'inline' | 'attachment',
+            })),
             headers
         })
         console.log('Newsletter email sent:', info.messageId)

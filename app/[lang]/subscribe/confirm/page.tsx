@@ -14,26 +14,22 @@ export const metadata: Metadata = {
 type ConfirmStatus = 'success' | 'invalid-token' | 'missing-token' | 'error'
 type View = 'prompt' | ConfirmStatus
 
-const STATUS_CONTENT: Record<ConfirmStatus, { title: string; message: string; icon: string }> = {
+const STATUS_CONTENT: Record<ConfirmStatus, { title: string; message: string }> = {
   success: {
     title: 'Subscription confirmed',
-    message: "You're all set — you'll receive an email whenever a new article is published.",
-    icon: '🎉'
+    message: "You're all set — you'll receive an email whenever a new article is published."
   },
   'invalid-token': {
     title: 'This link is no longer valid',
-    message: 'It may have already been used, or the subscription was cancelled. You can subscribe again from any blog article.',
-    icon: 'ℹ️'
+    message: 'It may have already been used, or the subscription was cancelled. You can subscribe again from any blog article.'
   },
   'missing-token': {
     title: 'We could not confirm your subscription',
-    message: 'The confirmation link is incomplete. Please use the link from the email we sent you.',
-    icon: '⚠️'
+    message: 'The confirmation link is incomplete. Please use the link from the email we sent you.'
   },
   error: {
     title: 'Something went wrong',
-    message: 'Please try again in a moment or contact us so we can help.',
-    icon: '⚠️'
+    message: 'Please try again in a moment or contact us so we can help.'
   }
 }
 
@@ -112,7 +108,6 @@ export default async function ConfirmSubscriptionPage({
     <main className="min-h-screen bg-[#101825] flex items-center justify-center px-4 py-24">
       <div className="max-w-md w-full space-y-6 text-center">
         <div className="mx-auto h-16 w-16 rounded-full bg-white/10 flex items-center justify-center text-3xl">
-          <span role="img" aria-hidden="true">{content.icon}</span>
         </div>
         <div>
           <h1 className="text-3xl font-semibold text-white mb-2">{statusDict.title || content.title}</h1>

@@ -20,7 +20,7 @@ export function normalizeProjectThumbnailOptimization(value: unknown): ProjectTh
   const effort = Number(settings.effort);
 
   return {
-    enabled: settings.enabled !== false,
+    enabled: true,
     quality: Number.isFinite(quality) ? Math.min(95, Math.max(50, Math.round(quality))) : DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION.quality,
     effort: Number.isFinite(effort) ? Math.min(6, Math.max(0, Math.round(effort))) : DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION.effort,
   };

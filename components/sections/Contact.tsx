@@ -1,18 +1,19 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion, useReducedMotion } from 'framer-motion'
-import { FaEnvelope, FaGithub, FaLinkedin, FaMapMarkerAlt } from 'react-icons/fa'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { FaCheck, FaEnvelope, FaGithub, FaLinkedin, FaMapMarkerAlt } from 'react-icons/fa'
 import type { ContactContent } from '@/models/Section'
 
 interface ContactSectionProps {
   lang?: 'en' | 'es';
+  initialContent?: ContactContent;
   dictionary?: any;
 }
 
-export default function ContactSection({ lang = 'en', dictionary = {} }: ContactSectionProps) {
+export default function ContactSection({ lang = 'en', initialContent, dictionary = {} }: ContactSectionProps) {
   const t = dictionary?.contact || {}
-  const [content, setContent] = useState<ContactContent>({
+  const [content, setContent] = useState<ContactContent>(initialContent || {
     email: 'inakilozano01@gmail.com',
     city: 'San Miguel de Tucumán, Argentina',
     city_en: 'San Miguel de Tucumán, Argentina',
@@ -30,9 +31,16 @@ export default function ContactSection({ lang = 'en', dictionary = {} }: Contact
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
   const [counters, setCounters] = useState({ name: 0, email: 0, message: 0 })
   const statusRef = useRef<HTMLParagraphElement | null>(null)
   const reduceMotion = useReducedMotion()
+
+  useEffect(() => {
+    if (!showSuccessToast) return
+    const t = window.setTimeout(() => setShowSuccessToast(false), 2800)
+    return () => window.clearTimeout(t)
+  }, [showSuccessToast])
 
   // Labels
   const labels = {
@@ -53,6 +61,8 @@ export default function ContactSection({ lang = 'en', dictionary = {} }: Contact
   }
 
   useEffect(() => {
+    if (initialContent) return
+
     const fetchContent = async () => {
       try {
         const response = await fetch('/api/sections/contact')
@@ -70,7 +80,7 @@ export default function ContactSection({ lang = 'en', dictionary = {} }: Contact
     }
 
     fetchContent()
-  }, [])
+  }, [initialContent])
 
   const validateForm = () => {
     const errors: { [key: string]: string } = {}
@@ -104,6 +114,7 @@ export default function ContactSection({ lang = 'en', dictionary = {} }: Contact
         })
         if (response.ok) {
           setSubmitStatus('success')
+          setShowSuccessToast(true)
           setFormData({ name: '', email: '', message: '' })
           setCounters({ name: 0, email: 0, message: 0 })
         } else {
@@ -139,6 +150,46 @@ export default function ContactSection({ lang = 'en', dictionary = {} }: Contact
 
   return (
     <div className="w-full pt-14 md:pt-0">
+      <AnimatePresence>
+        {showSuccessToast && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none px-4"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.25 }}
+            aria-hidden="true"
+          >
+            <motion.div
+              className="pointer-events-auto flex flex-col items-center gap-3 rounded-2xl bg-white/95 px-8 py-7 shadow-lg ring-1 ring-black/5 backdrop-blur-sm"
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.88, y: 12 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: 8 }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { type: 'spring', stiffness: 380, damping: 28 }
+              }
+            >
+              <motion.span
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm"
+                initial={reduceMotion ? false : { scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={
+                  reduceMotion
+                    ? { duration: 0 }
+                    : { type: 'spring', stiffness: 420, damping: 18, delay: 0.08 }
+                }
+              >
+                <FaCheck className="h-5 w-5" aria-hidden="true" />
+              </motion.span>
+              <p className="text-sm font-medium tracking-wide text-gray-800">
+                {labels.success}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <h2 className="text-3xl font-bold mb-8 text-primary">{labels.title}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <motion.div
@@ -296,4 +347,3 @@ export default function ContactSection({ lang = 'en', dictionary = {} }: Contact
     </div>
   )
 }
-

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import BlogModel from '@/models/Blog'
 import Subscriber from '@/models/Subscriber'
-import { sendNewsletterEmail } from '@/lib/email'
-import { buildNewsletterEmail } from '@/lib/newsletter-template'
+import { dispatchNewsletter } from '@/lib/server/newsletter-dispatcher'
+import { sendNewsletterAlwaysToCopy } from '@/lib/server/blog-newsletter'
 import { requireAdmin } from '@/lib/admin-auth'
 
 const MAX_MANUAL_NEWSLETTER_RECIPIENTS = 100
@@ -42,29 +42,18 @@ export async function POST(
             return NextResponse.json({ error: 'No active (confirmed) subscribers for selection' }, { status: 400 })
         }
 
-        const deadline = Date.now() + MANUAL_NEWSLETTER_DEADLINE_MS
-        const results: Array<{ email: string; success: boolean; error?: string }> = []
-        let nextIndex = 0
+        const results = await dispatchNewsletter(newsletterBlog, subscribers, {
+            concurrency: MANUAL_NEWSLETTER_CONCURRENCY,
+            deadlineMs: MANUAL_NEWSLETTER_DEADLINE_MS,
+        })
 
-        async function worker() {
-            while (nextIndex < subscribers.length) {
-                const subscriber = subscribers[nextIndex]
-                nextIndex += 1
-
-                if (Date.now() > deadline) {
-                    results.push({ email: subscriber.email, success: false, error: 'deadline_exceeded' })
-                    continue
-                }
-
-                const { subject, html, text, attachments, listUnsubscribeUrl } = buildNewsletterEmail(newsletterBlog, subscriber)
-                const success = await sendNewsletterEmail({ to: subscriber.email, subject, html, text, attachments, listUnsubscribe: listUnsubscribeUrl })
-                results.push({ email: subscriber.email, success })
-            }
-        }
-
-        await Promise.all(
-            Array.from({ length: Math.min(MANUAL_NEWSLETTER_CONCURRENCY, subscribers.length) }, () => worker())
+        const alwaysToResults = await sendNewsletterAlwaysToCopy(
+            newsletterBlog,
+            results.filter((r) => r.success).map((r) => r.email)
         )
+        for (const r of alwaysToResults) {
+            results.push(r)
+        }
 
         const failed = results.filter((r) => !r.success)
 

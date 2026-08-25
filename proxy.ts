@@ -56,7 +56,7 @@ export async function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  if (pathname === '/$') {
+  if (pathname === '/') {
     return NextResponse.redirect(new URL(`/${getLocale(request)}`, request.url), 308)
   }
 
@@ -106,7 +106,8 @@ export async function proxy(request: NextRequest) {
   if (pathnameIsMissingLocale) {
     const locale = getLocale(request)
     return NextResponse.redirect(
-      new URL(`/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url)
+      new URL(`/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url),
+      308
     )
   }
 

@@ -16,8 +16,10 @@ const sections = [
     order: 0,
     visible: true,
     content: {
-      headline: "🚀 Technology Accelerationist and Innovation Pursuer 💡",
-      description: "Hi, I'm Iñaki Lozano, a 🌍 Computer Engineering student at the National University of Tucumán. I'm passionate about building 🔧 innovative and creative solutions with 💻 code."
+      headline: "Software Engineer SSr · Computer Engineering, UNT",
+      headline_es: "Ingeniero de Software SSr · Ingeniería en Computación, UNT",
+      description: "I am Iñaki Lozano, a Software Engineer SSr at the Court of Accounts of Tucumán. I am completing Computer Engineering at the National University of Tucumán, with three final exams remaining. I build secure document workflows, scalable backends, and practical systems.",
+      description_es: "Soy Iñaki Lozano, Ingeniero de Software SSr en el Tribunal de Cuentas de Tucumán. Estoy finalizando Ingeniería en Computación en la Universidad Nacional de Tucumán, con tres exámenes finales pendientes. Construyo flujos seguros de documentos, backends escalables y sistemas prácticos."
     }
   },
   {
@@ -25,12 +27,12 @@ const sections = [
     order: 1,
     visible: true,
     content: {
-      description: "I'm a 🖥️ software developer with a passion for creating 🌟 innovative solutions. With 1.5 years of experience in the industry, I've worked on a wide range of projects, from 🌐 web applications to 🔄 APIs and everything in between.\n\nMy journey in software development began in 2nd year of university. Since then, I've been constantly 📚 learning and 🌟 adapting to new technologies to stay at the forefront of the industry.",
+      description: "I am a software developer focused on clean architecture, scalability, and practical systems. I have worked on web applications, APIs, backend systems, and automation pipelines.\n\nI began developing software in my second year of Computer Engineering at the National University of Tucumán. I continue to develop new technical skills through real projects.",
       highlights: [
-        "🔓 Open-source projects",
-        "🎙️ Podcasts",
-        "⚽ Watching Sports",
-        "🌱 Self development"
+        "Open-source projects",
+        "Podcasts",
+        "Watching sports",
+        "Professional development"
       ]
     }
   },
@@ -41,16 +43,16 @@ const sections = [
     content: {
       education: [
         {
-          institution: "🏛️ National University of Tucuman",
-          degree: "🎓 Computer Engineering",
+          institution: "National University of Tucumán",
+          degree: "Computer Engineering",
           period: "2019 - Present",
-          description: "📄 Currently with 3 remaining tests to graduate."
+          description: "Three final exams remain."
         },
         {
-          institution: "🏫 Instituto Integral Argentino Hebreo Independencia",
-          degree: "🎓 Bachelor in Theory and Management of Organization",
+          institution: "Instituto Integral Argentino Hebreo Independencia",
+          degree: "Bachelor in Theory and Management of Organization",
           period: "2013 - 2018",
-          description: "🏆 Best student 1st year. Standard bearer at last year."
+          description: "Best student in the first year. Standard bearer in the final year."
         }
       ]
     }
@@ -62,23 +64,23 @@ const sections = [
     content: {
       experiences: [
         {
-          company: "⚖️ Tribunal de Cuentas de la Provincia de Tucuman",
+          company: "Court of Accounts of Tucumán",
           period: "Nov 2023 - Present",
           responsibilities: [
-            "🖊️ Digital signatures, integrity middleware and API",
-            "🧑‍💻 Full stack development of Documents and Records System",
-            "🗄️ Database design and development"
+            "Digital signatures, integrity middleware, and APIs",
+            "Full-stack development of the Documents and Records System",
+            "Database design and development"
           ],
-          title: "👨‍💻 Jr Software Engineer"
+          title: "Software Engineer SSr"
         },
         {
-          title: "👨‍💻 Trainee Backend Developer",
+          title: "Trainee Backend Developer",
           company: "Third Party Startup Project",
           period: "Jan 2024 - Oct 2024",
           description: "",
           responsibilities: [
-            "🗄️ Designed complete database business logic for a REST API",
-            "🧑‍💻 Developed entire backend API for the web application"
+            "Designed complete database business logic for a REST API",
+            "Developed the backend API for the web application"
           ]
         }
       ]
@@ -143,4 +145,4 @@ async function seedSections() {
   }
 }
 
-seedSections() 
+seedSections()

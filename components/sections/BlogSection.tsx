@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { ArrowUpRight, Search } from 'lucide-react'
 // Removed unused imports
 import { type Blog } from '@/models/BlogClient'
 import { formatDistanceToNow } from 'date-fns'
@@ -11,45 +12,46 @@ import { es as esLocale } from 'date-fns/locale'
 import { formatDate } from '@/lib/utils'
 import NewsletterSignup from '@/components/NewsletterSignup'
 
-export default function BlogSection({ lang = 'en', dictionary = {} }: { lang?: 'en' | 'es'; dictionary?: any }) {
-    const router = useRouter()
+export default function BlogSection({ lang = 'en', initialContent, initialBlogs, dictionary = {} }: { lang?: 'en' | 'es'; initialContent?: Record<string, any>; initialBlogs?: Blog[]; dictionary?: any }) {
     const blogListDict = dictionary?.blog?.list || {}
     const t = {
         heading: blogListDict.heading || 'Blog',
         descriptionFallback: blogListDict.descriptionFallback || 'Stories, updates, and research notes.',
         searchPlaceholder: blogListDict.searchPlaceholder || 'Search blogs...',
         error: blogListDict.error || 'Error',
-        comingSoonTitle: blogListDict.comingSoonTitle || 'Coming Soon! 🚀',
+        comingSoonTitle: blogListDict.comingSoonTitle || 'Coming Soon!',
         comingSoonCopy: blogListDict.comingSoonCopy || "We're preparing some exciting content for you. Stay tuned!",
         noResults: blogListDict.noResults || 'No blogs found matching your search.',
         created: blogListDict.created || 'Created',
         languages: blogListDict.languages || 'EN / ES',
         filterByTagAria: blogListDict.filterByTagAria || 'Filter by tag',
         moreTags: blogListDict.moreTags || 'more',
+        readArticle: blogListDict.readArticle || 'Read article',
         fetchError: blogListDict.fetchError || 'Failed to fetch blogs',
     }
-    const [blogs, setBlogs] = useState<Blog[]>([]);
-    const [filteredBlogs, setFilteredBlogs] = useState<Blog[]>([]);
+    const [blogs, setBlogs] = useState<Blog[]>(initialBlogs || []);
+    const [filteredBlogs, setFilteredBlogs] = useState<Blog[]>(initialBlogs || []);
     const [searchQuery, setSearchQuery] = useState('');
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!initialBlogs);
     const [error, setError] = useState<string | null>(null);
-    const [sectionTitleBase, setSectionTitleBase] = useState('');
-    const [sectionTitleEn, setSectionTitleEn] = useState('');
-    const [sectionTitleEs, setSectionTitleEs] = useState('');
-    const [sectionDescription, setSectionDescription] = useState('');
-    const [sectionDescriptionEn, setSectionDescriptionEn] = useState('');
-    const [sectionDescriptionEs, setSectionDescriptionEs] = useState('');
+    const [sectionTitleBase, setSectionTitleBase] = useState(initialContent?.title || '');
+    const [sectionTitleEn, setSectionTitleEn] = useState(initialContent?.title_en || initialContent?.title || '');
+    const [sectionTitleEs, setSectionTitleEs] = useState(initialContent?.title_es || initialContent?.title || '');
+    const [sectionDescription, setSectionDescription] = useState(initialContent?.description || '');
+    const [sectionDescriptionEn, setSectionDescriptionEn] = useState(initialContent?.description_en || '');
+    const [sectionDescriptionEs, setSectionDescriptionEs] = useState(initialContent?.description_es || '');
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        if (initialBlogs) return
+
         async function fetchBlogs() {
             try {
-                const [sectionResponse, response] = await Promise.all([
-                    fetch('/api/sections/blog'),
-                    fetch('/api/blogs')
-                ]);
+                const requests = [fetch('/api/blogs')]
+                if (!initialContent) requests.push(fetch('/api/sections/blog'))
+                const [response, sectionResponse] = await Promise.all(requests)
 
-                if (sectionResponse.ok) {
+                if (sectionResponse?.ok) {
                     const sectionData = await sectionResponse.json();
                     if (sectionData && sectionData.content) {
                         setSectionTitleBase(sectionData.title || sectionData.content.title || '');
@@ -86,7 +88,7 @@ export default function BlogSection({ lang = 'en', dictionary = {} }: { lang?: '
         }
 
         fetchBlogs();
-    }, []);
+    }, [initialContent, initialBlogs, t.fetchError]);
 
     useEffect(() => {
         const query = searchQuery.trim().toLowerCase();
@@ -127,7 +129,7 @@ export default function BlogSection({ lang = 'en', dictionary = {} }: { lang?: '
         )
     }
 
-    const maxVisibleTags = 6
+    const maxVisibleTags = 4
 
     const getTagDisplay = useMemo(() => {
         return (tags: string[]) => {
@@ -197,20 +199,27 @@ export default function BlogSection({ lang = 'en', dictionary = {} }: { lang?: '
     }
 
     return (
-        <div className="container mx-auto py-8 px-4">
-            <div className="mb-6">
-                <h2 className="text-3xl font-bold text-primary">{heading}</h2>
-                {sectionCopy && <p className="text-muted-foreground mt-1">{sectionCopy}</p>}
-            </div>
-            <div className="mb-8">
-                <Input
-                    type="text"
-                    placeholder={t.searchPlaceholder}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="max-w-md mx-auto bg-white text-black placeholder:text-gray-500"
-                />
-                <div className="mt-4 max-w-2xl mx-auto">
+        <div className="mx-auto max-w-5xl px-4 py-4 md:py-8">
+            <header className="relative overflow-hidden rounded-xl bg-[#263547] px-6 py-8 text-white shadow-lg md:px-10 md:py-10">
+                <div className="relative max-w-3xl">
+                    <h2 className="text-3xl font-bold tracking-tight md:text-4xl">{heading}</h2>
+                    {sectionCopy && <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-200 md:text-lg">{sectionCopy}</p>}
+                </div>
+                <span className="absolute bottom-0 left-6 h-1 w-20 bg-[#FD4345] md:left-10" aria-hidden="true" />
+            </header>
+            <div className="my-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.9fr)] md:items-start">
+                <label className="relative block">
+                    <span className="sr-only">{t.searchPlaceholder}</span>
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+                    <Input
+                        type="search"
+                        placeholder={t.searchPlaceholder}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-12 border-slate-300 bg-white pl-11 text-black placeholder:text-slate-500 focus-visible:ring-[#FD4345]"
+                    />
+                </label>
+                <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                     <NewsletterSignup className="bg-white" lang={lang} dict={dictionary?.newsletter} />
                 </div>
             </div>
@@ -219,7 +228,7 @@ export default function BlogSection({ lang = 'en', dictionary = {} }: { lang?: '
                     {t.noResults}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                     {filteredBlogs.map((blog) => {
                         const title = lang === 'es'
                             ? (blog.title_es || blog.title_en || blog.title)
@@ -233,29 +242,21 @@ export default function BlogSection({ lang = 'en', dictionary = {} }: { lang?: '
                         const href = `/${lang}/blog/${blog.slug}`
 
                         return (
-                            <Card
-                                key={blog._id}
-                                role="link"
-                                tabIndex={0}
-                                onClick={() => router.push(href)}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter' || event.key === ' ') {
-                                        event.preventDefault()
-                                        router.push(href)
-                                    }
-                                }}
-                                className="hover:shadow-lg hover:bg-primary/5 transition-shadow duration-200 overflow-hidden group cursor-pointer"
-                            >
-                                <CardHeader className="relative space-y-2">
-                                    <CardTitle className="text-xl bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">
-                                        {highlight(title)}
-                                    </CardTitle>
+                            <article key={blog._id} className="h-full">
+                                <Card className="relative h-full overflow-hidden border-slate-200 bg-white shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-lg">
+                                    <CardHeader className="relative space-y-3 pb-4">
+                                        <span className="h-1 w-12 bg-[#FD4345]" aria-hidden="true" />
+                                        <CardTitle className="text-xl leading-snug text-primary">
+                                            <Link href={href} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2">
+                                                {highlight(title)}
+                                            </Link>
+                                        </CardTitle>
                                     <p className="text-muted-foreground text-sm">
                                         {highlight(subtitle)}
                                     </p>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex flex-wrap gap-2 mb-4">
+                                    </CardHeader>
+                                    <CardContent className="flex h-full flex-col">
+                                        <div className="flex flex-wrap gap-2">
                                         {(() => {
                                             const { visible, hidden } = getTagDisplay(blog.tags)
                                             return (
@@ -283,14 +284,18 @@ export default function BlogSection({ lang = 'en', dictionary = {} }: { lang?: '
                                             )
                                         })()}
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-100 pt-4 text-sm text-muted-foreground">
                                         {createdLabel ? (
                                             <span suppressHydrationWarning>{createdLabel}</span>
                                         ) : null}
-                                        <span className="uppercase text-xs tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full">{t.languages}</span>
+                                        <span className="ml-auto uppercase text-xs tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full">{t.languages}</span>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                        <Link href={href} className="mt-4 inline-flex w-fit items-center gap-1 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2">
+                                            {t.readArticle}<ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                                        </Link>
+                                    </CardContent>
+                                </Card>
+                            </article>
                         )
                     })}
                 </div>

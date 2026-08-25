@@ -78,7 +78,15 @@
         "paginationNextAria": "Página siguiente",
         "fetchSectionError": "No se pudo obtener la sección de habilidades",
         "fetchError": "No se pudieron obtener los datos de habilidades",
-        "invalidDataFormat": "Formato de datos de habilidades no válido"
+        "invalidDataFormat": "Formato de datos de habilidades no válido",
+        "categoryLabels": {
+            "ai": "IA",
+            "database": "Bases de datos",
+            "devops": "DevOps",
+            "framework": "Frameworks",
+            "language": "Lenguajes",
+            "tool": "Herramientas"
+        }
     },
     "projects": {
         "heading": "Proyectos",
@@ -100,13 +108,14 @@
             "descriptionFallback": "Historias, novedades y notas de investigación.",
             "searchPlaceholder": "Buscar blogs...",
             "error": "Error",
-            "comingSoonTitle": "¡Próximamente! 🚀",
+            "comingSoonTitle": "¡Próximamente!",
             "comingSoonCopy": "Estamos preparando contenido increíble para ti. ¡Mantente atento!",
             "noResults": "No se encontraron blogs que coincidan con tu búsqueda.",
             "created": "Creado",
             "languages": "EN / ES",
             "filterByTagAria": "Filtrar por etiqueta",
             "moreTags": "más",
+            "readArticle": "Leer artículo",
             "fetchError": "No se pudieron obtener los blogs"
         },
         "view": {
@@ -233,11 +242,11 @@
         "tryAgain": "Intentar de nuevo"
     },
     "seo": {
-        "title": "Iñaki F. Lozano | Estudiante de Ingeniería en Computación y Desarrollador de Software",
-        "description": "Estudiante de Ingeniería en Computación enfocado en tecnología e innovación. Investigando flujos de trabajo de documentos seguros, construyendo backends escalables, y combinando habilidades de DevOps, IA y desarrollo full stack.",
-        "keywords": "Desarrollador de Software, Estudiante de Ingeniería en Computación, Desarrollo Backend, Firmas electrónicas avanzadas, DevOps, Tucumán, Argentina",
+        "title": "Iñaki F. Lozano | Ingeniero de Software SSr · Ingeniería en Computación, UNT",
+        "description": "Ingeniero de Software SSr en el Tribunal de Cuentas de Tucumán. Finaliza Ingeniería en Computación en la UNT y construye flujos seguros de documentos, backends escalables y sistemas prácticos.",
+        "keywords": "Ingeniero de Software SSr, Ingeniería en Computación UNT, Desarrollo Backend, Firmas electrónicas avanzadas, DevOps, Tucumán, Argentina",
         "location": "Tucumán, Argentina",
-        "jobTitle": "Estudiante de Ingeniería en Computación y Desarrollador de Software",
+        "jobTitle": "Ingeniero de Software SSr · Ingeniería en Computación, UNT",
         "organization": "Tribunal de Cuentas de Tucumán"
     }
 }

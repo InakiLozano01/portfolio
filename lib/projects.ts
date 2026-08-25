@@ -18,6 +18,19 @@ interface PopulatedProject extends Omit<IProject, 'technologies'> {
     technologies: Skill[];
 }
 
+export const getProjectCards = async () => {
+    await connectToDatabase()
+
+    const projects = await Project.find({})
+        .select('slug title subtitle title_en title_es subtitle_en subtitle_es thumbnail thumbnailSmall thumbnailBlur publicUrl technologies')
+        .populate({ path: 'technologies', select: 'name category icon' })
+        .sort({ createdAt: -1 })
+        .lean()
+        .exec()
+
+    return JSON.parse(JSON.stringify(projects))
+}
+
 export const getProjectBySlug = async (slug: string) => {
     await connectToDatabase()
 

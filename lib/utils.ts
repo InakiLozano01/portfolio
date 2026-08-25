@@ -24,3 +24,10 @@ export function formatDate(date: string | Date | undefined | null): Date {
   const d = typeof date === 'string' ? new Date(date) : date;
   return isNaN(d.getTime()) ? new Date() : d;
 }
+
+/** Single source of truth for display order: visible sections, sorted by `order`. */
+export function orderedVisibleSections<T extends { visible?: boolean; order?: number }>(sections: T[]): T[] {
+  return (Array.isArray(sections) ? sections : [])
+    .filter((section) => section?.visible)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}

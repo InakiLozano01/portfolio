@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
+import { normalizeUrl } from '@/lib/seo'
 
-const normalizeBaseUrl = (url: string) => url.replace(/\/$/, '')
-
-const fallbackBaseUrl = normalizeBaseUrl(process.env.NEXT_PUBLIC_APP_URL || 'https://inakilozano.com')
-const fallbackAltBaseUrl = normalizeBaseUrl(process.env.NEXT_PUBLIC_ALT_APP_URL || '')
+const fallbackBaseUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL) || 'https://inakilozano.com'
+const fallbackAltBaseUrl = normalizeUrl(process.env.NEXT_PUBLIC_ALT_APP_URL) || ''
 
 const accentKeywordVariants = [
     'Iñaki Lozano',
@@ -60,8 +59,8 @@ export const buildEnglishMetadata = (
     const canonicalUrl = buildCanonicalUrl(baseUrl, canonicalPath)
 
     const keywords = [
-        'Computation Engineering student',
-        'Software Developer',
+        'Software Engineer SSr',
+        'Computer Engineering UNT',
         'Secure document workflows',
         'Advanced electronic signatures',
         'DevOps',
@@ -91,11 +90,11 @@ export const buildEnglishMetadata = (
     return {
         metadataBase: new URL(baseUrl),
         title: {
-            default: 'Iñaki F. Lozano | Computation Engineering Student & Software Developer',
-            template: '%s | Iñaki F. Lozano'
+            default: 'Iñaki F. Lozano | Software Engineer SSr · Computer Engineering, UNT',
+            template: '%s'
         },
         description:
-            'Driven Computation Engineering student focused on technology and innovation. Researching secure document workflows, building scalable backends, and blending DevOps, AI, and full stack development skills.',
+            'Software Engineer SSr at the Court of Accounts of Tucumán. Completing Computer Engineering at UNT and building secure document workflows, scalable backends, and practical systems.',
         keywords,
         authors: [{ name: 'Iñaki F. Lozano', url: baseUrl }],
         openGraph: {
@@ -103,25 +102,25 @@ export const buildEnglishMetadata = (
             locale: 'en_US',
             alternateLocale: ['es_AR'],
             url: canonicalUrl,
-            title: 'Iñaki F. Lozano | Computation Engineering Student & Software Developer',
+            title: 'Iñaki F. Lozano | Software Engineer SSr · Computer Engineering, UNT',
             description:
-                'Computation Engineering student leading secure document initiatives for the Court of Accounts of Tucumán and developing scalable e-commerce backends. Skilled across DevOps, AI, and full stack development.',
+                'Software Engineer SSr at the Court of Accounts of Tucumán. Completing Computer Engineering at UNT and building secure document workflows and scalable backends.',
             siteName: 'Iñaki F. Lozano Portfolio',
             images: [
                 {
                     url: '/og-en.png',
                     width: 1200,
                     height: 630,
-                    alt: 'Iñaki F. Lozano - Computation Engineering Student & Software Developer',
+                    alt: 'Iñaki F. Lozano - Software Engineer SSr · Computer Engineering, UNT',
                     type: 'image/png'
                 }
             ]
         },
         twitter: {
             card: 'summary_large_image',
-            title: 'Iñaki F. Lozano | Computation Engineering Student & Software Developer',
+            title: 'Iñaki F. Lozano | Software Engineer SSr · Computer Engineering, UNT',
             description:
-                'Driven technologist researching secure document signing standards, building scalable APIs, and honing AI and DevOps skills.',
+                'Software Engineer SSr building secure document workflows, scalable APIs, and DevOps automation.',
             images: ['/og-en.png'],
             creator: '@inakilozano',
             site: '@inakilozano'
@@ -170,8 +169,8 @@ export const buildSpanishMetadata = (
     const canonicalUrl = buildCanonicalUrl(baseUrl, canonicalPath)
 
     const keywords = [
-        'Estudiante de Ingeniería en Computación',
-        'Desarrollador de Software',
+        'Ingeniero de Software SSr',
+        'Ingeniería en Computación UNT',
         'Flujos de trabajo de documentos seguros',
         'Firmas electrónicas avanzadas',
         'DevOps',
@@ -207,11 +206,11 @@ export const buildSpanishMetadata = (
     return {
         metadataBase: new URL(baseUrl),
         title: {
-            default: 'Iñaki F. Lozano | Estudiante de Ingeniería en Computación y Desarrollador de Software',
-            template: '%s | Iñaki F. Lozano'
+            default: 'Iñaki F. Lozano | Ingeniero de Software SSr · Ingeniería en Computación, UNT',
+            template: '%s'
         },
         description:
-            'Estudiante de Ingeniería en Computación enfocado en tecnología e innovación. Investigando flujos de trabajo de documentos seguros, construyendo backends escalables, y combinando habilidades de DevOps, IA y desarrollo full stack.',
+            'Ingeniero de Software SSr en el Tribunal de Cuentas de Tucumán. Finaliza Ingeniería en Computación en la UNT y construye flujos seguros de documentos, backends escalables y sistemas prácticos.',
         keywords,
         authors: [{ name: 'Iñaki F. Lozano', url: baseUrl }],
         openGraph: {
@@ -219,25 +218,25 @@ export const buildSpanishMetadata = (
             locale: 'es_AR',
             alternateLocale: ['en_US'],
             url: canonicalUrl,
-            title: 'Iñaki F. Lozano | Estudiante de Ingeniería en Computación y Desarrollador de Software',
+            title: 'Iñaki F. Lozano | Ingeniero de Software SSr · Ingeniería en Computación, UNT',
             description:
-                'Estudiante de Ingeniería en Computación liderando iniciativas de documentos seguros para el Tribunal de Cuentas de Tucumán y desarrollando backends escalables de e-commerce. Experiencia en DevOps, IA y desarrollo full stack.',
+                'Ingeniero de Software SSr en el Tribunal de Cuentas de Tucumán. Finaliza Ingeniería en Computación en la UNT y construye flujos seguros de documentos y backends escalables.',
             siteName: 'Iñaki F. Lozano Portfolio',
             images: [
                 {
                     url: '/og-es.png',
                     width: 1200,
                     height: 630,
-                    alt: 'Iñaki F. Lozano - Estudiante de Ingeniería en Computación y Desarrollador de Software',
+                    alt: 'Iñaki F. Lozano - Ingeniero de Software SSr · Ingeniería en Computación, UNT',
                     type: 'image/png'
                 }
             ]
         },
         twitter: {
             card: 'summary_large_image',
-            title: 'Iñaki F. Lozano | Estudiante de Ingeniería en Computación y Desarrollador de Software',
+            title: 'Iñaki F. Lozano | Ingeniero de Software SSr · Ingeniería en Computación, UNT',
             description:
-                'Tecnólogo impulsado investigando estándares de firma de documentos seguros, construyendo APIs escalables y perfeccionando habilidades de IA y DevOps.',
+                'Ingeniero de Software SSr que construye flujos seguros de documentos, APIs escalables y automatización DevOps.',
             images: ['/og-es.png'],
             creator: '@inakilozano',
             site: '@inakilozano'

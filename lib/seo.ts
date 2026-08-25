@@ -17,6 +17,8 @@ const normalizeUrl = (url: string | null | undefined) => {
     }
 }
 
+export { normalizeUrl }
+
 export async function resolveBaseUrl(): Promise<string> {
     const configuredBaseUrl = normalizeUrl(FALLBACK_BASE_URL)
     if (configuredBaseUrl) return configuredBaseUrl

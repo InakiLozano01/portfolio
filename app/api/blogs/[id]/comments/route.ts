@@ -3,39 +3,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Comment from '@/models/Comment'
-
-async function moderate(content: string): Promise<boolean> {
-  // Basic local moderation fallback
-  const banned = [
-    /\b(?:kill|suicide|rape|nazi|terror|slur|retard|faggot)\b/i,
-    /(https?:\/\/\S{40,})/i,
-    /(.)\1{10,}/,
-  ]
-  for (const rx of banned) {
-    if (rx.test(content)) return false
-  }
-
-  const apiKey = process.env.GOOGLE_AI_API_KEY
-  if (!apiKey) return true
-
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:moderateText?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: content }] }] })
-      })
-    const data = await res.json()
-    if (data?.blocked === true) return false
-  } catch (err) {
-    console.error('Moderation error', err)
-  }
-  return true
-}
+import { isValidObjectId, moderateComment, sanitizeAlias, sanitizeCommentText } from '@/lib/comments'
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params
-  if (!id || !id.trim() || !id.match(/^[a-fA-F0-9]{24}$/)) {
+  if (!isValidObjectId(id)) {
     return NextResponse.json({ error: 'Invalid blog id' }, { status: 400 })
   }
   try {
@@ -50,7 +22,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params
-  if (!id || !id.trim() || !id.match(/^[a-fA-F0-9]{24}$/)) {
+  if (!isValidObjectId(id)) {
     return NextResponse.json({ error: 'Invalid blog id' }, { status: 400 })
   }
   try {
@@ -67,16 +39,18 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       return NextResponse.json({ error: 'Too many comments' }, { status: 429 })
     }
 
-    const allowed = await moderate(content)
+    const allowed = await moderateComment(String(content))
     if (!allowed) {
       return NextResponse.json({ error: 'Comment rejected by moderation' }, { status: 400 })
     }
 
-    const sanitizedAlias = String(alias).slice(0, 40).replace(/[<>]/g, '')
-    const sanitizedContent = String(content).slice(0, 5000).replace(/[<>]/g, '')
-    const parent = parentId ? parentId : null
-
-    const comment = await Comment.create({ blog: id, alias: sanitizedAlias, content: sanitizedContent, ip, parent })
+    const comment = await Comment.create({
+      blog: id,
+      alias: sanitizeAlias(alias),
+      content: sanitizeCommentText(content),
+      ip,
+      parent: parentId ? parentId : null,
+    })
     return NextResponse.json(comment)
   } catch (err) {
     console.error('Failed to create comment', err)

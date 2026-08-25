@@ -3,8 +3,7 @@ import type { FilterQuery } from 'mongoose'
 import { connectToDatabase } from '@/lib/mongodb'
 import Comment, { IComment } from '@/models/Comment'
 import { requireAdmin } from '@/lib/admin-auth'
-
-const HEX_24 = /^[a-fA-F0-9]{24}$/
+import { isValidObjectId, sanitizeCommentText, ALLOWED_COMMENT_STATUS } from '@/lib/comments'
 
 export async function GET(request: NextRequest) {
   const admin = await requireAdmin(request)
@@ -16,10 +15,10 @@ export async function GET(request: NextRequest) {
     const blog = searchParams.get('blog')
 
     const filter: FilterQuery<IComment> = {}
-    if (status && ['approved', 'rejected', 'pending'].includes(status)) {
+    if (status && (ALLOWED_COMMENT_STATUS as readonly string[]).includes(status)) {
       filter.status = status
     }
-    if (blog && HEX_24.test(blog)) {
+    if (blog && isValidObjectId(blog)) {
       filter.blog = blog
     }
 
@@ -43,14 +42,14 @@ export async function POST(request: NextRequest) {
   try {
     const { blogId, parentId, content } = await request.json()
 
-    if (!blogId || !HEX_24.test(blogId)) {
+    if (!isValidObjectId(blogId)) {
       return NextResponse.json({ error: 'Invalid blog id' }, { status: 400 })
     }
-    if (!parentId || !HEX_24.test(parentId)) {
+    if (!isValidObjectId(parentId)) {
       return NextResponse.json({ error: 'Invalid parent id' }, { status: 400 })
     }
 
-    const sanitizedContent = String(content ?? '').slice(0, 5000).replace(/[<>]/g, '')
+    const sanitizedContent = sanitizeCommentText(content)
     if (!sanitizedContent.trim()) {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 })
     }

@@ -1,26 +1,12 @@
 import type { MetadataRoute } from 'next'
 import { getAllBlogs } from '@/lib/blog'
 import { getAllProjects } from '@/lib/projects'
+import { resolveBaseUrl } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-const normalizeBaseUrl = (value: string | undefined) => {
-  const fallback = 'https://inakilozano.com'
-  const raw = (value || fallback).trim()
-  const withProtocol = raw.startsWith('http') ? raw : `https://${raw}`
-  try {
-    const url = new URL(withProtocol)
-    url.pathname = ''
-    url.search = ''
-    url.hash = ''
-    return url.toString().replace(/\/$/, '')
-  } catch {
-    return fallback
-  }
-}
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = normalizeBaseUrl(process.env.NEXT_PUBLIC_APP_URL)
+  const baseUrl = await resolveBaseUrl()
   const now = new Date()
 
   const entries: MetadataRoute.Sitemap = [

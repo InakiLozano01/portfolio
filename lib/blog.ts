@@ -3,6 +3,18 @@ import { connectToDatabase } from '@/lib/mongodb'
 import Blog from '@/models/Blog'
 import { slugify } from '@/lib/utils'
 
+export const getPublishedBlogCards = async () => {
+    await connectToDatabase()
+
+    const blogs = await Blog.find({ published: true })
+        .select('title subtitle title_en title_es subtitle_en subtitle_es published slug tags createdAt updatedAt')
+        .sort({ createdAt: -1 })
+        .lean()
+        .exec()
+
+    return JSON.parse(JSON.stringify(blogs))
+}
+
 export const getBlogBySlug = async (slug: string) => {
     await connectToDatabase()
 

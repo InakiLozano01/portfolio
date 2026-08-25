@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Comment from '@/models/Comment'
 import { requireAdmin } from '@/lib/admin-auth'
-
-const HEX_24 = /^[a-fA-F0-9]{24}$/
-const ALLOWED_STATUS = ['approved', 'rejected', 'pending'] as const
+import { isValidObjectId, ALLOWED_COMMENT_STATUS } from '@/lib/comments'
 
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params
-  if (!id || !HEX_24.test(id)) {
+  if (!isValidObjectId(id)) {
     return NextResponse.json({ error: 'Invalid comment id' }, { status: 400 })
   }
 
@@ -20,7 +18,7 @@ export async function PATCH(
 
   try {
     const { status } = await request.json()
-    if (!ALLOWED_STATUS.includes(status)) {
+    if (!(ALLOWED_COMMENT_STATUS as readonly string[]).includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
 
@@ -47,7 +45,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params
-  if (!id || !HEX_24.test(id)) {
+  if (!isValidObjectId(id)) {
     return NextResponse.json({ error: 'Invalid comment id' }, { status: 400 })
   }
 

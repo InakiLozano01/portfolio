@@ -78,7 +78,15 @@
         "paginationNextAria": "Next page",
         "fetchSectionError": "Failed to fetch skills section",
         "fetchError": "Failed to fetch skills data",
-        "invalidDataFormat": "Invalid skills data format"
+        "invalidDataFormat": "Invalid skills data format",
+        "categoryLabels": {
+            "ai": "AI",
+            "database": "Database",
+            "devops": "DevOps",
+            "framework": "Frameworks",
+            "language": "Languages",
+            "tool": "Tools"
+        }
     },
     "projects": {
         "heading": "Projects",
@@ -100,13 +108,14 @@
             "descriptionFallback": "Stories, updates, and research notes.",
             "searchPlaceholder": "Search blogs...",
             "error": "Error",
-            "comingSoonTitle": "Coming Soon! 🚀",
+            "comingSoonTitle": "Coming Soon!",
             "comingSoonCopy": "We're preparing some exciting content for you. Stay tuned!",
             "noResults": "No blogs found matching your search.",
             "created": "Created",
             "languages": "EN / ES",
             "filterByTagAria": "Filter by tag",
             "moreTags": "more",
+            "readArticle": "Read article",
             "fetchError": "Failed to fetch blogs"
         },
         "view": {
@@ -233,11 +242,11 @@
         "tryAgain": "Try again"
     },
     "seo": {
-        "title": "Iñaki F. Lozano | Computation Engineering Student & Software Developer",
-        "description": "Driven Computation Engineering student focused on technology and innovation. Researching secure document workflows, building scalable backends, and blending DevOps, AI, and full stack development skills.",
-        "keywords": "Software Developer, Computation Engineering Student, Backend Development, Advanced electronic signatures, DevOps, Tucumán, Argentina",
+        "title": "Iñaki F. Lozano | Software Engineer SSr · Computer Engineering, UNT",
+        "description": "Software Engineer SSr at the Court of Accounts of Tucumán. Completing Computer Engineering at UNT and building secure document workflows, scalable backends, and practical systems.",
+        "keywords": "Software Engineer SSr, Computer Engineering UNT, Backend Development, Advanced electronic signatures, DevOps, Tucumán, Argentina",
         "location": "Tucumán, Argentina",
-        "jobTitle": "Computation Engineering Student & Software Developer",
+        "jobTitle": "Software Engineer SSr · Computer Engineering, UNT",
         "organization": "Court of Accounts of Tucumán"
     }
 }

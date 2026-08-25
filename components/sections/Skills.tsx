@@ -71,6 +71,7 @@ export default function Skills({
     fetchSectionError: skillsDict.fetchSectionError || 'Failed to fetch skills section',
     fetchError: skillsDict.fetchError || 'Failed to fetch skills data',
     invalidDataFormat: skillsDict.invalidDataFormat || 'Invalid skills data format',
+    categoryLabels: skillsDict.categoryLabels || {},
   }
   const heading = lang === 'es'
     ? (titleEs || t.heading)
@@ -166,24 +167,21 @@ export default function Skills({
     return () => window.removeEventListener('resize', calculateItemsPerPage)
   }, [])
 
+  const getCategoryLabel = (category: string) =>
+    t.categoryLabels[category.toLowerCase()] || category.charAt(0).toUpperCase() + category.slice(1)
+
   const categories = useMemo(() => {
     const cats = new Map<string, number>()
     content.forEach(skill => {
-      // Capitalize first letter of each category
-      const category = skill.category
-      const norm = category.charAt(0).toUpperCase() + category.slice(1)
-      cats.set(norm, (cats.get(norm) || 0) + 1)
+      cats.set(skill.category, (cats.get(skill.category) || 0) + 1)
     })
-    return Array.from(cats.entries()).sort((a, b) => a[0].localeCompare(b[0]))
-  }, [content])
+    return Array.from(cats.entries()).sort(([a], [b]) => getCategoryLabel(a).localeCompare(getCategoryLabel(b)))
+  }, [content, t.categoryLabels])
 
   const filteredSkills = useMemo(() => {
     const dataset = selectedCategory === 'all'
       ? content
-      : content.filter(skill => {
-        const category = skill.category.charAt(0).toUpperCase() + skill.category.slice(1)
-        return category === selectedCategory
-      })
+      : content.filter(skill => skill.category === selectedCategory)
 
     const q = searchQuery.trim().toLowerCase()
     const withSearch = q
@@ -254,7 +252,7 @@ export default function Skills({
                 aria-selected={selectedCategory === category}
                 aria-controls={`${category}-panel`}
               >
-                {category} <span className="ml-1 text-xs opacity-70">{count}</span>
+                {getCategoryLabel(category)} <span className="ml-1 text-xs opacity-70">{count}</span>
               </button>
             ))}
           </div>
@@ -285,7 +283,7 @@ export default function Skills({
         aria-label={
           selectedCategory === 'all'
             ? `${t.all} ${t.skillsWord}`
-            : `${selectedCategory} ${t.skillsWord}`
+            : `${getCategoryLabel(selectedCategory)} ${t.skillsWord}`
         }
       >
         {paginatedSkills.map((skill, index) => {
@@ -325,7 +323,7 @@ export default function Skills({
                 )}
                 <div className="min-w-0">
                   <h3 className="font-medium text-sm leading-tight text-gray-900 truncate">{skill.name}</h3>
-                  <p className="text-xs leading-tight text-gray-500 capitalize truncate">{skill.category}</p>
+                  <p className="text-xs leading-tight text-gray-500 truncate">{getCategoryLabel(skill.category)}</p>
                 </div>
               </div>
             </motion.div>

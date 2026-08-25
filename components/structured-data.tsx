@@ -29,8 +29,8 @@ export function StructuredData({ lang = 'en', baseUrl, alternateBaseUrl }: Struc
         '@type': 'WebSite',
         name: isSpanish ? 'Portafolio de Iñaki F. Lozano' : 'Iñaki F. Lozano Portfolio',
         description: isSpanish
-            ? 'Estudiante de Ingeniería en Computación enfocado en flujos de trabajo de documentos seguros, backends escalables y prácticas modernas de DevOps.'
-            : 'Computation Engineering student focused on secure document workflows, scalable backends, and modern DevOps practices.',
+            ? 'Ingeniero de Software SSr que finaliza Ingeniería en Computación en la UNT y trabaja con flujos seguros de documentos, backends escalables y DevOps.'
+            : 'Software Engineer SSr completing Computer Engineering at UNT and working on secure document workflows, scalable backends, and DevOps.',
         url: canonicalBase,
         inLanguage: isSpanish ? 'es-AR' : 'en-US',
         sameAs,
@@ -56,8 +56,8 @@ export function StructuredData({ lang = 'en', baseUrl, alternateBaseUrl }: Struc
         givenName: 'Iñaki',
         familyName: 'Lozano',
         jobTitle: isSpanish
-            ? 'Estudiante de Ingeniería en Computación y Desarrollador de Software'
-            : 'Computation Engineering Student & Software Developer',
+            ? 'Ingeniero de Software SSr · Ingeniería en Computación, UNT'
+            : 'Software Engineer SSr · Computer Engineering, UNT',
         description: isSpanish
             ? 'Investigador y desarrollador trabajando en firmas electrónicas avanzadas, APIs escalables y automatización DevOps.'
             : 'Researcher and developer working on advanced electronic signatures, scalable APIs, and DevOps automation.',

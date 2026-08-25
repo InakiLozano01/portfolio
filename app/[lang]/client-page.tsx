@@ -6,6 +6,7 @@ import type { ComponentType } from 'react'
 import Carousel from '@/components/Carousel'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { orderedVisibleSections } from '@/lib/utils'
 
 type SectionComponent = ComponentType<any>
 
@@ -39,14 +40,13 @@ interface ClientPageProps {
     lang: 'en' | 'es'
     dictionary: any
     initialSections?: DBSection[]
+    initialProjects?: any[]
+    initialBlogs?: any[]
     initialYear: number
 }
 
 function buildUiSections(data: DBSection[], dictionary: any): Section[] {
-    return data
-        .filter(section => section.visible)
-        .sort((a, b) => a.order - b.order)
-        .reduce<Section[]>((items, section) => {
+    return orderedVisibleSections(data).reduce<Section[]>((items, section) => {
             const id = section.title.toLowerCase()
             const Component = sectionComponents[id]
             if (!Component) return items
@@ -61,7 +61,7 @@ function buildUiSections(data: DBSection[], dictionary: any): Section[] {
         }, [])
 }
 
-export default function ClientPage({ lang, dictionary, initialSections, initialYear }: ClientPageProps) {
+export default function ClientPage({ lang, dictionary, initialSections, initialProjects, initialBlogs, initialYear }: ClientPageProps) {
     const seededSections = useMemo(() => initialSections ?? [], [initialSections])
     const hasSeededSections = seededSections.length > 0
     const [currentIndex, setCurrentIndex] = useState(0)
@@ -223,7 +223,13 @@ export default function ClientPage({ lang, dictionary, initialSections, initialY
                                 >
                                     <div className={getSectionContainerClasses(id)}>
                                         <div className={getInnerWrapperClasses(id)}>
-                                            <Component lang={lang} initialContent={content} dictionary={dictionary} />
+                                            <Component
+                                                lang={lang}
+                                                initialContent={content}
+                                                initialProjects={id === 'projects' ? initialProjects : undefined}
+                                                initialBlogs={id === 'blog' ? initialBlogs : undefined}
+                                                dictionary={dictionary}
+                                            />
                                         </div>
                                     </div>
                                 </section>

@@ -23,7 +23,7 @@ interface ProjectWithTechnologies extends Omit<IProject, 'technologies'> {
   technologies: Skill[];
 }
 
-export default function Projects({ lang = 'en', dictionary = {} }: { lang?: 'en' | 'es'; dictionary?: any }) {
+export default function Projects({ lang = 'en', initialProjects, dictionary = {} }: { lang?: 'en' | 'es'; initialProjects?: ProjectWithTechnologies[]; dictionary?: any }) {
     const projectsDict = dictionary?.projects || {}
     const t = {
         heading: projectsDict.heading || 'Projects',
@@ -34,8 +34,8 @@ export default function Projects({ lang = 'en', dictionary = {} }: { lang?: 'en'
         visitProject: projectsDict.visitProject || 'Visit project',
         thumbnailAlt: projectsDict.thumbnailAlt || 'Thumbnail image for project',
     }
-    const [projects, setProjects] = useState<ProjectWithTechnologies[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+    const [projects, setProjects] = useState<ProjectWithTechnologies[]>(initialProjects || [])
+    const [isLoading, setIsLoading] = useState(!initialProjects)
     const [error, setError] = useState<string | null>(null)
     const [techFilter, setTechFilter] = useState<string>('all')
     const [availableTechs, setAvailableTechs] = useState<{ name: string, count: number }[]>([])
@@ -45,18 +45,16 @@ export default function Projects({ lang = 'en', dictionary = {} }: { lang?: 'en'
             : (enValue || esValue || fallback || '')
 
     useEffect(() => {
+        if (initialProjects) {
+            return
+        }
+
         const fetchProjects = async () => {
             try {
                 const response = await fetch('/api/projects')
                 if (!response.ok) throw new Error('Failed to fetch projects')
                 const data = await response.json()
                 setProjects(data)
-                // collect techs for filters
-                const counts = new Map<string, number>()
-                data.forEach((p: ProjectWithTechnologies) => p.technologies.forEach(t => {
-                    counts.set(t.name, (counts.get(t.name) || 0) + 1)
-                }))
-                setAvailableTechs(Array.from(counts.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)))
             } catch (err) {
                 setError(t.loadingError)
                 console.error('Error loading projects:', err)
@@ -66,7 +64,17 @@ export default function Projects({ lang = 'en', dictionary = {} }: { lang?: 'en'
         }
 
         fetchProjects()
-    }, [t.loadingError])
+    }, [initialProjects, t.loadingError])
+
+    useEffect(() => {
+        const counts = new Map<string, number>()
+        projects.forEach((project) => project.technologies.forEach((technology) => {
+            counts.set(technology.name, (counts.get(technology.name) || 0) + 1)
+        }))
+        setAvailableTechs(Array.from(counts.entries())
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => a.name.localeCompare(b.name)))
+    }, [projects])
 
     if (isLoading) {
         return (
@@ -132,7 +140,10 @@ export default function Projects({ lang = 'en', dictionary = {} }: { lang?: 'en'
 
     return (
         <section id="projects" className="container mx-auto px-4 py-16">
-            <h2 className="text-3xl font-bold mb-6 text-primary">{t.heading}</h2>
+            <div className="mb-6 flex items-end gap-4">
+                <h2 className="text-3xl font-bold text-primary">{t.heading}</h2>
+                <span className="mb-1 h-1 w-16 bg-[#FD4345]" aria-hidden="true" />
+            </div>
             <div className="flex flex-wrap gap-2 mb-6" aria-label={t.filtersLabel}>
                 <button
                     onClick={() => setTechFilter('all')}
@@ -164,22 +175,23 @@ export default function Projects({ lang = 'en', dictionary = {} }: { lang?: 'en'
                     return (
                         <article
                             key={project._id.toString()}
-                            className="transition-transform hover:scale-105"
+                            className="h-full transition-transform duration-200 hover:-translate-y-1"
                         >
-                            <Card className="relative h-full flex flex-col hover:bg-primary/5">
+                            <Card className="relative h-full overflow-hidden border-slate-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-lg">
                                 <Link
                                     href={projectHref}
                                     prefetch={false}
                                     aria-label={`${t.viewProject} ${title}`}
                                     className="absolute inset-0 z-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
                                 />
+                                <span className="absolute left-0 top-0 z-20 h-1 w-16 bg-[#FD4345]" aria-hidden="true" />
                                 <div className="relative aspect-video w-full">
                                     <Image
                                         src={project.thumbnailSmall || project.thumbnail || '/images/projects/default-project.jpg'}
                                         alt={`${t.thumbnailAlt} ${pickLang(project.title_en || project.title, project.title_es || project.title, project.title)}`}
                                         fill
                                         sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                                        className="object-cover rounded-t-lg"
+                                        className="object-cover transition-transform duration-300 hover:scale-[1.02]"
                                         loading="lazy"
                                         priority={false}
                                         placeholder="blur"
@@ -209,7 +221,7 @@ export default function Projects({ lang = 'en', dictionary = {} }: { lang?: 'en'
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex flex-wrap gap-2">
-                                        {project.technologies.map((tech) => (
+                                        {project.technologies.slice(0, 5).map((tech) => (
                                             <Badge
                                                 key={tech._id.toString()}
                                                 variant="outline"
