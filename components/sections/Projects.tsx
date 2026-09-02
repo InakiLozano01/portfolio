@@ -33,6 +33,8 @@ export default function Projects({ lang = 'en', initialProjects, dictionary = {}
         viewProject: projectsDict.viewProject || 'View project',
         visitProject: projectsDict.visitProject || 'Visit project',
         thumbnailAlt: projectsDict.thumbnailAlt || 'Thumbnail image for project',
+        principalProject: projectsDict.principalProject || 'Ethos is the principal independent product project developed and operated by Iñaki Fernando Lozano.',
+        visitEthos: projectsDict.visitEthos || 'Visit Ethos',
     }
     const [projects, setProjects] = useState<ProjectWithTechnologies[]>(initialProjects || [])
     const [isLoading, setIsLoading] = useState(!initialProjects)
@@ -140,10 +142,21 @@ export default function Projects({ lang = 'en', initialProjects, dictionary = {}
 
     return (
         <section id="projects" className="container mx-auto px-4 py-16">
-            <div className="mb-6 flex items-end gap-4">
+            <div className="mb-3 flex items-end gap-4">
                 <h2 className="text-3xl font-bold text-primary">{t.heading}</h2>
                 <span className="mb-1 h-1 w-16 bg-[#FD4345]" aria-hidden="true" />
             </div>
+            <p className="mb-6 max-w-2xl text-sm leading-6 text-slate-600">
+                {t.principalProject}{' '}
+                <a
+                    href="https://ethos.ar"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary underline decoration-[#FD4345] decoration-2 underline-offset-4 transition-colors hover:text-[#FD4345] focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2"
+                >
+                    {t.visitEthos}
+                </a>
+            </p>
             <div className="flex flex-wrap gap-2 mb-6" aria-label={t.filtersLabel}>
                 <button
                     onClick={() => setTechFilter('all')}

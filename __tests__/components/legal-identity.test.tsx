@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { render, screen } from '@testing-library/react'
 import Footer from '@/components/Footer'
+import Projects from '@/components/sections/Projects'
 import { StructuredData } from '@/components/structured-data'
+import en from '@/dictionaries/en.json'
+import es from '@/dictionaries/es.json'
 
 const contact = {
     email: 'inakilozano01@gmail.com',
@@ -55,5 +58,19 @@ describe('legal identity', () => {
         expect(legalPage).toContain('Ethos is the principal independent product project developed and operated by Iñaki Fernando Lozano.')
         expect(legalPage).toContain('Ethos es el principal proyecto de producto independiente desarrollado y operado por Iñaki Fernando Lozano.')
         expect(legalPage).toContain('href="https://ethos.ar"')
+    })
+
+    it('identifies Ethos as Iñaki Fernando Lozano’s principal project on the project surface in both languages', () => {
+        const { rerender } = render(
+            <Projects lang="en" initialProjects={[]} dictionary={en} />
+        )
+
+        expect(screen.getByText(en.projects.principalProject)).toBeVisible()
+        expect(screen.getByRole('link', { name: en.projects.visitEthos })).toHaveAttribute('href', 'https://ethos.ar')
+
+        rerender(<Projects lang="es" initialProjects={[]} dictionary={es} />)
+
+        expect(screen.getByText(es.projects.principalProject)).toBeVisible()
+        expect(screen.getByRole('link', { name: es.projects.visitEthos })).toHaveAttribute('href', 'https://ethos.ar')
     })
 })
