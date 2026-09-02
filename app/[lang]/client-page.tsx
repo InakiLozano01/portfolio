@@ -253,6 +253,7 @@ export default function ClientPage({ lang, dictionary, initialSections, initialP
                 dictionary={dictionary.footer}
                 initialContact={sections.find(section => section.id === 'contact')?.content as any}
                 currentYear={initialYear}
+                lang={lang}
             />
         </div>
     )

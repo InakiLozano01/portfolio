@@ -11,7 +11,8 @@
         "linkedin": "LinkedIn",
         "github": "GitHub",
         "email": "Email",
-        "copyright": "© {year} Iñaki Fernando Lozano"
+        "copyright": "© {year} Iñaki Fernando Lozano",
+        "legalNotice": "Legal notice — Iñaki Fernando Lozano"
     },
     "common": {
         "loading": "Loading...",

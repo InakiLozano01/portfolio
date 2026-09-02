@@ -96,7 +96,7 @@ export const buildEnglishMetadata = (
         description:
             'Software Engineer SSr at the Court of Accounts of Tucumán. Completing Computer Engineering at UNT and building secure document workflows, scalable backends, and practical systems.',
         keywords,
-        authors: [{ name: 'Iñaki F. Lozano', url: baseUrl }],
+        authors: [{ name: 'Iñaki Fernando Lozano', url: baseUrl }],
         openGraph: {
             type: 'website',
             locale: 'en_US',
@@ -212,7 +212,7 @@ export const buildSpanishMetadata = (
         description:
             'Ingeniero de Software SSr en el Tribunal de Cuentas de Tucumán. Finaliza Ingeniería en Computación en la UNT y construye flujos seguros de documentos, backends escalables y sistemas prácticos.',
         keywords,
-        authors: [{ name: 'Iñaki F. Lozano', url: baseUrl }],
+        authors: [{ name: 'Iñaki Fernando Lozano', url: baseUrl }],
         openGraph: {
             type: 'website',
             locale: 'es_AR',

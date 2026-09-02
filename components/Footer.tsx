@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Github, Linkedin, Mail } from 'lucide-react'
 import type { ContactContent } from '@/models/Section'
 
@@ -8,9 +9,10 @@ interface FooterProps {
     dictionary?: any;
     initialContact?: ContactContent | null;
     currentYear?: number;
+    lang?: 'en' | 'es';
 }
 
-export default function Footer({ dictionary = {}, initialContact = null, currentYear }: FooterProps) {
+export default function Footer({ dictionary = {}, initialContact = null, currentYear, lang = 'en' }: FooterProps) {
     const fallbackContact: ContactContent = {
         email: 'inakilozano01@gmail.com',
         city: 'San Miguel de Tucumán, Argentina',
@@ -101,7 +103,13 @@ export default function Footer({ dictionary = {}, initialContact = null, current
                         </a>
                     )}
                 </div>
-                <p className="text-sm text-gray-400">{copyrightText}</p>
+                <Link
+                    href={`/${lang}/legal`}
+                    className="rounded-sm text-sm text-gray-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2433]"
+                    aria-label={dictionary.legalNotice || copyrightText}
+                >
+                    {copyrightText}
+                </Link>
             </div>
         </footer>
     )

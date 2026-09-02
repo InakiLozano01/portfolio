@@ -37,7 +37,7 @@ export function StructuredData({ lang = 'en', baseUrl, alternateBaseUrl }: Struc
         alternateName,
         author: {
             '@type': 'Person',
-            name: 'Iñaki F. Lozano'
+            name: 'Iñaki Fernando Lozano'
         },
         potentialAction: {
             '@type': 'SearchAction',
@@ -52,7 +52,7 @@ export function StructuredData({ lang = 'en', baseUrl, alternateBaseUrl }: Struc
     const personSchema = {
         '@context': 'https://schema.org',
         '@type': 'Person',
-        name: 'Iñaki F. Lozano',
+        name: 'Iñaki Fernando Lozano',
         givenName: 'Iñaki',
         familyName: 'Lozano',
         jobTitle: isSpanish
@@ -122,6 +122,7 @@ export function StructuredData({ lang = 'en', baseUrl, alternateBaseUrl }: Struc
     const organizationSchema = {
         '@context': 'https://schema.org',
         '@type': 'Organization',
+        legalName: 'Iñaki Fernando Lozano',
         name: isSpanish
             ? 'Iñaki F. Lozano - Desarrollador de Software'
             : 'Iñaki F. Lozano - Software Developer',
@@ -134,7 +135,7 @@ export function StructuredData({ lang = 'en', baseUrl, alternateBaseUrl }: Struc
         logo: `${canonicalBase}/inakilozanodotcomlogo.png`,
         founder: {
             '@type': 'Person',
-            name: 'Iñaki F. Lozano'
+            name: 'Iñaki Fernando Lozano'
         },
         contactPoint: {
             '@type': 'ContactPoint',
@@ -176,6 +177,7 @@ export function StructuredData({ lang = 'en', baseUrl, alternateBaseUrl }: Struc
         '@context': 'https://schema.org',
         '@type': 'LocalBusiness',
         '@id': `${canonicalBase}/#business`,
+        legalName: 'Iñaki Fernando Lozano',
         name: isSpanish
             ? 'Iñaki F. Lozano - Desarrollador de Software'
             : 'Iñaki F. Lozano - Software Developer',
