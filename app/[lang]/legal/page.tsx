@@ -12,6 +12,8 @@ const content = {
         title: 'Website ownership',
         statement: 'The legal name of the person and business represented by this website is Iñaki Fernando Lozano.',
         detail: 'inakilozano.com is the official professional website of Iñaki Fernando Lozano, based in Tucumán, Argentina.',
+        ethos: 'Ethos is the principal independent product project developed and operated by Iñaki Fernando Lozano.',
+        ethosLink: 'Visit Ethos',
         labels: {
             legalName: 'Legal name',
             website: 'Website',
@@ -27,6 +29,8 @@ const content = {
         title: 'Titularidad del sitio web',
         statement: 'El nombre legal de la persona y del negocio representado por este sitio web es Iñaki Fernando Lozano.',
         detail: 'inakilozano.com es el sitio web profesional oficial de Iñaki Fernando Lozano, con sede en Tucumán, Argentina.',
+        ethos: 'Ethos es el principal proyecto de producto independiente desarrollado y operado por Iñaki Fernando Lozano.',
+        ethosLink: 'Visitar Ethos',
         labels: {
             legalName: 'Nombre legal',
             website: 'Sitio web',
@@ -108,6 +112,15 @@ export default async function LegalPage({ params }: LegalPageProps) {
                 </p>
                 <p className="mt-4 max-w-2xl text-base leading-7 text-[#1a2433]/70">
                     {copy.detail}
+                </p>
+                <p className="mt-4 max-w-2xl text-base leading-7 text-[#1a2433]/70">
+                    {copy.ethos}{' '}
+                    <a
+                        href="https://ethos.ar"
+                        className="font-medium text-[#1a2433] underline decoration-[#FD4345] decoration-2 underline-offset-4 transition-colors hover:text-[#FD4345] focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4"
+                    >
+                        {copy.ethosLink}
+                    </a>
                 </p>
 
                 <dl className="mt-12 divide-y divide-[#1a2433]/10 border-y border-[#1a2433]/10">
