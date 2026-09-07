@@ -6,7 +6,7 @@ const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 const mongoose = require('mongoose')
-const nodemailer = require('nodemailer')
+const nodemailer = require('portfolio-nodemailer')
 const sharp = require('sharp')
 
 const ALWAYS_TO = (process.env.NEWSLETTER_ALWAYS_TO || '')

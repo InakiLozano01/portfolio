@@ -14,12 +14,9 @@ out
 .git
 .gitignore
 
-# Environment files
-.env
-.env.local
-.env.development
-.env.test
-!.env.production
+# Environment files are supplied only at runtime by Compose.
+.env*
+**/.env*
 
 # IDE files
 .idea
@@ -46,4 +43,4 @@ LICENSE
 .editorconfig
 .prettierrc
 .eslintrc*
-jest.config.* 
+jest.config.*
