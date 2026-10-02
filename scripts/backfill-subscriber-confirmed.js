@@ -8,26 +8,25 @@
  * and are left untouched, so they still must confirm via email.
  *
  * Dry-run by default; gated on APPLY=1. Run inside the capped portfolio
- * container (mongoose + MONGODB_URI available there), never on the host:
+ * container (PostgreSQL + DATABASE_URL available there), never on the host:
  *
  *   # dry run (counts only)
  *   docker exec portfolio-portfolio-1 node /app/scripts/backfill-subscriber-confirmed.js
  *   # apply
  *   docker exec -e APPLY=1 portfolio-portfolio-1 node /app/scripts/backfill-subscriber-confirmed.js
  */
-const mongoose = require('mongoose');
+const { rawModel, pool } = require('./postgres-model.cjs');
 
 const dryRun = process.env.APPLY !== '1';
 
 async function main() {
-  if (!process.env.MONGODB_URI) {
-    throw new Error('MONGODB_URI is required');
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is required');
   }
 
-  await mongoose.connect(process.env.MONGODB_URI);
+  await pool().query('SELECT 1');
   const Subscriber =
-    mongoose.models.Subscriber ||
-    mongoose.model('Subscriber', new mongoose.Schema({}, { strict: false, collection: 'subscribers' }));
+    rawModel('Subscriber', 'subscribers');
 
   // Legacy subscribers: not already confirmed AND no pending confirm token.
   const filter = { confirmed: { $ne: true }, confirmToken: { $exists: false } };
@@ -38,7 +37,7 @@ async function main() {
 
   if (dryRun) {
     console.log('No changes written (set APPLY=1 to apply).');
-    await mongoose.disconnect();
+    await pool().end();
     return;
   }
 
@@ -47,7 +46,7 @@ async function main() {
   });
   console.log(`Done. Marked confirmed: ${res.modifiedCount ?? res.nModified ?? 0}`);
 
-  await mongoose.disconnect();
+  await pool().end();
 }
 
 main().catch((error) => {

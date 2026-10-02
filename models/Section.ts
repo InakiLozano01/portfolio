@@ -1,3 +1,4 @@
+import { postgresModel } from '../lib/postgres-model'
 import mongoose from 'mongoose';
 import { z } from 'zod';
 
@@ -117,4 +118,4 @@ if (mongoose.models.Section) {
   delete mongoose.models.Section;
 }
 
-export const SectionModel = mongoose.model('Section', sectionSchema); 
+export const SectionModel = postgresModel(mongoose.model('Section', sectionSchema));

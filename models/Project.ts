@@ -1,3 +1,4 @@
+import { postgresModel } from '../lib/postgres-model'
 import mongoose, { Types } from 'mongoose';
 import slugify from 'slugify';
 import './Skill';  // Import Skill model to ensure it's registered
@@ -140,4 +141,4 @@ ProjectSchema.pre('validate', function (next) {
 // Reuse existing model if it exists to avoid recompilation issues
 const ProjectModel = (mongoose.models.Project || mongoose.model<IProject>('Project', ProjectSchema)) as mongoose.Model<IProject>;
 
-export default ProjectModel; 
+export default postgresModel(ProjectModel);

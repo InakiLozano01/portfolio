@@ -3,7 +3,7 @@
  * projects, generated with sharp from each project's current `thumbnail`.
  *
  * Mirrors scripts/optimize-project-thumbnails.js: dry-run by default, gated on
- * APPLY=1, reads PUBLIC_DIR (default /app/public) and MONGODB_URI. Designed to
+ * APPLY=1, reads PUBLIC_DIR (default /app/public) and DATABASE_URL. Designed to
  * run inside the capped portfolio container (sharp + mongoose are available
  * there), never on the host shell.
  *
@@ -14,7 +14,7 @@
  */
 const fs = require('fs/promises');
 const path = require('path');
-const mongoose = require('mongoose');
+const { rawModel, pool } = require('./postgres-model.cjs');
 const sharp = require('sharp');
 
 const dryRun = process.env.APPLY !== '1';
@@ -63,13 +63,13 @@ function resolveVariantPaths(thumbnail) {
 }
 
 async function main() {
-  if (!process.env.MONGODB_URI) {
-    throw new Error('MONGODB_URI is required');
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is required');
   }
 
-  await mongoose.connect(process.env.MONGODB_URI);
+  await pool().query('SELECT 1');
   const Project =
-    mongoose.models.Project || mongoose.model('Project', new mongoose.Schema({}, { strict: false }));
+    rawModel('Project', 'projects');
   const projects = await Project.find({ thumbnail: thumbnailPattern }).lean();
 
   console.log(`${dryRun ? 'Dry run' : 'Apply'}: scanning ${projects.length} projects with eligible thumbnails`);
@@ -146,7 +146,7 @@ async function main() {
     `Done. ${dryRun ? 'Would update' : 'Updated'}: ${updated}, skipped(existing): ${skipped}, failed: ${failed}`,
   );
 
-  await mongoose.disconnect();
+  await pool().end();
 }
 
 main().catch((error) => {

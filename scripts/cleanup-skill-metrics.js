@@ -1,6 +1,5 @@
-const mongoose = require('mongoose');
+const { collection, pool } = require('../lib/postgres-store');
 
-const uri = process.env.MONGODB_URI || 'mongodb://mongodb:27017/portfolio';
 const legacyMetricFields = [
   'proficiency',
   'yearsOfExperience',
@@ -15,9 +14,9 @@ const legacyMetricFields = [
 
 async function cleanupSkillMetrics() {
   try {
-    await mongoose.connect(uri, { bufferCommands: false });
+    await pool().query('SELECT 1');
 
-    const result = await mongoose.connection.collection('skills').updateMany(
+    const result = await collection('skills').updateMany(
       {
         $or: legacyMetricFields.map((field) => ({ [field]: { $exists: true } })),
       },
@@ -35,7 +34,7 @@ async function cleanupSkillMetrics() {
     console.error('[Cleanup Skill Metrics] Failed:', error);
     process.exitCode = 1;
   } finally {
-    await mongoose.disconnect();
+    await pool().end();
   }
 }
 

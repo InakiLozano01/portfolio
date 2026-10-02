@@ -1,3 +1,4 @@
+import { postgresModel } from '../lib/postgres-model'
 import mongoose from 'mongoose';
 
 const ContactSchema = new mongoose.Schema({
@@ -38,4 +39,4 @@ const ContactSchema = new mongoose.Schema({
 // Create a compound index for rate limiting
 ContactSchema.index({ ipAddress: 1, createdAt: 1 });
 
-export default mongoose.models.Contact || mongoose.model('Contact', ContactSchema); 
+export default postgresModel(mongoose.models.Contact || mongoose.model('Contact', ContactSchema));

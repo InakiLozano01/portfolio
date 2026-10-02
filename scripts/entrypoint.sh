@@ -2,20 +2,24 @@
 
 # Simple startup script used in Docker
 
-echo 'Waiting for MongoDB and Redis to be ready...'
-sleep 5
+echo 'Starting portfolio with PostgreSQL and Redis...'
 
 # Try to normalize permissions on bind-mounted images dir, but don't fail if not allowed
 # Best-effort: ensure upload directory exists
 mkdir -p /app/public/images/projects /app/public/images/blogs 2>/dev/null || true
-chmod 755 /app/public/images /app/public/images/projects /app/public/images/blogs 2>/dev/null || true
-find /app/public/images -type d -exec chmod 755 {} \; 2>/dev/null || true
-find /app/public/images -type f -exec chmod 644 {} \; 2>/dev/null || true
 
-# Use Next.js standalone server from .next/standalone
-node server.js &
-srv=$!
+# Retain the pre-existing 30-day contact expiry policy only after recovery.
+if [ "$PORTFOLIO_CONTACT_RETENTION_ENABLED" = "true" ]; then
+  node /app/scripts/postgres-retention.cjs &
+  retention_pid=$!
+  node server.js &
+  server_pid=$!
+  trap 'kill "$retention_pid" "$server_pid" 2>/dev/null || true' TERM INT
+  wait "$server_pid"
+  status=$?
+  kill "$retention_pid" 2>/dev/null || true
+  exit "$status"
+fi
 
-# Health log
-echo "Server started with PID $srv"
-wait $srv
+# Use Next.js standalone server.
+exec node server.js

@@ -75,7 +75,7 @@ ENV HOSTNAME=0.0.0.0
 # runtime env provided by compose; keep empty defaults
 ENV SKIP_REDIS_DURING_BUILD=""
 ENV SKIP_DB_DURING_BUILD=""
-ENV MONGODB_URI=""
+ENV DATABASE_URL=""
 ENV REDIS_URL=""
 
 CMD ["sh", "/app/scripts/entrypoint.sh"]

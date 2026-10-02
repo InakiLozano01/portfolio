@@ -1,3 +1,4 @@
+import { postgresModel } from '../lib/postgres-model'
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
@@ -39,4 +40,4 @@ AdminSchema.methods.comparePassword = async function (candidatePassword: string)
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-export default mongoose.models.Admin || mongoose.model('Admin', AdminSchema); 
+export default postgresModel(mongoose.models.Admin || mongoose.model('Admin', AdminSchema));

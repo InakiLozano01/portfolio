@@ -5,7 +5,7 @@
 const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
-const mongoose = require('mongoose')
+const { rawModel, pool } = require('./postgres-model.cjs')
 const nodemailer = require('portfolio-nodemailer')
 const sharp = require('sharp')
 
@@ -351,7 +351,7 @@ ${footer}
 }
 
 async function main() {
-  if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI required')
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL required')
   if (!ALWAYS_TO.length) throw new Error('NEWSLETTER_ALWAYS_TO required')
   if (!fs.existsSync(PUBLIC_ROOT)) throw new Error(`PUBLIC_ROOT missing: ${PUBLIC_ROOT}`)
 
@@ -367,9 +367,9 @@ async function main() {
     tls: { rejectUnauthorized: false },
   })
 
-  await mongoose.connect(process.env.MONGODB_URI)
-  const Blog = mongoose.model('Blog', new mongoose.Schema({}, { strict: false, collection: 'blogs' }))
-  const Subscriber = mongoose.model('Subscriber', new mongoose.Schema({}, { strict: false, collection: 'subscribers' }))
+  await pool().query('SELECT 1')
+  const Blog = rawModel('Blog', 'blogs')
+  const Subscriber = rawModel('Subscriber', 'subscribers')
 
   const blogs = await Blog.find({ published: true }).sort({ createdAt: 1 }).lean()
   const subDocs = await Subscriber.find({ email: { $in: ALWAYS_TO } }).select('email language token').lean()
@@ -415,7 +415,7 @@ async function main() {
 
   const failed = results.filter((r) => !r.ok).length
   console.log(`\nDone. sent=${results.length - failed} failed=${failed}`)
-  await mongoose.disconnect()
+  await pool().end()
   if (failed) process.exit(1)
 }
 

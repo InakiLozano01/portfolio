@@ -2,7 +2,7 @@
 // @ts-ignore: Declare module slugify as any
 declare module 'slugify';
 
-import mongoose from 'mongoose';
+import { pool } from '../lib/postgres-store';
 import Project from '../models/Project';
 import Skill from '../models/Skill';
 import { connectToDatabase } from '../lib/mongodb';
@@ -72,7 +72,7 @@ async function seedProjects() {
 
         console.log('Seeded projects successfully');
 
-        await mongoose.disconnect();
+        await pool().end();
         console.log('Disconnected from MongoDB');
         process.exit(0);
     } catch (error) {

@@ -7,9 +7,7 @@ import { slugify } from '../lib/utils'
 config()
 
 // Set MongoDB URI for development if not set
-if (!process.env.MONGODB_URI) {
-    process.env.MONGODB_URI = 'mongodb://localhost:27017/portfolio'
-}
+if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required')
 
 // Define the type for seed data
 interface BlogSeed {

@@ -4,7 +4,7 @@ import redis from '@/lib/redis';
 
 export async function GET() {
     try {
-        // Check MongoDB connection
+        // Check PostgreSQL connection
         await connectToDatabase();
 
         // Check Redis connection

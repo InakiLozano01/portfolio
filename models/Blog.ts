@@ -1,3 +1,4 @@
+import { postgresModel } from '../lib/postgres-model'
 import mongoose from 'mongoose';
 import { z } from 'zod';
 
@@ -101,4 +102,4 @@ export interface IBlog extends mongoose.Document {
 // Only create the model on the server side
 const BlogModel = (mongoose.models.Blog || mongoose.model<IBlog>('Blog', blogSchema)) as mongoose.Model<IBlog>;
 
-export default BlogModel; 
+export default postgresModel(BlogModel);

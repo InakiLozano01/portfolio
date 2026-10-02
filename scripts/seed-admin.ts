@@ -6,9 +6,7 @@ import { config } from 'dotenv';
 config();
 
 // Set MongoDB URI for Docker environment if not set
-if (!process.env.MONGODB_URI) {
-  process.env.MONGODB_URI = 'mongodb://mongodb:27017/portfolio';
-}
+if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required')
 
 const adminData = {
   email: process.env.ADMIN_EMAIL || 'admin@example.com',

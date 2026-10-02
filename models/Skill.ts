@@ -1,3 +1,4 @@
+import { postgresModel } from '../lib/postgres-model'
 import mongoose from 'mongoose';
 
 export interface ISkill extends mongoose.Document {
@@ -42,4 +43,4 @@ const SkillSchema = new mongoose.Schema({
 // Reuse existing model if it exists to avoid recompilation issues
 const SkillModel = (mongoose.models.Skill || mongoose.model<ISkill>('Skill', SkillSchema)) as mongoose.Model<ISkill>;
 
-export default SkillModel;
+export default postgresModel(SkillModel);

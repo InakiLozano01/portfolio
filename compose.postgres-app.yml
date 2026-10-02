@@ -1,0 +1,36 @@
+# Standalone application deployment; existing Redis and PostgreSQL are external.
+# Supply the non-secret deployment paths/image using compose --env-file.
+services:
+  portfolio:
+    image: ${PORTFOLIO_APP_IMAGE:?Reviewed application image required}
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:${PORTFOLIO_APP_PORT:-3003}:3000"
+    env_file:
+      - ${PORTFOLIO_EXISTING_ENV_FILE:?Existing private application environment required}
+      - ${PORTFOLIO_DATABASE_ENV_FILE:?Private PostgreSQL app environment required}
+    environment:
+      SKIP_DB_DURING_BUILD: "false"
+      SKIP_REDIS_DURING_BUILD: "false"
+      PORTFOLIO_CONTACT_RETENTION_ENABLED: ${PORTFOLIO_CONTACT_RETENTION_ENABLED:-false}
+    volumes:
+      - ${PORTFOLIO_IMAGES_PATH:?Existing images directory required}:/app/public/images:rw
+    networks: [portfolio_network]
+    cpus: "0.5"
+    mem_limit: 512m
+    memswap_limit: 512m
+    pids_limit: 256
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    healthcheck:
+      test: [CMD-SHELL, 'nc -z 127.0.0.1 3000 || exit 1']
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+networks:
+  portfolio_network:
+    external: true
+    name: portfolio_portfolio_network

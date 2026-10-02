@@ -1,0 +1,35 @@
+# Isolated destination. Creating its roles/secrets requires explicit approval.
+# Never pass this file to the production stack until recovery checks pass.
+services:
+  postgres:
+    image: ${PORTFOLIO_POSTGRES_IMAGE:?Set a reviewed postgres:16 image digest}
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 512m
+    environment:
+      POSTGRES_DB: portfolio
+      POSTGRES_USER: portfolio_owner
+      POSTGRES_PASSWORD_FILE: /run/secrets/portfolio_owner_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    secrets:
+      - portfolio_owner_password
+    volumes:
+      - portfolio_postgres_data:/var/lib/postgresql/data
+    # No host port. Access is limited to the portfolio's private Docker network.
+    networks:
+      - portfolio_network
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U portfolio_owner -d portfolio']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+secrets:
+  portfolio_owner_password:
+    file: ${PORTFOLIO_OWNER_PASSWORD_FILE:?Private secret file required}
+volumes:
+  portfolio_postgres_data:
+    name: portfolio_postgres_data
+networks:
+  portfolio_network:
+    external: true
+    name: portfolio_portfolio_network

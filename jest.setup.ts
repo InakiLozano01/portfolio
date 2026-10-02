@@ -44,6 +44,10 @@ installGlobal('File', File)
 
 process.env.SUPPRESS_JEST_WARNINGS = 'true'
 
+// Route/component tests already mock the document models below. Exercise the
+// real PostgreSQL binding separately with npm run test:postgres.
+jest.mock('./lib/postgres-model', () => ({ postgresModel: (model: unknown) => model }))
+
 jest.mock('next-auth', () => ({
   getServerSession: jest.fn(),
 }))

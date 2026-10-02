@@ -14,7 +14,7 @@ export const authOptions: NextAuthOptions = {
             async authorize(credentials) {
                 // During build time, skip auth
                 if (process.env.SKIP_DB_DURING_BUILD === 'true') {
-                    console.log('[MongoDB] Skipping auth during build');
+                    console.log('[Database] Skipping auth during build');
                     return null;
                 }
 

@@ -1,49 +1,8 @@
-import mongoose from 'mongoose';
-
-// Check if MONGODB_URI is defined, if not use default development URI
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/portfolio';
-const parsedMongoTimeout = parseInt(process.env.MONGODB_TIMEOUT_MS || '10000', 10);
-const mongoTimeoutMs = Number.isFinite(parsedMongoTimeout) ? parsedMongoTimeout : 10000;
-
-interface GlobalMongoose {
-  conn: typeof mongoose | null
-  promise: Promise<typeof mongoose> | null
-}
-
-declare global {
-  var mongoose: GlobalMongoose | undefined
-}
-
-const cached: GlobalMongoose = global.mongoose || { conn: null, promise: null };
-if (!global.mongoose) {
-  global.mongoose = cached;
-}
-
+// Compatibility import for existing routes. PostgreSQL is the sole runtime database.
+import { pool } from './postgres-store'
 export async function connectToDatabase() {
-  if (cached.conn) {
-    return cached.conn;
-  }
-
-  if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-      serverSelectionTimeoutMS: mongoTimeoutMs,
-      connectTimeoutMS: mongoTimeoutMs,
-      socketTimeoutMS: mongoTimeoutMs,
-    };
-
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose;
-    });
-  }
-
-  try {
-    cached.conn = await cached.promise;
-    return cached.conn;
-  } catch (e) {
-    cached.promise = null;
-    throw e;
-  }
+  const connection = pool()
+  await connection.query('SELECT 1')
+  return connection
 }
-
-export default mongoose;
+export default connectToDatabase

@@ -1,3 +1,4 @@
+import { postgresModel } from '../lib/postgres-model'
 import mongoose from 'mongoose'
 
 export interface ISubscriber extends mongoose.Document {
@@ -25,5 +26,5 @@ const SubscriberSchema = new mongoose.Schema<ISubscriber>({
   confirmToken: { type: String, index: true },
 }, { timestamps: true })
 
-export default (mongoose.models.Subscriber as mongoose.Model<ISubscriber>) || mongoose.model<ISubscriber>('Subscriber', SubscriberSchema)
+export default postgresModel((mongoose.models.Subscriber as mongoose.Model<ISubscriber>) || mongoose.model<ISubscriber>('Subscriber', SubscriberSchema))
 

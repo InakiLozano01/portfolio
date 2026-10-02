@@ -1,4 +1,6 @@
+import { postgresModel } from '../lib/postgres-model'
 import mongoose from 'mongoose'
+import './Blog'
 
 export interface IComment extends mongoose.Document {
   blog: mongoose.Types.ObjectId
@@ -24,4 +26,4 @@ const CommentSchema = new mongoose.Schema<IComment>({
   votes: { type: [{ ip: { type: String, required: true }, value: { type: Number, enum: [-1, 1], required: true } }], default: [] },
 }, { timestamps: true })
 
-export default (mongoose.models.Comment as mongoose.Model<IComment>) || mongoose.model<IComment>('Comment', CommentSchema)
+export default postgresModel((mongoose.models.Comment as mongoose.Model<IComment>) || mongoose.model<IComment>('Comment', CommentSchema))

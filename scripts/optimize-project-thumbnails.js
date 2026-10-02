@@ -2,7 +2,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { randomUUID } = require('crypto');
 const { spawn } = require('child_process');
-const mongoose = require('mongoose');
+const { rawModel, pool } = require('./postgres-model.cjs');
 
 const quality = clampNumber(process.env.THUMBNAIL_WEBP_QUALITY, 82, 50, 95);
 const effort = clampNumber(process.env.THUMBNAIL_WEBP_EFFORT, 4, 0, 6);
@@ -90,12 +90,12 @@ async function optimizeFile(sourcePath, outputPath) {
 }
 
 async function main() {
-  if (!process.env.MONGODB_URI) {
-    throw new Error('MONGODB_URI is required');
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is required');
   }
 
-  await mongoose.connect(process.env.MONGODB_URI);
-  const Project = mongoose.models.Project || mongoose.model('Project', new mongoose.Schema({}, { strict: false }));
+  await pool().query('SELECT 1');
+  const Project = rawModel('Project', 'projects');
   const projects = await Project.find({ thumbnail: /^\/images\/projects\/.+\.(jpe?g|png|avif)$/i }).lean();
 
   console.log(`${dryRun ? 'Dry run' : 'Apply'}: found ${projects.length} project thumbnails to convert`);
@@ -133,7 +133,7 @@ async function main() {
     }
   }
 
-  await mongoose.disconnect();
+  await pool().end();
 }
 
 main().catch((error) => {
