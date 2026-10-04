@@ -1,0 +1,82 @@
+{
+  "long-fields": {
+    "pages": 3,
+    "pageSizes": [
+      [
+        596.0,
+        842.0
+      ]
+    ],
+    "wordsOutsidePage": 0,
+    "longTokenCharsPreserved": true
+  },
+  "reference-comparison": {
+    "pages": 1,
+    "pageSizes": [
+      [
+        596.0,
+        842.0
+      ]
+    ],
+    "wordsOutsidePage": 0
+  },
+  "accents": {
+    "pages": 1,
+    "pageSizes": [
+      [
+        596.0,
+        842.0
+      ]
+    ],
+    "wordsOutsidePage": 0,
+    "accentTextPreserved": true
+  },
+  "multipage": {
+    "pages": 14,
+    "pageSizes": [
+      [
+        596.0,
+        842.0
+      ]
+    ],
+    "wordsOutsidePage": 0,
+    "all20ItemEndMarkers": true
+  },
+  "originalHorizontalRulesPt": [
+    58.2,
+    165.0,
+    192.0,
+    216.0,
+    241.8,
+    283.8,
+    298.8,
+    325.2,
+    351.0,
+    367.2,
+    408.0,
+    487.8,
+    580.2,
+    649.8,
+    739.8
+  ],
+  "proofHorizontalRulesPt": [
+    58.2,
+    165.0,
+    192.0,
+    216.0,
+    241.8,
+    283.8,
+    298.8,
+    325.2,
+    351.0,
+    367.2,
+    408.0,
+    487.8,
+    579.6,
+    649.8,
+    740.4
+  ],
+  "changedPixelsExcludingProofNumberSignature": 116643,
+  "comparisonTotalPixels": 1395576,
+  "pixelIdentical": false
+}

@@ -50,6 +50,7 @@ COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/lib ./lib
 COPY --from=builder /app/models ./models
 COPY --from=builder /app/data ./data
+COPY --from=builder /app/assets/invoices ./assets/invoices
 COPY --from=builder /app/tsconfig*.json ./
 COPY --from=builder /app/package*.json ./
 # permissions

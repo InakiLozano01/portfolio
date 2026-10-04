@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  outputFileTracingIncludes: {
+    '/api/admin/invoices/**': ['./assets/invoices/**/*'],
+  },
   // @react-pdf/renderer ships fontkit + yoga (wasm); keep it external so its
   // assets resolve from node_modules at runtime instead of being bundled.
   serverExternalPackages: ['@react-pdf/renderer'],

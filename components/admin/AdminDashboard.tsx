@@ -16,6 +16,7 @@ import SectionsManager from './SectionsManager';
 import SkillsManager from './SkillsManager';
 import ProjectsManager from './ProjectsManager';
 import AssetsManager from './AssetsManager';
+import InvoicesManager from './InvoicesManager';
 import StatusCards from './StatusCards';
 import {
   RefreshCw,
@@ -51,6 +52,7 @@ const sidebarItems = [
   { id: 'skills', label: 'Skills', icon: Wrench },
   { id: 'projects', label: 'Projects', icon: Briefcase },
   { id: 'blogs', label: 'Blog', icon: FileText },
+  { id: 'invoices', label: 'Invoices', icon: FileText },
   { id: 'messages', label: 'Messages', icon: MessageSquare },
   { id: 'comments', label: 'Comments', icon: MessageCircle },
   { id: 'assets', label: 'Assets', icon: ImageIcon },
@@ -435,6 +437,7 @@ const AdminDashboard: FC = () => {
                 {activeSection === 'skills' && <SkillsManager skills={skills} onSave={handleSaveSkill} />}
                 {activeSection === 'projects' && <ProjectsManager />}
                 {activeSection === 'blogs' && <BlogManager />}
+                {activeSection === 'invoices' && <InvoicesManager />}
                 {activeSection === 'messages' && <MessagesManager />}
                 {activeSection === 'comments' && <CommentsManager />}
                 {activeSection === 'assets' && <AssetsManager />}

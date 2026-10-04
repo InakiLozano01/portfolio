@@ -17,6 +17,8 @@ public/images/blogs/*
 .package-lock.json
 *.tsbuildinfo
 .cache/
+.qa/
+assets/invoices/fonts/Arial*.ttf
 mongodb_data
 redis_data
 

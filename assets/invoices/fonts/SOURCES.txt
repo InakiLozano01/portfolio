@@ -1,0 +1,15 @@
+RobotoMono-Regular.ttf and RobotoMono-OFL.txt
+Source: https://github.com/googlefonts/RobotoMono
+Commit: 895ec691990d041dd727c7b5afa3ce56525d98e6
+Path: fonts/ttf/RobotoMono-Regular.ttf
+License: SIL Open Font License 1.1 (included)
+
+LiberationSans-Regular.ttf and LiberationSans-Bold.ttf
+Source: installed Debian fonts-liberation package, /usr/share/fonts/truetype/liberation
+Upstream: https://github.com/liberationfonts
+License: SIL Open Font License 1.1 (included in LICENSE.txt)
+Use: watermarked QA proofs only while the Arial fidelity requirement is unresolved.
+
+Arial files are not supplied or extracted from the source PDF. The source's
+embedded font subsets are incomplete. Complete Arial for server rendering must
+come from a separately authorized, appropriately licensed source.
