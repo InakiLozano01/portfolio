@@ -22,7 +22,9 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { TinyMCE, type TinyMCEHandle } from '@/components/ui/tinymce'
+import type { TinyMCEHandle } from '@/components/ui/tinymce'
+import dynamic from 'next/dynamic'
+const TinyMCE = dynamic(() => import('@/components/ui/tinymce').then(m => m.TinyMCE), { ssr: false })
 import { buildNewsletterEmail } from '@/lib/blog-newsletter'
 import type { ISubscriber } from '@/models/Subscriber'
 import { slugify } from '@/lib/utils'
@@ -124,14 +126,13 @@ export default function BlogManager() {
 
     useEffect(() => {
         fetchBlogs()
-        fetchSubscribers()
     }, [])
 
     async function fetchBlogs() {
         setFetchError(null)
         setLoading(true)
         try {
-            const response = await fetch('/api/blogs')
+            const response = await fetch('/api/blogs?view=summary')
             if (!response.ok) {
                 throw new Error('Failed to fetch blogs')
             }
@@ -153,8 +154,10 @@ export default function BlogManager() {
             }
             const data = await response.json()
             setSubscribers(Array.isArray(data) ? data : [])
+            return Array.isArray(data) ? data as ISubscriber[] : []
         } catch (err) {
             console.error('Failed to fetch subscribers', err)
+            throw new Error('Failed to fetch subscribers')
         }
     }
 
@@ -202,6 +205,17 @@ export default function BlogManager() {
         setFormError(null)
         setPendingTag('')
         setViewMode('list')
+    }
+
+    const loadBlog = async (blog: Blog) => {
+        setLoading(true)
+        try {
+            const response = await fetch(`/api/blogs/${blog._id}`)
+            if (!response.ok) throw new Error('Failed to load blog')
+            handleSelectBlog(await response.json())
+        } catch {
+            toast({ title: 'Error', description: 'Failed to load blog. Please retry.', variant: 'destructive' })
+        } finally { setLoading(false) }
     }
 
     const commitPendingTag = useCallback((raw?: string) => {
@@ -364,13 +378,18 @@ export default function BlogManager() {
         setBlogToDelete(null)
     }
 
-    const openNewsletterModal = (blog: Blog, e?: React.MouseEvent) => {
+    const openNewsletterModal = async (blog: Blog, e?: React.MouseEvent) => {
         e?.stopPropagation();
-        setNewsletterBlog(blog)
-        const defaultRecipients = subscribers.filter(sub => !sub.unsubscribed).map(sub => sub._id?.toString() || '')
-        setSelectedRecipients(defaultRecipients)
-        setEmailPreview(null)
-        setNewsletterModalOpen(true)
+        try {
+            const [response, recipients] = await Promise.all([fetch(`/api/blogs/${blog._id}`), fetchSubscribers()])
+            if (!response.ok) throw new Error('Failed to load blog')
+            setNewsletterBlog(await response.json())
+            setSelectedRecipients(recipients.filter(sub => !sub.unsubscribed).map(sub => sub._id?.toString() || ''))
+            setEmailPreview(null)
+            setNewsletterModalOpen(true)
+        } catch {
+            toast({ title: 'Error', description: 'Failed to load newsletter data. Please retry.', variant: 'destructive' })
+        }
     }
 
     const handleSendNewsletter = async () => {
@@ -496,7 +515,7 @@ export default function BlogManager() {
                                             ) : null}
                                         </div>
                                         <div className="flex flex-wrap gap-2 md:justify-end">
-                                            <Button type="button" variant="outline" size="sm" onClick={() => handleSelectBlog(blog)} className="border-slate-200">
+                                            <Button type="button" variant="outline" size="sm" onClick={() => loadBlog(blog)} className="border-slate-200">
                                                 <Edit className="w-3.5 h-3.5 mr-2" />
                                                 Edit
                                             </Button>

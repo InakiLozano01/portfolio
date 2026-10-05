@@ -64,10 +64,14 @@ export default function BlogComments({ blogId, lang = 'en', dict = {} }: { blogI
       })
       if (res.ok) {
         const comment = await res.json()
-        setComments([comment, ...comments])
+        if (comment.status === 'approved') setComments([comment, ...comments])
         setContent('')
         setReplyTo(null)
-        setPosted(dict?.posted || 'Comment posted')
+        setPosted(comment.status === 'pending'
+          ? (lang === 'es' ? 'Comentario recibido. Está pendiente de revisión.' : 'Comment received. Awaiting review.')
+          : comment.status === 'rejected'
+            ? (lang === 'es' ? 'El comentario no fue publicado por moderación. Un administrador puede revisar la decisión.' : 'The comment was not published by moderation. An administrator can review the decision.')
+            : dict?.posted || 'Comment posted')
       } else {
         const data = await res.json().catch(() => ({}))
         setError(data.error || dict?.errorSend || 'Failed to send comment')

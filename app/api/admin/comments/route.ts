@@ -23,12 +23,15 @@ export async function GET(request: NextRequest) {
     }
 
     await connectToDatabase()
+    if (searchParams.get('summary') === '1') {
+      return NextResponse.json({ pending: await Comment.countDocuments({ status: 'pending' }) }, { headers: { 'Cache-Control': 'private, no-store' } })
+    }
     const comments = await Comment.find(filter)
       .sort({ createdAt: -1 })
       .populate('blog', 'title title_en slug')
       .lean()
 
-    return NextResponse.json(comments)
+    return NextResponse.json(comments, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
     console.error('Failed to fetch comments', error)
     return NextResponse.json({ error: 'Failed to fetch comments' }, { status: 500 })

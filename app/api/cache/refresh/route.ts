@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
                 await Promise.all([
                     clearSectionsCache(),
                     invalidateCache('projects'),
+                    invalidateCache('projects:summary'),
                     invalidateCache('skills'),
                     invalidateCache('blogs'),
                     invalidateCache('messages')
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
 
             case 'projects':
                 await invalidateCache('projects')
+                await invalidateCache('projects:summary')
                 revalidatePath('/projects')
                 revalidateTag('projects', 'max')
                 break

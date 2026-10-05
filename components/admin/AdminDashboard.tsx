@@ -3,21 +3,22 @@
 
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import BlogManager from './BlogManager';
-import MessagesManager from './MessagesManager';
-import CommentsManager from './CommentsManager';
-import SectionsManager from './SectionsManager';
-import SkillsManager from './SkillsManager';
-import ProjectsManager from './ProjectsManager';
-import AssetsManager from './AssetsManager';
-import InvoicesManager from './InvoicesManager';
-import StatusCards from './StatusCards';
+const BlogManager = dynamic(() => import('./BlogManager'), { loading: () => <div className="p-4 text-slate-500">Loading…</div> });
+const MessagesManager = dynamic(() => import('./MessagesManager'), { loading: () => <div className="p-4 text-slate-500">Loading…</div> });
+const CommentsManager = dynamic(() => import('./CommentsManager'), { loading: () => <div className="p-4 text-slate-500">Loading…</div> });
+const SectionsManager = dynamic(() => import('./SectionsManager'), { loading: () => <div className="p-4 text-slate-500">Loading…</div> });
+const SkillsManager = dynamic(() => import('./SkillsManager'), { loading: () => <div className="p-4 text-slate-500">Loading…</div> });
+const ProjectsManager = dynamic(() => import('./ProjectsManager'), { loading: () => <div className="p-4 text-slate-500">Loading…</div> });
+const AssetsManager = dynamic(() => import('./AssetsManager'), { loading: () => <div className="p-4 text-slate-500">Loading…</div> });
+const InvoicesManager = dynamic(() => import('./InvoicesManager'), { loading: () => <div className="p-4 text-slate-500">Loading…</div> });
+const StatusCards = dynamic(() => import('./StatusCards'), { loading: () => <div className="p-4 text-slate-500">Loading…</div> });
 import {
   RefreshCw,
   Activity,
@@ -35,9 +36,9 @@ import {
   Image as ImageIcon,
   UserCog
 } from 'lucide-react';
-import ChangePassword from './ChangePassword';
+const ChangePassword = dynamic(() => import('./ChangePassword'), { loading: () => <div className="p-4 text-slate-500">Loading…</div> });
 import TopBar from './TopBar';
-import EmailDiagnostics from './EmailDiagnostics';
+const EmailDiagnostics = dynamic(() => import('./EmailDiagnostics'), { loading: () => <div className="p-4 text-slate-500">Loading…</div> });
 
 interface Skill {
   _id: string;
@@ -68,7 +69,8 @@ function getSectionFromHash() {
 }
 
 const AdminDashboard: FC = () => {
-  const [activeSection, setActiveSection] = useState(getSectionFromHash);
+  const [activeSection, setActiveSection] = useState('loading');
+  const [pendingComments, setPendingComments] = useState(0);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedCacheType, setSelectedCacheType] = useState('all');
@@ -117,8 +119,20 @@ const AdminDashboard: FC = () => {
         console.error('Skills fetch error:', err)
       }
     }
-    loadSkills()
-  }, [])
+    if (activeSection === 'skills') loadSkills()
+  }, [activeSection])
+
+  useEffect(() => {
+    const refresh = async () => {
+      try {
+        const response = await fetch('/api/admin/comments?summary=1');
+        if (response.ok) setPendingComments((await response.json()).pending || 0);
+      } catch { /* A subsequent refresh retries the count. */ }
+    };
+    void refresh();
+    const timer = setInterval(refresh, 60000);
+    return () => clearInterval(timer);
+  }, [activeSection]);
 
   const handleSaveSkill = async (skill: Skill) => {
     try {
@@ -285,7 +299,7 @@ const AdminDashboard: FC = () => {
                       transition={{ delay: 0.1 }}
                       className="whitespace-nowrap"
                     >
-                      {item.label}
+                      {item.label}{item.id === 'comments' && pendingComments > 0 && <span className="ml-2 rounded-full bg-amber-500 px-2 py-0.5 text-xs text-white" aria-label={`${pendingComments} comments need review`}>{pendingComments}</span>}
                     </motion.span>
                   )}
                   {isActive && sidebarOpen && (

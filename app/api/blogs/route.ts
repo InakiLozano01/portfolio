@@ -15,13 +15,16 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { requireAdmin } from '@/lib/admin-auth';
 
-export async function GET() {
+export async function GET(request?: Request) {
     try {
         await connectToDatabase();
         const session = await getServerSession(authOptions);
         const query = session?.user?.email ? {} : { published: true };
-        const blogs = await BlogModel.find(query).sort({ createdAt: -1 }).lean();
-        return NextResponse.json(blogs);
+        const summary = request && new URL(request.url).searchParams.get('view') === 'summary';
+        const find = BlogModel.find(query);
+        if (summary) find.select('-content -content_en -content_es -footer -footer_en -footer_es -bibliography -bibliography_en -bibliography_es');
+        const blogs = await find.sort({ createdAt: -1 }).lean();
+        return NextResponse.json(blogs, { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } });
     } catch (error) {
         console.error('Failed to fetch blogs:', error);
         return NextResponse.json(

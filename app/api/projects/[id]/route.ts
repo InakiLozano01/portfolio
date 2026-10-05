@@ -69,6 +69,7 @@ export async function PUT(
 
         if (!isDevelopment) {
             await invalidateCache(PROJECTS_CACHE_KEY)
+            await invalidateCache(`${PROJECTS_CACHE_KEY}:summary`)
         }
 
         return NextResponse.json(project)
@@ -102,6 +103,7 @@ export async function DELETE(
 
         if (!isDevelopment) {
             await invalidateCache(PROJECTS_CACHE_KEY)
+            await invalidateCache(`${PROJECTS_CACHE_KEY}:summary`)
         }
 
         return NextResponse.json({ message: 'Project deleted successfully' })

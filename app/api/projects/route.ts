@@ -9,11 +9,13 @@ import { optimizeExistingProjectThumbnail, ensureProjectThumbnailVariants } from
 const PROJECTS_CACHE_KEY = 'projects';
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-export async function GET() {
+export async function GET(request?: NextRequest) {
   try {
+    const summary = request?.nextUrl?.searchParams.get('view') === 'summary';
+    const cacheKey = summary ? `${PROJECTS_CACHE_KEY}:summary` : PROJECTS_CACHE_KEY;
     // Skip cache in development
     if (!isDevelopment) {
-      const cachedProjects = await getFromCache(PROJECTS_CACHE_KEY);
+      const cachedProjects = await getFromCache(cacheKey);
       if (cachedProjects) {
         return NextResponse.json(cachedProjects);
       }
@@ -21,14 +23,16 @@ export async function GET() {
 
     await connectToDatabase();
     // Ensure models are registered, but avoid forcing collection creation in prod
-    const projects = await Project.find({})
+    const query = Project.find({});
+    if (summary) query.select('-description -description_en -description_es');
+    const projects = await query
       .populate('technologies')
       .sort({ createdAt: -1 })
       .lean();
 
     // Cache the results in production
     if (!isDevelopment) {
-      await setInCache(PROJECTS_CACHE_KEY, projects);
+      await setInCache(cacheKey, projects);
     }
 
     return NextResponse.json(projects);
@@ -64,6 +68,7 @@ export async function POST(request: NextRequest) {
     // Invalidate cache after creating new project
     if (!isDevelopment) {
       await invalidateCache(PROJECTS_CACHE_KEY);
+      await invalidateCache(`${PROJECTS_CACHE_KEY}:summary`);
     }
 
     return NextResponse.json(savedProject);
@@ -97,6 +102,7 @@ export async function PUT(request: Request) {
     // Invalidate cache after updating project
     if (!isDevelopment) {
       await invalidateCache(PROJECTS_CACHE_KEY);
+      await invalidateCache(`${PROJECTS_CACHE_KEY}:summary`);
     }
 
     return NextResponse.json(project);
@@ -121,6 +127,7 @@ export async function DELETE(request: Request) {
     // Invalidate cache after deleting project
     if (!isDevelopment) {
       await invalidateCache(PROJECTS_CACHE_KEY);
+      await invalidateCache(`${PROJECTS_CACHE_KEY}:summary`);
     }
 
     return NextResponse.json({ message: 'Project deleted successfully' });

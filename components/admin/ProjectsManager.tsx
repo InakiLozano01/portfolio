@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TinyMCE } from '@/components/ui/tinymce';
+import dynamic from 'next/dynamic';
+const TinyMCE = dynamic(() => import('@/components/ui/tinymce').then(m => m.TinyMCE), { ssr: false });
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { IProject } from '@/models/Project';
@@ -98,7 +99,7 @@ export default function ProjectsManager() {
     const fetchData = async () => {
       try {
         const [projectsRes, skillsRes] = await Promise.all([
-          fetch('/api/projects'),
+          fetch('/api/projects?view=summary'),
           fetch('/api/skills'),
         ]);
 
@@ -134,8 +135,9 @@ export default function ProjectsManager() {
       const raw = localStorage.getItem('projectDraft');
       if (raw) {
         const draft = JSON.parse(raw);
-        if (draft && typeof draft === 'object') {
+        if (draft && typeof draft === 'object' && (draft.title || draft.description || draft.description_en || draft.description_es || draft.thumbnail)) {
           setSelectedProject({
+            ...(draft._id ? { _id: new Types.ObjectId(draft._id) } : {}),
             title: draft.title || '',
             title_es: draft.title_es || '',
             subtitle_en: draft.subtitle_en || draft.subtitle || '',
@@ -162,11 +164,11 @@ export default function ProjectsManager() {
   // Autosave draft
   useEffect(() => {
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    if (viewMode !== 'editor') return;
     autosaveTimer.current = setTimeout(() => {
       try {
-        const { _id: _draftId, ...draftProject } = selectedProject;
         const toSave = {
-          ...draftProject,
+          ...selectedProject,
           technologies: selectedProject.technologies.map((id) => id.toString()),
         };
         localStorage.setItem('projectDraft', JSON.stringify(toSave));
@@ -175,7 +177,7 @@ export default function ProjectsManager() {
     return () => {
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     };
-  }, [selectedProject]);
+  }, [selectedProject, viewMode]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -399,6 +401,17 @@ export default function ProjectsManager() {
     setViewMode('editor');
   };
 
+  const loadProject = async (project: ProjectWithTechnologies) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/projects/${project._id}`);
+      if (!response.ok) throw new Error('Failed to load project');
+      handleSelectProject(await response.json());
+    } catch {
+      toast({ title: 'Error', description: 'Failed to load project. Please retry.', variant: 'destructive' });
+    } finally { setIsLoading(false); }
+  };
+
   const handleBackToList = () => {
     setErrors({});
     setViewMode('list');
@@ -456,7 +469,7 @@ export default function ProjectsManager() {
                     <div className="flex min-w-0 gap-4">
                       <div className="relative hidden h-16 w-24 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-100 sm:block">
                         {project.thumbnail ? (
-                          <Image src={project.thumbnail} alt="" fill className="object-cover" />
+                          <Image src={project.thumbnailSmall || project.thumbnail} alt="" fill sizes="80px" className="object-cover" placeholder={project.thumbnailBlur ? 'blur' : 'empty'} blurDataURL={project.thumbnailBlur} />
                         ) : (
                           <div className="flex h-full items-center justify-center text-slate-300">
                             <Briefcase className="h-5 w-5" />
@@ -482,7 +495,7 @@ export default function ProjectsManager() {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 md:justify-end">
-                      <Button type="button" variant="outline" size="sm" onClick={() => handleSelectProject(project)} className="border-slate-200">
+                      <Button type="button" variant="outline" size="sm" onClick={() => loadProject(project)} className="border-slate-200">
                         <Edit className="w-3.5 h-3.5 mr-2" />
                         Edit
                       </Button>

@@ -48,6 +48,8 @@ interface Comment {
   content: string
   status: CommentStatus
   isOfficial: boolean
+  moderation?: { decision: string; source: string; model: string; confidence: number; categories: Record<string, number>; reasons: string[] }
+  overrides?: { status: string; actor: string; at: string }[]
   parent?: string | null
   createdAt: string
 }
@@ -200,7 +202,7 @@ export default function CommentsManager() {
 
   const filterTabs: { id: FilterType; label: string; activeClass: string }[] = [
     { id: 'all', label: 'All', activeClass: 'bg-white text-slate-900 shadow-sm' },
-    { id: 'pending', label: 'Pending', activeClass: 'bg-white text-amber-600 shadow-sm' },
+    { id: 'pending', label: 'Needs review', activeClass: 'bg-white text-amber-600 shadow-sm' },
     { id: 'approved', label: 'Approved', activeClass: 'bg-white text-green-600 shadow-sm' },
     { id: 'rejected', label: 'Rejected', activeClass: 'bg-white text-red-600 shadow-sm' },
   ]
@@ -211,7 +213,7 @@ export default function CommentsManager() {
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-slate-900">Comments</h2>
-            <p className="text-slate-500 text-sm mt-1">Moderate blog comments and reply as the author</p>
+            <p className="text-slate-500 text-sm mt-1">Review categorized moderation decisions, override any outcome, and reply as the author</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-200">
             {filterTabs.map((tab) => (
@@ -239,6 +241,11 @@ export default function CommentsManager() {
         </div>
       </div>
 
+      {comments.some(comment => comment.status === 'pending') && (
+        <div role="alert" className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          {comments.filter(comment => comment.status === 'pending').length} comments need review. Open Needs review to approve or deny them.
+        </div>
+      )}
       <div className="space-y-4">
         {currentComments.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-lg border border-dashed border-slate-200 shadow-sm">
@@ -286,6 +293,18 @@ export default function CommentsManager() {
                         {comment.content}
                       </div>
 
+                      {comment.moderation && (
+                        <div className="space-y-1 text-xs text-slate-600">
+                          <p>{comment.moderation.source === 'jev' ? 'Jev' : 'Moderation unavailable'}: {comment.moderation.decision} · confidence {Math.round(comment.moderation.confidence * 100)}%</p>
+                          <p>{comment.moderation.reasons.join(', ').replaceAll('_', ' ')}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {Object.entries(comment.moderation.categories).map(([category, probability]) => (
+                              <Badge key={category} variant="outline">{category.replaceAll('_', ' ')} {Math.round(probability * 100)}%</Badge>
+                            ))}
+                          </div>
+                          {!!comment.overrides?.length && <p>Admin override: {comment.overrides.at(-1)?.status}. Original moderation retained.</p>}
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 text-xs text-slate-400">
                         <Clock className="w-3 h-3" />
                         {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
@@ -310,6 +329,11 @@ export default function CommentsManager() {
                             onClick={() => handleStatusChange(comment._id, 'rejected')}
                           >
                             <XCircle className="w-4 h-4 mr-1.5" /> Reject
+                          </Button>
+                        )}
+                        {comment.status !== 'pending' && (
+                          <Button variant="ghost" size="sm" onClick={() => handleStatusChange(comment._id, 'pending')}>
+                            <AlertCircle className="w-4 h-4 mr-1.5" /> Send to review
                           </Button>
                         )}
                         <Button

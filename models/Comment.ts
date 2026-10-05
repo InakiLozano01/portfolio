@@ -1,5 +1,6 @@
 import { postgresModel } from '../lib/postgres-model'
 import mongoose from 'mongoose'
+import type { ModerationResult } from '../lib/comment-moderation'
 import './Blog'
 
 export interface IComment extends mongoose.Document {
@@ -9,6 +10,8 @@ export interface IComment extends mongoose.Document {
   ip: string
   status: 'approved' | 'rejected' | 'pending'
   isOfficial: boolean
+  moderation?: ModerationResult
+  overrides?: { status: string; actor: string; at: Date }[]
   parent?: mongoose.Types.ObjectId | null
   votes: { ip: string; value: number }[]
   createdAt: Date
@@ -20,7 +23,11 @@ const CommentSchema = new mongoose.Schema<IComment>({
   alias: { type: String, required: true },
   content: { type: String, required: true },
   ip: { type: String, required: true },
-  status: { type: String, enum: ['approved', 'rejected', 'pending'], default: 'approved' },
+  status: { type: String, enum: ['approved', 'rejected', 'pending'], default: 'pending' },
+  moderation: { type: mongoose.Schema.Types.Mixed },
+  // Audit entries are built by the authenticated handler; keep them plain BSON
+  // values rather than Mongoose subdocuments with private array modifiers.
+  overrides: { type: [mongoose.Schema.Types.Mixed], default: [] },
   isOfficial: { type: Boolean, default: false },
   parent: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', default: null },
   votes: { type: [{ ip: { type: String, required: true }, value: { type: Number, enum: [-1, 1], required: true } }], default: [] },

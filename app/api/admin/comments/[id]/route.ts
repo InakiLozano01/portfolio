@@ -25,7 +25,7 @@ export async function PATCH(
     await connectToDatabase()
     const comment = await Comment.findByIdAndUpdate(
       id,
-      { $set: { status } },
+      { $set: { status }, $push: { overrides: { status, actor: admin.session.user!.email, at: new Date() } } },
       { new: true }
     )
 

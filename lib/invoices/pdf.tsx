@@ -146,7 +146,7 @@ export function InvoiceDocument({ snapshot, proof = false }: { snapshot: Invoice
 // Serialize renderer work in each process to bound font/layout memory usage.
 let tail: Promise<unknown> = Promise.resolve()
 export function renderInvoice(snapshot: InvoiceSnapshot, proof = false): Promise<Buffer> {
-  if (!proof && !hasArial) return Promise.reject(new InvoiceError(503, 'PDF export requires approved complete Arial fonts; no substitute is used for invoices'))
+  if (!proof && !hasArial && process.env.INVOICE_FONT !== 'liberation-sans') return Promise.reject(new InvoiceError(503, 'PDF export requires licensed Arial fonts or approval to use Liberation Sans'))
   const result = tail.then(async () => {
     await Promise.all(fontDescriptors.map(descriptor => Font.load(descriptor)))
     const fonts = fontDescriptors.slice(0, 2).map(descriptor => Font.getFont(descriptor).data!)
