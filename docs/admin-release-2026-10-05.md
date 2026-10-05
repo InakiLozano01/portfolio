@@ -38,7 +38,18 @@ through the private runtime setting `INVOICE_FONT=liberation-sans`. Verification
 on the deployed image covers accented text, a nine-page PDF with all items intact,
 the absence of the proof watermark, unsupported-character rejection and nine
 invoice persistence/export checks in an isolated engine. Existing stored PDFs
-remain immutable. No signature or invoice email is added.
+remain immutable. New normal exports now include the owner's signature image from
+a private read-only runtime mount. Export new PDF version saves a new revision
+without changing the invoice number, payment status or previous PDFs. Proofs
+remain unsigned; invoice email is not added.
+
+Signature validation: 14 invoice store/renderer checks passed, including missing
+asset rejection and unsigned proofs. The exact supplied PNG was verified once
+below SIGNATURE on the final page of one-page and eight-page PDFs, and visually
+inspected on a white background. Authenticated browser checks on an isolated
+database restore covered both export buttons, downloads, unchanged prior PDF
+bytes, retained paid status and mobile overflow. The production build, TypeScript
+and targeted ESLint passed.
 
 Validation: 51 Jest tests, seven PostgreSQL persistence tests, nine invoice store
 tests, TypeScript and the production build passed. ESLint has zero errors and
@@ -49,8 +60,13 @@ an override retained its original decision. Backup restore checks cover the
 original data and the synthetic invoice export bytes.
 
 Private release evidence and rollback image information live outside Git at
-`/home/ilozano/archive/portfolio/2026-10-05/admin-release`. The current font activation
-manifest and its prior runtime settings remain in
-`/home/ilozano/portfolio-invoice-font-release-20261005`. Rollback replaces the app image
+`/home/ilozano/portfolio-db-recovery-20261002T125907Z/release-records`. Current
+deployment manifests, the private signature and PostgreSQL role files remain in
+that runtime directory. Its `backups` folder contains one current PostgreSQL
+backup restored and compared across all 14 tables, and one compressed original
+Mongo backup whose decompressed SHA-256 was verified. Integrated source bundles,
+old database dumps, build contexts and duplicate screenshots were deleted,
+including their former copies in `archive`. Two unintegrated historical design
+drafts remain in a verified 88 KB incremental bundle. Rollback replaces the app image
 only; preserve PostgreSQL invoice tables and histories. Never restore an old
 database over newer invoices or comments to undo an application deployment.

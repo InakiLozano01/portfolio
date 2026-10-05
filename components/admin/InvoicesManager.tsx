@@ -124,10 +124,15 @@ export default function InvoicesManager() {
             })}><option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="unknown">Unknown</option></select>
           </label><p className="text-xs text-slate-600">No payment is collected or verified automatically.</p></div>
           {selected.paymentEvents?.length ? <details><summary className="cursor-pointer text-sm">Payment history</summary><ul className="mt-2 text-sm">{selected.paymentEvents.map(e => <li key={e.version}>{new Date(e.changedAt).toLocaleString()} — {e.status}</li>)}</ul></details> : null}
-          <div className="flex flex-wrap items-center justify-between gap-3"><div><h4 className="font-semibold">PDF history</h4><p className="text-sm text-slate-600">Exports are private, unsigned and saved permanently. Save edits before exporting.</p></div><Button disabled={busy || dirty} onClick={() => void run(async () => {
-            await api(`/${selected.id}/exports`, 'POST', { revision: selected.revision })
-            replace(await api<Detail>(`/${selected.id}`)); setNotice('PDF version saved. Download it from the history below.')
-          })}>Export saved revision</Button></div>
+          <div className="flex flex-wrap items-center justify-between gap-3"><div><h4 className="font-semibold">PDF history</h4><p className="text-sm text-slate-600">New PDFs include your signature image. Existing PDFs stay unchanged. Save edits before exporting.</p></div><Button disabled={busy || dirty} onClick={() => void run(async () => {
+            const record = selected.exports.some(version => version.revision === selected.revision)
+              ? await api<Detail>(`/${selected.id}`, 'PUT', { revision: selected.revision, invoice: selected.invoice })
+              : selected
+            // Keep the successful revision even if rendering fails, so retrying is safe.
+            replace(record)
+            await api(`/${record.id}/exports`, 'POST', { revision: record.revision })
+            replace(await api<Detail>(`/${record.id}`)); await refresh(); setNotice('PDF with your signature image saved. Download the latest revision below.')
+          })}>{selected.exports.some(version => version.revision === selected.revision) ? 'Export new PDF version' : 'Export saved revision'}</Button></div>
           {!selected.exports.length && <p className="text-sm text-slate-500">No PDF exported yet.</p>}
           <ul className="space-y-2">{selected.exports.map(version => <li key={version.revision} className="rounded border p-3 text-sm">
             <a className="font-medium underline" href={`/api/admin/invoices/${selected.id}/exports/${version.revision}`}>Download PDF · revision {version.revision}</a>

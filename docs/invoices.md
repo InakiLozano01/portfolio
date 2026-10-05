@@ -2,9 +2,9 @@
 
 This feature is based on PostgreSQL recovery commit `2958084` and is deliberately
 separate from the database cutover candidate. It adds Invoices to `/admin#invoices`.
-Nothing imports, changes, signs or sends historical invoices. No fiscal service,
-signature, payment processor, email dispatch or automatic payment confirmation is
-implemented.
+Historical PDFs retain their original bytes. New exports include the owner's
+private signature image. No cryptographic digital signing, fiscal service,
+payment processor, email dispatch or automatic payment confirmation is implemented.
 
 ## Data and workflow
 
@@ -25,6 +25,10 @@ implemented.
   per revision. A snapshot, complete PDF bytes and SHA-256 are stored in PostgreSQL.
   Downloads read those bytes; they never re-render a historical PDF. Database
   triggers reject UPDATE/DELETE on export and payment event rows.
+- If the current revision already has a PDF, **Export new PDF version** saves a
+  new revision with the same contents and exports it using the current renderer
+  and signature. The invoice number, payment history and older PDFs are preserved.
+  A rendering failure leaves the new saved revision available for retry.
 - New invoices start unpaid. Manual paid/unpaid/unknown changes have their own
   optimistic version and append-only audit events; they do not alter PDF content
   revisions. Unknown remains available for uncertain historical payment state,
@@ -58,12 +62,16 @@ connection details.
 
 The authoritative original SHA-256 is
 `b62d00b0edc7caac2d01d3c09109bd7f0bc94279ed34c88db131dfb5ed803e16`.
-Its source and signature are kept outside this repository. Only the two logo
-assets are used. No signature asset is copied into the application.
+Its source and the owner's supplied signature are kept outside this repository.
+The signature PNG is mounted read-only into the application using
+`PORTFOLIO_INVOICE_SIGNATURE_FILE` in the deployment manifest; the renderer reads
+the absolute server-only `INVOICE_SIGNATURE_PATH`. It is never copied into the
+image or `public/`. Normal exports return 503 if this private asset is unavailable.
 
 The renderer uses the original 596 × 842 pt page, table widths, borders, headings,
-logos, USD presentation and original `AMMOUNT` spelling. It leaves the signature
-area blank. Complete official Roboto Mono is bundled under its SIL-OFL license,
+logos, USD presentation and original `AMMOUNT` spelling. The supplied signature
+is placed below `SIGNATURE:` in the final totals block, once on the last page,
+at 190 × 46 pt. Complete official Roboto Mono is bundled under its SIL-OFL license,
 from https://github.com/googlefonts/RobotoMono, commit
 `895ec691990d041dd727c7b5afa3ce56525d98e6`.
 
@@ -111,7 +119,7 @@ environment and replaces only the application container using its existing image
 
 ## Reproducible checks
 
-`npm test -- --runInBand`, `node --test scripts/invoices/test-store.cjs`,
+`npm test -- --runInBand`, `node --test scripts/invoices/test-store.cjs scripts/invoices/test-pdf.cjs`,
 `npm run test:postgres`, `npm run lint`, `npx tsc --noEmit`, `npm run build`.
 
 The invoice store suite defaults to an isolated PGlite engine. Real concurrent

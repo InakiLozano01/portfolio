@@ -75,7 +75,7 @@ export function chunks(text: string): string[] {
 }
 const amount = (value: string) => 'U$D ' + decimal(value).replace(/\.00$/, '')
 
-export function InvoiceDocument({ snapshot, proof = false }: { snapshot: InvoiceSnapshot; proof?: boolean }) {
+export function InvoiceDocument({ snapshot, proof = false, signature }: { snapshot: InvoiceSnapshot; proof?: boolean; signature?: Buffer }) {
   const v = snapshot.invoice
   const rows = v.items.flatMap((item, index) => chunks(item.description).map((part, segment) => <View style={[s.item, { minHeight: 70 }]} key={`${index}-${segment}`} wrap={false}>
         <View style={s.itemId}><Text>{String(index + 1).padStart(3, '0')}</Text></View>
@@ -136,7 +136,10 @@ export function InvoiceDocument({ snapshot, proof = false }: { snapshot: Invoice
             </View>
           </View>
         </View>
-        <Text style={[s.heading, { marginTop: 40, marginLeft: 266 }]}>SIGNATURE:</Text>
+        <View style={{ marginTop: 30, marginLeft: 266 }}>
+          <Text style={s.heading}>SIGNATURE:</Text>
+          {signature && <Image src={{ data: signature, format: 'png' }} style={{ width: 190, height: 46, marginTop: 8 }} />}
+        </View>
       </View>
       <Text fixed style={{ position: 'absolute', bottom: 20, right: 45.5, fontSize: 8 }} render={({ pageNumber, totalPages }) => totalPages > 1 ? `${pageNumber} / ${totalPages}` : ''} />
     </Page>
@@ -148,13 +151,28 @@ let tail: Promise<unknown> = Promise.resolve()
 export function renderInvoice(snapshot: InvoiceSnapshot, proof = false): Promise<Buffer> {
   if (!proof && !hasArial && process.env.INVOICE_FONT !== 'liberation-sans') return Promise.reject(new InvoiceError(503, 'PDF export requires licensed Arial fonts or approval to use Liberation Sans'))
   const result = tail.then(async () => {
+    // Read only the operator-configured private file, never a client-supplied path.
+    // Proofs remain unsigned. A normal export must not silently omit the signature.
+    let signature: Buffer | undefined
+    if (!proof) {
+      try {
+        const file = process.env.INVOICE_SIGNATURE_PATH
+        if (!file || !path.isAbsolute(file)) throw new Error('Missing signature')
+        const stat = await fs.promises.stat(file)
+        if (!stat.isFile() || stat.size > 1024 * 1024) throw new Error('Invalid signature')
+        signature = await fs.promises.readFile(file)
+        if (signature.length < 24 || signature.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') throw new Error('Invalid signature')
+      } catch {
+        throw new InvoiceError(503, 'The private invoice signature is unavailable; PDF export can be retried after configuration is restored')
+      }
+    }
     await Promise.all(fontDescriptors.map(descriptor => Font.load(descriptor)))
     const fonts = fontDescriptors.slice(0, 2).map(descriptor => Font.getFont(descriptor).data!)
     const text = Object.entries(snapshot.invoice).filter(([key]) => key !== 'items').map(([, value]) => String(value)).join('') + snapshot.invoice.items.map(i => i.title + i.description).join('')
     if (Array.from(text).some(char => !/\s/u.test(char) && fonts.some(font => !font.hasGlyphForCodePoint(char.codePointAt(0)!)))) {
       throw new InvoiceError(422, 'Some characters are not supported by the invoice fonts; revise the text before exporting')
     }
-    return renderToBuffer(<InvoiceDocument snapshot={snapshot} proof={proof} />)
+    return renderToBuffer(<InvoiceDocument snapshot={snapshot} proof={proof} signature={signature} />)
   })
   tail = result.catch(() => undefined)
   return result

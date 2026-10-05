@@ -14,8 +14,15 @@ services:
       SKIP_DB_DURING_BUILD: "false"
       SKIP_REDIS_DURING_BUILD: "false"
       PORTFOLIO_CONTACT_RETENTION_ENABLED: ${PORTFOLIO_CONTACT_RETENTION_ENABLED:-false}
+      INVOICE_SIGNATURE_PATH: /app/private-invoice/signature.png
     volumes:
       - ${PORTFOLIO_IMAGES_PATH:?Existing images directory required}:/app/public/images:rw
+      - type: bind
+        source: ${PORTFOLIO_INVOICE_SIGNATURE_FILE:?Private invoice signature PNG required}
+        target: /app/private-invoice/signature.png
+        read_only: true
+        bind:
+          create_host_path: false
     networks: [portfolio_network]
     cpus: "0.5"
     mem_limit: 512m
