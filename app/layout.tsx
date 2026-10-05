@@ -1,9 +1,9 @@
-import { Inter } from 'next/font/google'
+import { Geist } from 'next/font/google'
 import './globals.css'
 import { metadata as baseMetadata } from './metadata'
 import type { Metadata, Viewport } from 'next'
 
-const inter = Inter({ subsets: ['latin'] })
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
 
 // Export the base metadata for the root layout
 export const metadata: Metadata = baseMetadata
@@ -20,8 +20,8 @@ export default function RootLayout({
     children: React.ReactNode
 }) {
     return (
-        <html lang="en" suppressHydrationWarning>
-            <body className={inter.className}>
+        <html lang="en" className={geist.variable} suppressHydrationWarning>
+            <body className={`${geist.className} antialiased`}>
                 {children}
             </body>
         </html>

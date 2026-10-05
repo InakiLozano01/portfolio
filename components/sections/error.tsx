@@ -20,8 +20,8 @@ export default function SectionError({ error, resetErrorBoundary }: ErrorProps) 
   }, [error])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+    <div className="min-h-screen flex items-center justify-center bg-cream px-4">
+      <div className="bg-white p-8 rounded-xl border border-navy/15 max-w-md w-full text-center">
         <h2 className="text-2xl font-bold text-red-600 mb-4">{dict?.title || 'Section Error'}</h2>
         <p className="text-gray-600 mb-4">{error.message || dict?.fallback || 'An error occurred while loading this section.'}</p>
         <button

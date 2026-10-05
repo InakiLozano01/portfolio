@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import type { ComponentType } from 'react'
-import Carousel from '@/components/Carousel'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { orderedVisibleSections } from '@/lib/utils'
@@ -98,88 +97,55 @@ export default function ClientPage({ lang, dictionary, initialSections, initialP
     }, [hasSeededSections])
 
     useEffect(() => {
-        const hash = window.location.hash.slice(1)
-        if (hash && sections.length > 0) {
-            const sectionIndex = sections.findIndex(section => section.id === hash)
-            if (sectionIndex !== -1) {
-                setCurrentIndex(sectionIndex)
-            }
-        } else if (sections.length > 0) {
-            // Reset to first section if no hash
-            setCurrentIndex(0)
+        const followHash = () => {
+            const id = window.location.hash.slice(1) || sections[0]?.id
+            const index = sections.findIndex(section => section.id === id)
+            if (index < 0) return
+            setCurrentIndex(index)
+            document.getElementById(id)?.scrollIntoView({ behavior: 'instant' })
         }
-
-        const handleHashChange = () => {
-            const nextHash = window.location.hash.slice(1)
-            const sectionIndex = sections.findIndex(section => section.id === nextHash)
-            if (sectionIndex !== -1) {
-                setCurrentIndex(sectionIndex)
-            }
-        }
-
-        window.addEventListener('hashchange', handleHashChange)
+        const frame = requestAnimationFrame(followHash)
+        window.addEventListener('hashchange', followHash)
+        window.addEventListener('popstate', followHash)
         return () => {
-            window.removeEventListener('hashchange', handleHashChange)
+            cancelAnimationFrame(frame)
+            window.removeEventListener('hashchange', followHash)
+            window.removeEventListener('popstate', followHash)
         }
     }, [sections])
 
-    const updateSection = (newIndex: number) => {
-        setCurrentIndex(newIndex)
-        const newHash = sections[newIndex]?.id === 'home' ? '' : `#${sections[newIndex]?.id}`
-        window.history.pushState(null, '', `${window.location.pathname}${newHash}`)
-    }
-
-    const handlePrev = () => {
-        const newIndex = currentIndex > 0 ? currentIndex - 1 : sections.length - 1
-        updateSection(newIndex)
-    }
-
-    const handleNext = () => {
-        const newIndex = currentIndex < sections.length - 1 ? currentIndex + 1 : 0
-        updateSection(newIndex)
-    }
-
     useEffect(() => {
-        const currentSectionId = sections[currentIndex]?.id
-        if (!currentSectionId) return
-
-        setTimeout(() => {
-            const currentSectionEl = document.getElementById(currentSectionId)
-            currentSectionEl?.scrollTo({ top: 0, behavior: 'auto' })
-        }, 50)
-    }, [currentIndex, sections])
-
-    const getSectionContainerClasses = (id: string) => {
-        const basePadding = 'w-full px-4 md:px-8'
-        const mobilePadding = id === 'about'
-            ? 'pt-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))]'
-            : 'pt-16 pb-[calc(20px+env(safe-area-inset-bottom,0px))]'
-        const verticalPadding = `${mobilePadding} md:py-12`
-
-        const mobileJustify = id === 'about' ? 'justify-start' : ''
-        const desktopJustify = id === 'home' ? 'md:justify-center' : 'md:justify-start'
-        const layout = `min-h-[calc(100vh-48px-40px-env(safe-area-inset-bottom,0px))] md:min-h-full flex flex-col pb-safe-area md:pb-0 md:items-stretch ${mobileJustify} ${desktopJustify}`
-
-        let additional = ''
-        if (id === 'skills') {
-            additional = 'pb-32 md:pb-20'
-        } else if (id === 'experience') {
-            additional = 'pb-20 md:pb-40'
+        if (!sections.length) return
+        const observer = new IntersectionObserver(entries => {
+            const visible = entries.filter(entry => entry.isIntersecting)
+                .sort((a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top))
+            if (visible[0]) {
+                const index = sections.findIndex(section => section.id === visible[0].target.id)
+                if (index >= 0) setCurrentIndex(index)
+            }
+        }, { rootMargin: '-15% 0px -65% 0px' })
+        for (const section of sections) {
+            const element = document.getElementById(section.id)
+            if (element) observer.observe(element)
         }
+        return () => observer.disconnect()
+    }, [sections])
 
-        return `${basePadding} ${verticalPadding} ${layout} ${additional}`
-    }
-
-    const getInnerWrapperClasses = (id: string) => {
-        const base = 'w-full max-w-6xl mx-auto'
-        if (id === 'about') return `${base} md:px-12`
-        return base
+    const updateSection = (index: number) => {
+        const section = sections[index]
+        if (!section) return
+        setCurrentIndex(index)
+        const hash = section.id === 'home' ? '' : `#${section.id}`
+        window.history.pushState(null, '', `${window.location.pathname}${hash}`)
+        document.getElementById(section.id)?.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+        })
     }
 
     if (loading) return null
 
     return (
-        <div className="flex flex-col min-h-screen md:h-screen md:overflow-hidden bg-[#263547]">
+        <div className="min-h-screen bg-cream text-navy">
             <Header
                 staticSections={sections}
                 currentIndex={currentIndex}
@@ -188,65 +154,25 @@ export default function ClientPage({ lang, dictionary, initialSections, initialP
                 languageSwitcherDict={dictionary.languageSwitcher}
                 lang={lang}
             />
-
-            <main id="content" className="flex-grow relative bg-white overflow-hidden">
-                <div className="md:absolute md:inset-0">
-                    <div className="fixed inset-x-0 top-[48px] bottom-[calc(40px+env(safe-area-inset-bottom,0px))] md:absolute md:inset-0 md:top-0 md:bottom-0 z-0 pointer-events-none">
-                        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E5E5E5" strokeWidth="1.5" />
-                                </pattern>
-                            </defs>
-                            <rect width="100%" height="100%" fill="url(#grid)" />
-                        </svg>
-                    </div>
-
-                    {sections.length > 1 && (
-                        <button
-                            className="hidden md:block fixed left-4 top-1/2 -translate-y-1/2 z-20 bg-[#FD4345] hover:bg-[#ff5456] text-white p-4 rounded-full shadow-lg transition-colors"
-                            onClick={handlePrev}
-                            aria-label={dictionary.common.previous || "Previous section"}
-                        >
-                            ←
-                        </button>
-                    )}
-
-                    <div className="h-[calc(100vh-48px-40px-env(safe-area-inset-bottom,0px))] md:h-full md:overflow-hidden z-10">
-                        <Carousel currentIndex={currentIndex} onSwipe={updateSection}>
-                            {sections.map(({ id, component: Component, content }) => (
-                                <section
-                                    key={id}
-                                    id={id}
-                                    className="h-full relative z-10 overflow-y-auto overflow-x-hidden"
-                                    style={{ WebkitOverflowScrolling: 'touch' }}
-                                >
-                                    <div className={getSectionContainerClasses(id)}>
-                                        <div className={getInnerWrapperClasses(id)}>
-                                            <Component
-                                                lang={lang}
-                                                initialContent={content}
-                                                initialProjects={id === 'projects' ? initialProjects : undefined}
-                                                initialBlogs={id === 'blog' ? initialBlogs : undefined}
-                                                dictionary={dictionary}
-                                            />
-                                        </div>
-                                    </div>
-                                </section>
-                            ))}
-                        </Carousel>
-                    </div>
-
-                    {sections.length > 1 && (
-                        <button
-                            className="hidden md:block fixed right-4 top-1/2 -translate-y-1/2 z-20 bg-[#FD4345] hover:bg-[#ff5456] text-white p-4 rounded-full shadow-lg transition-colors"
-                            onClick={handleNext}
-                            aria-label={dictionary.common.next || "Next section"}
-                        >
-                            →
-                        </button>
-                    )}
-                </div>
+            <main id="content" tabIndex={-1}>
+                {sections.map(({ id, component: Component, content }, index) => (
+                    <section
+                        key={id}
+                        id={id}
+                        aria-label={dictionary.sections[id] || id}
+                        className={id === 'home' ? 'bg-navy text-cream' : index % 2 ? 'bg-cream' : 'bg-cream-dark'}
+                    >
+                        <div className={id === 'home' ? '' : 'max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24'}>
+                            <Component
+                                lang={lang}
+                                initialContent={content}
+                                initialProjects={id === 'projects' ? initialProjects : undefined}
+                                initialBlogs={id === 'blog' ? initialBlogs : undefined}
+                                dictionary={dictionary}
+                            />
+                        </div>
+                    </section>
+                ))}
             </main>
 
             <Footer

@@ -47,7 +47,7 @@ export default function NewsletterSignup({ compact = false, className = '', lang
   }
 
   return (
-    <div className={`border rounded p-4 bg-white shadow-sm ${!compact ? 'md:bg-white/80' : ''} ${className}`.trim()}>
+    <div className={`border border-navy/15 rounded-xl p-5 bg-white text-navy ${className}`.trim()}>
       <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
         <div className="flex-1">
           <label htmlFor={emailId} className="block text-sm mb-1">{dict?.emailLabel || 'Email'}</label>

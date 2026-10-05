@@ -23,10 +23,9 @@ export default function SkillIcon({ name, icon, size = 16, className }: SkillIco
     }
 
     if (Icon) {
-        return <Icon className={className || `w-[${size}px] h-[${size}px}`} />
+        return <Icon aria-label={name} className={className || `w-[${size}px] h-[${size}px}`} />
     }
 
-    return <VscCode className={className || `w-[${size}px] h-[${size}px}`} />
+    return <VscCode aria-label={name} className={className || `w-[${size}px] h-[${size}px}`} />
 }
-
 

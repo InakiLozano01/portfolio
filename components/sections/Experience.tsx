@@ -60,7 +60,7 @@ export default function Experience({ lang = 'en', dictionary = {} }: ExperienceP
   return (
     <div className="w-full">
       <div className="pt-16 pb-24 md:py-0">
-        <h2 className="text-3xl font-bold mb-6 text-primary">{title}</h2>
+        <h2 className="text-3xl md:text-4xl font-bold tracking-display mb-6 text-primary">{title}</h2>
         <div className="space-y-8">
           {content.experiences.map((exp, index) => {
             const jobTitle = (lang === 'en' ? exp.title : exp.title_es) || exp.title
@@ -73,7 +73,7 @@ export default function Experience({ lang = 'en', dictionary = {} }: ExperienceP
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl border border-navy/10 p-6 hover:border-bordeaux/30 transition-colors"
               >
                 <div className="flex items-start gap-4">
                   <div

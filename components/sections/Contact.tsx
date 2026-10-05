@@ -190,7 +190,7 @@ export default function ContactSection({ lang = 'en', initialContent, dictionary
           </motion.div>
         )}
       </AnimatePresence>
-      <h2 className="text-3xl font-bold mb-8 text-primary">{labels.title}</h2>
+      <h2 className="text-3xl md:text-4xl font-bold tracking-display mb-8 text-primary">{labels.title}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <motion.div
           className="bg-gray-50 rounded-lg p-6 shadow-sm"
@@ -328,7 +328,7 @@ export default function ContactSection({ lang = 'en', initialContent, dictionary
               type="submit"
               disabled={isSubmitting}
               aria-disabled={isSubmitting}
-              className="w-full bg-[#FD4345] text-white px-6 py-3 rounded-md font-semibold hover:bg-[#E13D3F] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-bordeaux text-cream px-6 py-3 rounded-lg font-semibold hover:bg-bordeaux-light transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? labels.sending : labels.send}
             </button>

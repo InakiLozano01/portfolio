@@ -192,7 +192,7 @@ export default function BlogSection({ lang = 'en', initialContent, initialBlogs,
     if (blogs.length === 0) {
         return (
             <div className="container mx-auto py-8 px-4 text-center">
-                <h2 className="text-3xl font-bold mb-4">{t.comingSoonTitle}</h2>
+                <h2 className="text-3xl md:text-4xl font-bold tracking-display mb-4">{t.comingSoonTitle}</h2>
                 <p className="text-muted-foreground">{t.comingSoonCopy}</p>
             </div>
         );
@@ -202,7 +202,7 @@ export default function BlogSection({ lang = 'en', initialContent, initialBlogs,
         <div className="mx-auto max-w-5xl px-4 py-4 md:py-8">
             <header className="relative overflow-hidden rounded-xl bg-[#263547] px-6 py-8 text-white shadow-lg md:px-10 md:py-10">
                 <div className="relative max-w-3xl">
-                    <h2 className="text-3xl font-bold tracking-tight md:text-4xl">{heading}</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold tracking-display tracking-tight md:text-4xl">{heading}</h2>
                     {sectionCopy && <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-200 md:text-lg">{sectionCopy}</p>}
                 </div>
                 <span className="absolute bottom-0 left-6 h-1 w-20 bg-[#FD4345] md:left-10" aria-hidden="true" />
@@ -243,7 +243,7 @@ export default function BlogSection({ lang = 'en', initialContent, initialBlogs,
 
                         return (
                             <article key={blog._id} className="h-full">
-                                <Card className="relative h-full overflow-hidden border-slate-200 bg-white shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-lg">
+                                <Card className="relative h-full overflow-hidden rounded-xl border-navy/15 bg-white transition-colors duration-200 hover:border-bordeaux/40">
                                     <CardHeader className="relative space-y-3 pb-4">
                                         <span className="h-1 w-12 bg-[#FD4345]" aria-hidden="true" />
                                         <CardTitle className="text-xl leading-snug text-primary">

@@ -56,7 +56,7 @@ export default function Education({ lang = 'en', dictionary = {} }: EducationPro
 
   return (
     <div className="w-full py-16 md:py-0">
-      <h2 className="text-3xl font-bold mb-8 text-primary">{title}</h2>
+      <h2 className="text-3xl md:text-4xl font-bold tracking-display mb-8 text-primary">{title}</h2>
       <div className="space-y-8">
         {content.education.map((edu, index) => {
           const degree = (lang === 'en' ? edu.degree : edu.degree_es) || edu.degree
@@ -68,7 +68,7 @@ export default function Education({ lang = 'en', dictionary = {} }: EducationPro
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+              className="bg-white rounded-xl border border-navy/10 p-6 hover:border-bordeaux/30 transition-colors"
             >
               <div className="flex items-start gap-4">
                 <div

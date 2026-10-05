@@ -53,16 +53,10 @@ export default function Footer({ dictionary = {}, initialContact = null, current
 
     return (
         <footer
-            className="fixed inset-x-0 bg-[#1a2433] text-white z-50 md:relative md:flex-shrink-0"
-            style={{
-                bottom: 'calc(env(safe-area-inset-bottom, 0px) * -1)',
-                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-                minHeight: 'calc(40px + env(safe-area-inset-bottom, 0px))',
-            }}
+            className="bg-navy text-cream/80 border-t border-cream/10 pb-safe-area"
         >
             <div
-                className="container mx-auto flex h-[40px] items-center justify-between px-4"
-                style={{ marginBottom: 'calc(env(safe-area-inset-bottom, 0px) * -1)' }}
+                className="max-w-6xl mx-auto flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between px-4 sm:px-6 lg:px-8 py-10 md:py-14"
             >
                 <div className="flex items-center space-x-4">
                     {contactData.social.linkedin && (
@@ -105,7 +99,7 @@ export default function Footer({ dictionary = {}, initialContact = null, current
                 </div>
                 <Link
                     href={`/${lang}/legal`}
-                    className="rounded-sm text-sm text-gray-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2433]"
+                    className="rounded-sm text-sm text-cream/80 transition-colors hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2433]"
                     aria-label={dictionary.legalNotice || copyrightText}
                 >
                     {copyrightText}

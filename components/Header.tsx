@@ -28,7 +28,8 @@ export default function Header({
   lang = 'en'
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement | null>(null)
+  const menuRef = useRef<HTMLElement | null>(null)
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null)
 
   const handleSectionClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault()
@@ -44,7 +45,7 @@ export default function Header({
     if (!isMenuOpen) return
 
     const handleResize = () => {
-      if (window.innerWidth >= 768) {
+      if (window.innerWidth >= 1024) {
         setIsMenuOpen(false)
       }
     }
@@ -57,7 +58,10 @@ export default function Header({
     if (!isMenuOpen) return
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsMenuOpen(false)
+      if (e.key === 'Escape') {
+        setIsMenuOpen(false)
+        menuButtonRef.current?.focus()
+      }
     }
     document.addEventListener('keydown', onKeyDown)
     document.body.classList.add('overflow-hidden')
@@ -105,7 +109,7 @@ export default function Header({
   }
 
   return (
-    <header className="h-[48px] md:h-[56px] flex-shrink-0 bg-[#1a2433] text-white z-50 relative">
+    <header className="sticky top-0 h-14 lg:h-[72px] bg-navy text-cream z-50 shadow-sm">
       {/* Skip to content link */}
       <a
         href="#content"
@@ -113,7 +117,7 @@ export default function Header({
       >
         {dictionary.skipToContent || 'Skip to content'}
       </a>
-      <nav className="h-full container mx-auto px-4">
+      <nav className="h-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-full flex justify-between items-center">
           <a
             href={`/${lang}`}
@@ -132,7 +136,7 @@ export default function Header({
 
           <div className="flex items-center gap-4">
             {/* Desktop navigation */}
-            <div className="hidden md:flex space-x-6" aria-label={dictionary.mainNavigation || 'Main navigation'}>
+            <div className="hidden lg:flex gap-1" aria-label={dictionary.mainNavigation || 'Main navigation'}>
               {staticSections.map((section, index) => {
                 const isActive = index === currentIndex
                 return (
@@ -140,7 +144,7 @@ export default function Header({
                     key={section.id}
                     href={section.id === 'home' ? `/${lang}` : `/${lang}#${section.id}`}
                     onClick={(e) => handleSectionClick(e, section.id)}
-                    className={`hover:text-[#FF5456] transition-colors cursor-pointer ${isActive ? 'text-[#FF5456]' : 'text-white'
+                    className={`px-2 py-2 rounded text-sm font-medium hover:text-cream transition-colors cursor-pointer ${isActive ? 'text-cream underline decoration-[#FF5456] decoration-2 underline-offset-8' : 'text-cream/80'
                       }`}
                     aria-current={isActive ? 'page' : undefined}
                   >
@@ -150,13 +154,14 @@ export default function Header({
               })}
             </div>
 
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <LanguageSwitcher lang={lang} dict={languageSwitcherDict} />
             </div>
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden text-white hover:text-[#FF5456] transition-colors"
+              ref={menuButtonRef}
+              className="lg:hidden text-cream p-2 rounded hover:bg-cream/10 transition-colors"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label={isMenuOpen ? (dictionary.closeMenu || 'Close menu') : (dictionary.openMenu || 'Open menu')}
               aria-expanded={isMenuOpen}
@@ -172,14 +177,14 @@ export default function Header({
               {/* Backdrop overlay */}
               <button
                 aria-hidden="true"
-                className="fixed inset-0 bg-black/40 md:hidden z-40"
+                className="fixed inset-0 bg-black/40 lg:hidden z-40"
                 onClick={() => setIsMenuOpen(false)}
                 tabIndex={-1}
               />
               <nav
                 ref={menuRef}
                 id="mobile-menu"
-                className="absolute top-[48px] left-0 right-0 bg-[#1a2433] p-4 md:hidden shadow-lg z-50"
+                className="absolute top-14 left-0 right-0 bg-navy p-4 lg:hidden shadow-lg z-50 max-h-[calc(100dvh-56px)] overflow-y-auto"
                 aria-label={dictionary.mobileNavigation || 'Mobile navigation'}
               >
                 {staticSections.map((section, index) => {
@@ -192,7 +197,7 @@ export default function Header({
                         handleSectionClick(e, section.id)
                         setIsMenuOpen(false)
                       }}
-                      className={`block py-2 hover:text-[#FF5456] transition-colors ${isActive ? 'text-[#FF5456]' : 'text-white'
+                      className={`block py-3 px-4 rounded-lg hover:bg-cream/10 transition-colors ${isActive ? 'text-cream bg-cream/10' : 'text-cream/80'
                         }`}
                       aria-current={isActive ? 'page' : undefined}
                     >

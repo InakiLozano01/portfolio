@@ -21,6 +21,7 @@ import Image from 'next/image'
 
 export interface IconProps {
     className?: string
+    'aria-label'?: string
 }
 
 export const CursorIcon: React.FC<IconProps> = ({ className }) => (
@@ -141,5 +142,4 @@ export function resolveIconKey(iconKeyOrPath: string, name?: string): string | u
     const guessFromName = name ? aliasMap[name.trim().toLowerCase()] : undefined
     return guessFromName
 }
-
 

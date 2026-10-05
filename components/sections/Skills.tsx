@@ -219,7 +219,7 @@ export default function Skills({
   return (
     <div className="max-w-6xl mx-auto flex flex-col">
       <div className="sticky top-0 bg-white backdrop-blur-sm py-6 md:static md:bg-transparent z-20 -mx-4 px-4 md:mx-0 md:px-0 md:py-0 shadow-sm md:shadow-none">
-        <h2 className="text-3xl font-bold mb-2 text-primary">{heading}</h2>
+        <h2 className="text-3xl md:text-4xl font-bold tracking-display mb-2 text-primary">{heading}</h2>
 
         {displayDescription && (
           <p className="text-lg text-gray-600 mb-2">{displayDescription}</p>

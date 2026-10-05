@@ -80,8 +80,8 @@ export default function Projects({ lang = 'en', initialProjects, dictionary = {}
 
     if (isLoading) {
         return (
-            <section id="projects" className="container mx-auto px-4 py-16">
-                <h2 className="text-3xl font-bold mb-8 text-primary">{t.heading}</h2>
+            <div className="w-full">
+                <h2 className="text-3xl md:text-4xl font-bold tracking-display mb-8 text-primary">{t.heading}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[1, 2, 3].map((i) => (
                         <Card key={i} className="animate-pulse">
@@ -101,16 +101,16 @@ export default function Projects({ lang = 'en', initialProjects, dictionary = {}
                         </Card>
                     ))}
                 </div>
-            </section>
+            </div>
         )
     }
 
     if (error) {
         return (
-            <section id="projects" className="container mx-auto px-4 py-16">
-                <h2 className="text-3xl font-bold mb-8 text-primary">{t.heading}</h2>
+            <div className="w-full">
+                <h2 className="text-3xl md:text-4xl font-bold tracking-display mb-8 text-primary">{t.heading}</h2>
                 <div className="text-center text-red-500">{error}</div>
-            </section>
+            </div>
         )
     }
 
@@ -141,9 +141,9 @@ export default function Projects({ lang = 'en', initialProjects, dictionary = {}
     }
 
     return (
-        <section id="projects" className="container mx-auto px-4 py-16">
+        <div className="w-full">
             <div className="mb-3 flex items-end gap-4">
-                <h2 className="text-3xl font-bold text-primary">{t.heading}</h2>
+                <h2 className="text-3xl md:text-4xl font-bold tracking-display text-primary">{t.heading}</h2>
                 <span className="mb-1 h-1 w-16 bg-[#FD4345]" aria-hidden="true" />
             </div>
             <p className="mb-6 max-w-2xl text-sm leading-6 text-slate-600">
@@ -188,9 +188,9 @@ export default function Projects({ lang = 'en', initialProjects, dictionary = {}
                     return (
                         <article
                             key={project._id.toString()}
-                            className="h-full transition-transform duration-200 hover:-translate-y-1"
+                            className="h-full"
                         >
-                            <Card className="relative h-full overflow-hidden border-slate-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-lg">
+                            <Card className="relative h-full overflow-hidden rounded-xl border-navy/15 bg-white transition-colors duration-200 hover:border-bordeaux/40">
                                 <Link
                                     href={projectHref}
                                     prefetch={false}
@@ -251,6 +251,6 @@ export default function Projects({ lang = 'en', initialProjects, dictionary = {}
                     )
                 })}
             </div>
-        </section>
+        </div>
     )
 } 

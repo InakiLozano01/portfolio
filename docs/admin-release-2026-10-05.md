@@ -66,7 +66,9 @@ that runtime directory. Its `backups` folder contains one current PostgreSQL
 backup restored and compared across all 14 tables, and one compressed original
 Mongo backup whose decompressed SHA-256 was verified. Integrated source bundles,
 old database dumps, build contexts and duplicate screenshots were deleted,
-including their former copies in `archive`. Two unintegrated historical design
-drafts remain in a verified 88 KB incremental bundle. Rollback replaces the app image
+including their former copies in `archive`. The two historical design drafts
+are integrated into `main` as described in
+`portfolio-convergence-2026-10-05.md`; their redundant recovery bundle is removed
+after both originals are reachable from origin. Rollback replaces the app image
 only; preserve PostgreSQL invoice tables and histories. Never restore an old
 database over newer invoices or comments to undo an application deployment.
