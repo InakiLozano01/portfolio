@@ -67,24 +67,26 @@ area blank. Complete official Roboto Mono is bundled under its SIL-OFL license,
 from https://github.com/googlefonts/RobotoMono, commit
 `895ec691990d041dd727c7b5afa3ce56525d98e6`.
 
-**Exact typography is a release blocker.** No complete authorized Arial was found
-in the notebook/VPS font directories or portfolio font assets. The original
-subsets are insufficient. Complete SIL-OFL Liberation Sans is bundled solely for
-watermarked QA proofs, not silently accepted as the final typeface. Normal PDF
-export fails with 503 until approved complete `Arial.ttf` and `Arial-Bold.ttf`
-exist in `INVOICE_ARIAL_DIR` (or the private asset font directory). Never commit
-proprietary font files without redistribution permission. Merely finding a Windows
-copy is not proof of permission to distribute it on a server; see
-https://learn.microsoft.com/en-us/typography/fonts/font-faq.
+The owner approved Liberation Sans on 2026-10-05. Normal PDF export uses the bundled
+SIL-OFL Liberation Sans through the private runtime setting
+`INVOICE_FONT=liberation-sans`; Roboto Mono remains the font for URL text.
+The alternative is accepted for invoices and does not claim exact Arial typography.
+No complete authorized Arial was found in the notebook/VPS font directories or
+portfolio assets, and the original subsets are insufficient.
 
-The remaining options are an appropriately licensed server font source supplied
-by the owner, or explicit approval of an alternative typeface/design. No new font
-agreement or paid license was accepted during preparation. After Arial is resolved,
-repeat the reference comparison and adjust layout before accepting exact fidelity.
+The renderer still refuses normal exports with 503 if the approved runtime setting
+is absent and complete `Arial.ttf` and `Arial-Bold.ttf` are unavailable in
+`INVOICE_ARIAL_DIR` (or the private asset directory). Never commit proprietary font
+files without redistribution permission. No new font agreement or paid license
+was accepted. This runtime change does not alter previously stored PDF bytes.
 Row height reflows with text; bounded continuation rows preserve long descriptions
 and long tokens across pages. Proofs are visibly marked NOT ISSUED and UNSIGNED.
 
-## Explicit deployment gate — not run during preparation
+## Deployment and recovery
+
+PostgreSQL and invoices are deployed. The following procedure remains the contract
+for future schema/image replacements. Font activation changes the private runtime
+environment and replaces only the application container using its existing image.
 
 1. Complete/approve the PostgreSQL migration cutover separately. Do not substitute
    this feature branch for the already-verified migration candidate.

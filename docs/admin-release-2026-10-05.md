@@ -33,11 +33,12 @@ was tested against an isolated restore and applied with the existing owner role.
 The existing application role gets only the needed invoice table privileges;
 export/payment history remains guarded against updates and deletion.
 
-PDF export requires complete licensed Arial, or an explicitly approved alternative
-through the runtime setting `INVOICE_FONT=liberation-sans`. The substitute was
-tested only with synthetic invoices in an isolated restored database. Pending the
-owner's font choice, production invoice creation and payment tracking are usable
-while PDF export retains its font guard. No signature or invoice email is added.
+The owner approved Liberation Sans on 2026-10-05. Normal PDF export is enabled
+through the private runtime setting `INVOICE_FONT=liberation-sans`. Verification
+on the deployed image covers accented text, a nine-page PDF with all items intact,
+the absence of the proof watermark, unsupported-character rejection and nine
+invoice persistence/export checks in an isolated engine. Existing stored PDFs
+remain immutable. No signature or invoice email is added.
 
 Validation: 51 Jest tests, seven PostgreSQL persistence tests, nine invoice store
 tests, TypeScript and the production build passed. ESLint has zero errors and
@@ -48,6 +49,8 @@ an override retained its original decision. Backup restore checks cover the
 original data and the synthetic invoice export bytes.
 
 Private release evidence and rollback image information live outside Git at
-`/home/ilozano/portfolio-admin-release-20261005`. Rollback replaces the app image
+`/home/ilozano/archive/portfolio/2026-10-05/admin-release`. The current font activation
+manifest and its prior runtime settings remain in
+`/home/ilozano/portfolio-invoice-font-release-20261005`. Rollback replaces the app image
 only; preserve PostgreSQL invoice tables and histories. Never restore an old
 database over newer invoices or comments to undo an application deployment.
