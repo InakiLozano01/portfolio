@@ -13,7 +13,7 @@ Opening main: `7d94b1b481fbfe77c3dea3536fe210ee3355b46f`.
 
 Both candidates were already ancestors of main. Both worktrees had clean source state and no visible direct process or Docker mount users. Git removed them without force. Git also deleted the two merged branches and `feat/i18n-comments-email-pdf-media`, which pointed to the first candidate. Their directories used about 272 MiB. All accepted commits remain in main history.
 
-Portfolio now has one local branch and no linked worktrees. Separate active sessions own Floods Argentina and Ethos. Their work remains preserved. The cross-repository inventory is recorded at `/home/ubuntu/vps/docs/worktree-convergence-2026-09-07.md`.
+Portfolio now has one local branch and no linked worktrees. Separate active sessions own Floods Argentina and Ethos. Their work remains preserved.
 
 ## Search Console findings
 
