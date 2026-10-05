@@ -1,5 +1,7 @@
 'use client'
 
+import { adminFetch } from '@/lib/admin-fetch';
+
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -46,7 +48,7 @@ export default function ChangePassword() {
 
     setIsSubmitting(true)
     try {
-      const res = await fetch('/api/admin/password', {
+      const res = await adminFetch('/api/admin/password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword, newPassword })
@@ -71,7 +73,7 @@ export default function ChangePassword() {
       <CardHeader className="bg-slate-50 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-50 rounded-lg border border-amber-100">
-                <Lock className="w-5 h-5 text-amber-600" />
+                <Lock className="w-5 h-5 text-amber-800" />
             </div>
             <div>
                 <CardTitle className="text-lg font-bold text-slate-900">Change Password</CardTitle>
@@ -83,32 +85,33 @@ export default function ChangePassword() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="current-password">Current password</Label>
-            <Input 
+            <Input
                 id="current-password"
-                type="password" 
-                value={currentPassword} 
-                onChange={(e) => setCurrentPassword(e.target.value)} 
-                required 
-                className="bg-white text-slate-900 focus-visible:ring-[#FD4345]" 
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+                className="bg-white text-slate-900 focus-visible:ring-[#B42335]"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="new-password">New password</Label>
             <div className="relative">
-                <Input 
+                <Input
                     id="new-password"
-                    type={showPassword ? "text" : "password"} 
-                    value={newPassword} 
-                    onChange={(e) => setNewPassword(e.target.value)} 
-                    required 
-                    className="bg-white text-slate-900 pr-10 focus-visible:ring-[#FD4345]" 
+                    type={showPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    className="bg-white text-slate-900 pr-10 focus-visible:ring-[#B42335]"
                 />
                 <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors"
-                    tabIndex={-1}
+                    className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center text-slate-600 hover:text-slate-600 transition-colors"
+                    aria-label={showPassword ? "Hide new password" : "Show new password"}
+                    aria-pressed={showPassword}
                 >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -120,17 +123,17 @@ export default function ChangePassword() {
 
           <div className="space-y-2">
             <Label htmlFor="confirm-password">Confirm new password</Label>
-            <Input 
+            <Input
                 id="confirm-password"
-                type="password" 
-                value={confirmPassword} 
-                onChange={(e) => setConfirmPassword(e.target.value)} 
-                required 
-                className="bg-white text-slate-900 focus-visible:ring-[#FD4345]" 
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="bg-white text-slate-900 focus-visible:ring-[#B42335]"
             />
           </div>
 
-          <Button type="submit" disabled={isSubmitting} className="w-full bg-[#FD4345] hover:bg-[#ff5456] text-white mt-2">
+          <Button type="submit" disabled={isSubmitting} className="w-full bg-[#B42335] hover:bg-[#941B2B] text-white mt-2">
             {isSubmitting ? 'Updating...' : 'Update Password'}
           </Button>
         </form>

@@ -30,15 +30,15 @@ export default function TopBar({ onRefreshAll }: Props) {
                 variant="outline" 
                 size="sm" 
                 onClick={onRefreshAll}
-                className="hidden md:flex text-slate-600 border-slate-200 hover:border-[#FD4345] hover:text-[#FD4345]"
+                className="hidden md:flex text-slate-600 border-slate-200 hover:border-[#B42335] hover:text-[#B42335]"
             >
                 <RefreshCw className="w-4 h-4 mr-2" /> 
                 Refresh Cache
             </Button>
 
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 hover:bg-slate-100">
+                    <Button variant="ghost" aria-label="Account menu" className="relative h-11 w-11 rounded-full p-0 hover:bg-slate-100">
                         <Avatar className="h-9 w-9 border border-slate-200">
                             <AvatarFallback className="bg-[#263547] text-white text-xs">{userInitials}</AvatarFallback>
                         </Avatar>

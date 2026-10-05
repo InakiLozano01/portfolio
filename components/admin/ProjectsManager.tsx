@@ -1,5 +1,7 @@
 'use client';
 
+import { adminFetch } from '@/lib/admin-fetch';
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,11 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import dynamic from 'next/dynamic';
 const TinyMCE = dynamic(() => import('@/components/ui/tinymce').then(m => m.TinyMCE), { ssr: false });
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { IProject } from '@/models/Project';
+import type { IProject } from '@/models/Project';
 import { Plus, Trash2, Save, Edit, Briefcase, Search, AlertCircle, ArrowLeft } from 'lucide-react';
-import { Types } from 'mongoose';
+import type { Types } from 'mongoose';
+import { ObjectId } from 'bson';
 import Image from 'next/image';
 import { slugify } from '@/lib/utils';
 import { DEFAULT_PROJECT_THUMBNAIL_OPTIMIZATION, ProjectThumbnailOptimization } from '@/lib/project-thumbnail-settings';
@@ -99,8 +101,8 @@ export default function ProjectsManager() {
     const fetchData = async () => {
       try {
         const [projectsRes, skillsRes] = await Promise.all([
-          fetch('/api/projects?view=summary'),
-          fetch('/api/skills'),
+          adminFetch('/api/projects?view=summary'),
+          adminFetch('/api/skills'),
         ]);
 
         if (!projectsRes.ok || !skillsRes.ok) {
@@ -137,7 +139,7 @@ export default function ProjectsManager() {
         const draft = JSON.parse(raw);
         if (draft && typeof draft === 'object' && (draft.title || draft.description || draft.description_en || draft.description_es || draft.thumbnail)) {
           setSelectedProject({
-            ...(draft._id ? { _id: new Types.ObjectId(draft._id) } : {}),
+            ...(draft._id ? { _id: new ObjectId(draft._id) } : {}),
             title: draft.title || '',
             title_es: draft.title_es || '',
             subtitle_en: draft.subtitle_en || draft.subtitle || '',
@@ -146,7 +148,7 @@ export default function ProjectsManager() {
             description_en: draft.description_en || draft.description || '',
             description: draft.description || '',
             description_es: draft.description_es || '',
-            technologies: Array.isArray(draft.technologies) ? draft.technologies.map((id: string) => new Types.ObjectId(id)) : [],
+            technologies: Array.isArray(draft.technologies) ? draft.technologies.map((id: string) => new ObjectId(id)) : [],
             thumbnail: draft.thumbnail || '',
             githubUrl: draft.githubUrl || '',
             publicUrl: draft.publicUrl || '',
@@ -204,7 +206,7 @@ export default function ProjectsManager() {
       formData.append('thumbnailOptimizationEffort', String(selectedProject.thumbnailOptimization.effort));
 
       try {
-        const uploadResponse = await fetch('/api/upload', {
+        const uploadResponse = await adminFetch('/api/upload', {
           method: 'POST',
           body: formData,
         });
@@ -271,7 +273,7 @@ export default function ProjectsManager() {
         ? `/api/projects/${selectedProject._id}`
         : '/api/projects';
 
-      const response = await fetch(url, {
+      const response = await adminFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -320,7 +322,7 @@ export default function ProjectsManager() {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/projects/${id}`, {
+      const response = await adminFetch(`/api/projects/${id}`, {
         method: 'DELETE',
       });
 
@@ -359,7 +361,7 @@ export default function ProjectsManager() {
   };
 
   const handleTechnologyToggle = (techId: string) => {
-    const objectId = new Types.ObjectId(techId);
+    const objectId = new ObjectId(techId);
     const newTechnologies = selectedProject.technologies.some(
       (id) => id.toString() === techId
     )
@@ -404,7 +406,7 @@ export default function ProjectsManager() {
   const loadProject = async (project: ProjectWithTechnologies) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/projects/${project._id}`);
+      const response = await adminFetch(`/api/projects/${project._id}`);
       if (!response.ok) throw new Error('Failed to load project');
       handleSelectProject(await response.json());
     } catch {
@@ -436,7 +438,7 @@ export default function ProjectsManager() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
                 <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
-                  <Briefcase className="w-5 h-5 text-[#FD4345]" />
+                  <Briefcase className="w-5 h-5 text-[#B42335]" />
                   Project Library
                 </CardTitle>
                 <p className="mt-1 text-sm text-slate-500">
@@ -445,16 +447,16 @@ export default function ProjectsManager() {
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="relative w-full sm:w-72">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-600" />
                   <Input
                     aria-label="Search projects"
                     placeholder="Search title or subtitle..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-9 h-9 border-slate-200 focus-visible:ring-[#FD4345]"
+                    className="w-full pl-9 h-9 border-slate-200 focus-visible:ring-[#B42335]"
                   />
                 </div>
-                <Button type="button" onClick={handleNewProject} className="bg-[#FD4345] hover:bg-[#ff5456] text-white">
+                <Button type="button" onClick={handleNewProject} className="bg-[#B42335] hover:bg-[#941B2B] text-white">
                   <Plus className="w-4 h-4 mr-2" />
                   New Project
                 </Button>
@@ -535,12 +537,12 @@ export default function ProjectsManager() {
             <CardTitle className="flex items-center gap-2 text-base md:text-lg text-white">
                 {selectedProject._id ? (
                     <>
-                        <Edit className="w-5 h-5 text-[#FD4345]" />
+                        <Edit className="w-5 h-5 text-[#B42335]" />
                         Edit Project
                     </>
                 ) : (
                     <>
-                        <Plus className="w-5 h-5 text-[#FD4345]" />
+                        <Plus className="w-5 h-5 text-[#B42335]" />
                         Create New Project
                     </>
                 )}
@@ -578,33 +580,34 @@ export default function ProjectsManager() {
                 <span className="px-2.5 py-0.5 text-xs font-bold bg-blue-50 text-blue-700 rounded-full uppercase tracking-wide">English</span>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Project Title <span className="text-red-500">*</span></label>
-                <Input
+                <label className="text-sm font-medium text-slate-700">Project Title <span className="text-red-700">*</span></label>
+                <Input aria-label="Project Title"
                   placeholder="Enter project title"
                   value={selectedProject.title || ''}
                   onChange={(e) =>
                     setSelectedProject({ ...selectedProject, title: e.target.value })
                   }
-                  className={errors.title ? 'border-red-500 focus-visible:ring-red-500' : 'focus-visible:ring-[#FD4345]'}
+                  className={errors.title ? 'border-red-500 focus-visible:ring-red-500' : 'focus-visible:ring-[#B42335]'}
                 />
                 {errors.title && <p className="text-xs text-red-600">{errors.title}</p>}
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Subtitle <span className="text-red-500">*</span></label>
-                <Input
+                <label className="text-sm font-medium text-slate-700">Subtitle <span className="text-red-700">*</span></label>
+                <Input aria-label="Subtitle"
                   placeholder="Brief description or tagline"
                   value={selectedProject.subtitle || ''}
                   onChange={(e) =>
                     setSelectedProject({ ...selectedProject, subtitle: e.target.value })
                   }
-                  className={errors.subtitle ? 'border-red-500 focus-visible:ring-red-500' : 'focus-visible:ring-[#FD4345]'}
+                  className={errors.subtitle ? 'border-red-500 focus-visible:ring-red-500' : 'focus-visible:ring-[#B42335]'}
                 />
                 {errors.subtitle && <p className="text-xs text-red-600">{errors.subtitle}</p>}
               </div>
               <div className="space-y-3">
                 <label className="text-sm font-medium text-slate-700">Description</label>
-                <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
+                <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#B42335]">
                     <TinyMCE
+                    label="Project description (English)"
                     value={selectedProject.description_en || selectedProject.description || ''}
                     onChange={(content) =>
                         setSelectedProject({ ...selectedProject, description_en: content, description: content })
@@ -621,30 +624,31 @@ export default function ProjectsManager() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Título</label>
-                <Input
+                <Input aria-label="Título"
                   placeholder="Título del proyecto"
                   value={selectedProject.title_es || ''}
                   onChange={(e) =>
                     setSelectedProject({ ...selectedProject, title_es: e.target.value })
                   }
-                  className="focus-visible:ring-[#FD4345]"
+                  className="focus-visible:ring-[#B42335]"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Subtítulo</label>
-                <Input
+                <Input aria-label="Subtítulo"
                   placeholder="Descripción breve"
                   value={selectedProject.subtitle_es || ''}
                   onChange={(e) =>
                     setSelectedProject({ ...selectedProject, subtitle_es: e.target.value })
                   }
-                  className="focus-visible:ring-[#FD4345]"
+                  className="focus-visible:ring-[#B42335]"
                 />
               </div>
               <div className="space-y-3">
                 <label className="text-sm font-medium text-slate-700">Descripción</label>
-                 <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
+                 <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#B42335]">
                     <TinyMCE
+                    label="Project description (Spanish)"
                     value={selectedProject.description_es || ''}
                     onChange={(content) =>
                         setSelectedProject({ ...selectedProject, description_es: content })
@@ -659,24 +663,24 @@ export default function ProjectsManager() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 pt-6 border-t border-slate-100">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">GitHub URL</label>
-              <Input
+              <Input aria-label="GitHub URL"
                 placeholder="https://github.com/username/repository"
                 value={selectedProject.githubUrl || ''}
                 onChange={(e) =>
                   setSelectedProject({ ...selectedProject, githubUrl: e.target.value })
                 }
-                className="focus-visible:ring-[#FD4345]"
+                className="focus-visible:ring-[#B42335]"
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Public URL (optional)</label>
-              <Input
+              <Input aria-label="Public URL optional"
                 placeholder="https://your-live-site.com"
                 value={selectedProject.publicUrl || ''}
                 onChange={(e) =>
                   setSelectedProject({ ...selectedProject, publicUrl: e.target.value })
                 }
-                className="focus-visible:ring-[#FD4345]"
+                className="focus-visible:ring-[#B42335]"
               />
             </div>
           </div>
@@ -700,7 +704,7 @@ export default function ProjectsManager() {
                       },
                     })
                   }
-                  className="mt-1 h-9 focus-visible:ring-[#FD4345]"
+                  className="mt-1 h-9 focus-visible:ring-[#B42335]"
                 />
               </label>
               <label className="text-xs font-medium text-slate-600">
@@ -719,7 +723,7 @@ export default function ProjectsManager() {
                       },
                     })
                   }
-                  className="mt-1 h-9 focus-visible:ring-[#FD4345]"
+                  className="mt-1 h-9 focus-visible:ring-[#B42335]"
                 />
               </label>
             </div>
@@ -731,9 +735,10 @@ export default function ProjectsManager() {
                 <div className="flex-1 min-w-0">
                     <Input
                         type="file"
+                        aria-label="Project thumbnail image"
                         accept="image/*"
                         onChange={handleImageChange}
-                        className="h-auto py-2.5 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#263547] file:text-white hover:file:bg-[#1e293b] file:cursor-pointer focus-visible:ring-[#FD4345]"
+                        className="h-auto py-2.5 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#263547] file:text-white hover:file:bg-[#1e293b] file:cursor-pointer focus-visible:ring-[#B42335]"
                     />
                     <p className="text-xs text-slate-500 mt-2">Supported formats: JPG, PNG, WebP, AVIF</p>
                 </div>
@@ -754,7 +759,7 @@ export default function ProjectsManager() {
             <div className="flex items-center justify-between">
                 <label className="text-sm font-semibold text-slate-700">Technologies Used</label>
                 {selectedProject.technologies.length > 0 && (
-                <span className="text-xs font-medium text-[#FD4345]">
+                <span className="text-xs font-medium text-[#B42335]">
                     {selectedProject.technologies.length} selected
                 </span>
                 )}
@@ -770,17 +775,17 @@ export default function ProjectsManager() {
                     (id) => id.toString() === skill._id.toString()
                   );
                   return (
-                    <Badge
+                    <button type="button" aria-pressed={isSelected}
                       key={skill._id.toString()}
-                      className={`cursor-pointer transition-all duration-200 hover:scale-105 border px-3 py-1 ${isSelected
-                        ? 'bg-[#FD4345] hover:bg-[#ff5456] text-white border-[#FD4345]'
+                      className={`inline-flex items-center rounded-full text-xs font-semibold cursor-pointer transition-colors border px-3 py-1 ${isSelected
+                        ? 'bg-[#B42335] hover:bg-[#941B2B] text-white border-[#B42335]'
                         : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300'
                         }`}
                       onClick={() => handleTechnologyToggle(skill._id.toString())}
                     >
                       {skill.name}
                       {isSelected && <span className="ml-1">✓</span>}
-                    </Badge>
+                    </button>
                   );
                 })
               )}
@@ -798,7 +803,7 @@ export default function ProjectsManager() {
             <Button
               onClick={handleSave}
               disabled={!selectedProject.title || !selectedProject.subtitle}
-              className="bg-[#FD4345] hover:bg-[#ff5456] text-white disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed flex items-center gap-2 px-8"
+              className="bg-[#B42335] hover:bg-[#941B2B] text-white disabled:bg-slate-200 disabled:text-slate-600 disabled:cursor-not-allowed flex items-center gap-2 px-8"
             >
               <Save className="w-4 h-4" />
               {selectedProject._id ? 'Update Project' : 'Create Project'}

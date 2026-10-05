@@ -1,0 +1,62 @@
+/* Admin tokens also reach dialogs, menus and toasts portaled into body. */
+html[data-admin-ui], .admin-ui {
+  --admin-action-rgb: 180 35 53;
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 214 32% 91%;
+  --secondary-foreground: 215 25% 27%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 25% 35%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+  --destructive: 0 74% 42%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 85%;
+  --input: 215 20% 55%;
+  --ring: 350 67% 42%;
+  color-scheme: light;
+  color: hsl(var(--foreground));
+}
+html[data-admin-ui] :is(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid #b42335;
+  outline-offset: 3px;
+}
+html[data-admin-ui] [data-admin-sidebar] :focus-visible { outline-color: white; }
+html[data-admin-ui] :is(input, textarea, select):not([type="file"]) { border-color: #64748b; }
+html[data-admin-ui] :is(button, input, textarea, select):disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+html[data-admin-ui] button:disabled {
+  background: #e2e8f0;
+  color: #475569;
+  border-color: #94a3b8;
+}
+html[data-admin-ui] :is(input, textarea, select):disabled {
+  background: #f1f5f9;
+  color: #475569;
+}
+html[data-admin-ui] [role="switch"][data-state="checked"] {
+  background: #15803d;
+  border-color: #15803d;
+}
+html[data-admin-ui] [role="switch"][data-state="unchecked"] { border-color: #64748b; }
+html[data-admin-ui] ::selection { background: #fce7eb; color: #881b2b; }
+html[data-admin-ui] :is(input, textarea) { caret-color: #b42335; }
+html[data-admin-ui] .admin-ui { height: 100dvh; }
+html[data-admin-ui] .admin-ui [data-admin-shell] { height: 100%; }
+@media (pointer: coarse) {
+  html[data-admin-ui] button:not([role="switch"]) { min-height: 44px; min-width: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-admin-ui] *, html[data-admin-ui] *::before, html[data-admin-ui] *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

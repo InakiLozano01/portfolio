@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button'
 import { PlusCircle, Trash2, Code, Save, X } from 'lucide-react'
 import JsonEditor from './JsonEditor'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { TinyMCE } from '@/components/ui/tinymce'
+import dynamic from 'next/dynamic'
+const TinyMCE = dynamic(() => import('@/components/ui/tinymce').then(m => m.TinyMCE), { ssr: false })
 
 interface Section {
   _id: string;
@@ -323,26 +324,26 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
           <>
             <div className="space-y-2">
               <Label className="text-slate-700 font-semibold">Headline ({language.toUpperCase()})</Label>
-              <Input
+              <Input aria-label="Headline"
                 value={editedSection.content[getFieldName('headline')] || ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
                   [getFieldName('headline')]: e.target.value
                 }))}
                 placeholder={`Enter a catchy headline (${language})`}
-                className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
+                className="border-slate-300 focus:border-[#B42335] focus:ring-[#B42335] focus:ring-1"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-slate-700 font-semibold">Description ({language.toUpperCase()})</Label>
-              <Textarea
+              <Textarea aria-label="Description"
                 value={editedSection.content[getFieldName('description')] || ''}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
                   [getFieldName('description')]: e.target.value
                 }))}
                 placeholder={`Describe yourself and your work (${language})`}
-                className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
+                className="border-slate-300 focus:border-[#B42335] focus:ring-[#B42335] focus:ring-1"
               />
             </div>
           </>
@@ -353,19 +354,19 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
           <>
             <div className="space-y-2">
               <Label className="text-slate-700 font-semibold">Description ({language.toUpperCase()})</Label>
-              <Textarea
+              <Textarea aria-label="Description"
                 value={editedSection.content[getFieldName('description')] || ''}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
                   [getFieldName('description')]: e.target.value
                 }))}
                 placeholder={`Tell your story (${language})`}
-                className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
+                className="border-slate-300 focus:border-[#B42335] focus:ring-[#B42335] focus:ring-1"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-slate-700 font-semibold">Highlights (one per line) ({language.toUpperCase()})</Label>
-              <Textarea
+              <Textarea aria-label="Highlights one per line"
                 value={(editedSection.content[getFieldName('highlights')] || []).join('\n')}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
@@ -381,7 +382,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   }))
                 }}
                 placeholder={`List your key achievements or highlights (${language})`}
-                className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
+                className="border-slate-300 focus:border-[#B42335] focus:ring-[#B42335] focus:ring-1"
               />
             </div>
           </>
@@ -393,7 +394,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             <Button
               type="button"
               onClick={addEducationEntry}
-              className="flex items-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#FD4345] hover:border-[#FD4345]"
+              className="flex items-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#B42335] hover:border-[#B42335]"
               variant="outline"
             >
               <PlusCircle className="w-4 h-4" />
@@ -407,7 +408,8 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="text-slate-400 hover:text-red-700 hover:bg-red-50"
+                      className="text-slate-600 hover:text-red-700 hover:bg-red-50"
+                      aria-label={`Remove education ${index + 1}`}
                       onClick={() => removeEducationEntry(index)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -415,38 +417,38 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   </div>
                   <div>
                     <Label className="text-slate-700 font-semibold">Institution</Label>
-                    <Input
+                    <Input aria-label="Institution"
                       value={edu.institution}
                       onChange={(e) => handleEducationChange(index, 'institution', e.target.value)}
                       placeholder="Enter institution name"
-                      className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
+                      className="border-slate-300 focus:border-[#B42335] focus:ring-[#B42335] focus:ring-1"
                     />
                   </div>
                   <div>
                     <Label className="text-gray-900">Degree ({language.toUpperCase()})</Label>
-                    <Input
+                    <Input aria-label="Degree"
                       value={language === 'en' ? edu.degree : (edu.degree_es || '')}
                       onChange={(e) => handleEducationChange(index, language === 'en' ? 'degree' : 'degree_es' as keyof Education, e.target.value)}
                       placeholder={`Enter degree name (${language})`}
-                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                      className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
                     />
                   </div>
                   <div>
                     <Label className="text-gray-900">Period</Label>
-                    <Input
+                    <Input aria-label="Period"
                       value={edu.period}
                       onChange={(e) => handleEducationChange(index, 'period', e.target.value)}
                       placeholder="e.g., 2018 - 2022"
-                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                      className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
                     />
                   </div>
                   <div>
                     <Label className="text-gray-900">Description ({language.toUpperCase()})</Label>
-                    <Textarea
+                    <Textarea aria-label="Description"
                       value={language === 'en' ? edu.description : (edu.description_es || '')}
                       onChange={(e) => handleEducationChange(index, language === 'en' ? 'description' : 'description_es' as keyof Education, e.target.value)}
                       placeholder={`Describe your studies and achievements (${language})`}
-                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                      className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
                     />
                   </div>
                 </CardContent>
@@ -461,7 +463,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             <Button
               type="button"
               onClick={addExperienceEntry}
-              className="flex items-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#FD4345] hover:border-[#FD4345]"
+              className="flex items-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#B42335] hover:border-[#B42335]"
               variant="outline"
             >
               <PlusCircle className="w-4 h-4" />
@@ -475,7 +477,8 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="text-slate-400 hover:text-red-700 hover:bg-red-50"
+                      className="text-slate-600 hover:text-red-700 hover:bg-red-50"
+                      aria-label={`Remove experience ${index + 1}`}
                       onClick={() => removeExperienceEntry(index)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -483,38 +486,38 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   </div>
                   <div>
                     <Label className="text-gray-900">Title ({language.toUpperCase()})</Label>
-                    <Input
+                    <Input aria-label="Title"
                       value={language === 'en' ? exp.title : (exp.title_es || '')}
                       onChange={(e) => handleExperienceChange(index, language === 'en' ? 'title' : 'title_es' as keyof Experience, e.target.value)}
                       placeholder={`Enter job title (${language})`}
-                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                      className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
                     />
                   </div>
                   <div>
                     <Label className="text-gray-900">Company</Label>
-                    <Input
+                    <Input aria-label="Company"
                       value={exp.company}
                       onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
                       placeholder="Enter company name"
-                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                      className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
                     />
                   </div>
                   <div>
                     <Label className="text-gray-900">Period</Label>
-                    <Input
+                    <Input aria-label="Period"
                       value={exp.period}
                       onChange={(e) => handleExperienceChange(index, 'period', e.target.value)}
                       placeholder="e.g., Jan 2020 - Present"
-                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                      className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
                     />
                   </div>
                   <div>
                     <Label className="text-gray-900">Description ({language.toUpperCase()})</Label>
-                    <Textarea
+                    <Textarea aria-label="Description"
                       value={language === 'en' ? exp.description : (exp.description_es || '')}
                       onChange={(e) => handleExperienceChange(index, language === 'en' ? 'description' : 'description_es' as keyof Experience, e.target.value)}
                       placeholder={`Brief overview of your role (${language})`}
-                      className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                      className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
                     />
                   </div>
                   <div>
@@ -524,7 +527,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="text-blue-500 hover:text-blue-700"
+                        className="text-blue-700 hover:text-blue-800"
                         onClick={() => addResponsibility(index)}
                       >
                         <PlusCircle className="w-4 h-4 mr-1" />
@@ -537,13 +540,14 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                           value={responsibility}
                           onChange={(e) => handleResponsibilityChange(index, respIndex, e.target.value)}
                           placeholder={`Responsibility ${respIndex + 1} (${language})`}
-                          className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                          className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="text-slate-400 hover:text-red-700 hover:bg-red-50 shrink-0"
+                          className="text-slate-600 hover:text-red-700 hover:bg-red-50 shrink-0"
+                          aria-label={`Remove responsibility ${respIndex + 1}`}
                           onClick={() => removeResponsibility(index, respIndex)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -562,31 +566,31 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
           <>
             <div className="space-y-2">
               <Label className="text-gray-900">Email</Label>
-              <Input
+              <Input aria-label="Email"
                 value={editedSection.content.email || ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
                   email: e.target.value
                 }))}
                 placeholder="Enter your email address"
-                className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-gray-900">City ({language.toUpperCase()})</Label>
-              <Input
+              <Input aria-label="City"
                 value={editedSection.content[getFieldName('city')] || ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
                   [getFieldName('city')]: e.target.value
                 }))}
                 placeholder={`Enter your city (${language})`}
-                className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-gray-900">GitHub URL</Label>
-              <Input
+              <Input aria-label="GitHub URL"
                 value={editedSection.content.social?.github || ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
@@ -596,12 +600,12 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   }
                 }))}
                 placeholder="Enter your GitHub profile URL"
-                className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-gray-900">LinkedIn URL</Label>
-              <Input
+              <Input aria-label="LinkedIn URL"
                 value={editedSection.content.social?.linkedin || ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleContentChange(JSON.stringify({
                   ...editedSection.content,
@@ -611,7 +615,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
                   }
                 }))}
                 placeholder="Enter your LinkedIn profile URL"
-                className="bg-white text-slate-900 placeholder:text-gray-400 focus-visible:ring-[#FD4345]"
+                className="bg-white text-slate-900 placeholder:text-gray-600 focus-visible:ring-[#B42335]"
               />
             </div>
           </>
@@ -623,52 +627,52 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-slate-700 font-semibold">Title (EN)</Label>
-                <Input
+                <Input aria-label="Title EN"
                   value={editedSection.content.title_en || ''}
                   onChange={(e) => handleContentChange(JSON.stringify({
                     ...editedSection.content,
                     title_en: e.target.value
                   }))}
                   placeholder="Blog"
-                  className="focus-visible:ring-[#FD4345]"
+                  className="focus-visible:ring-[#B42335]"
                 />
               </div>
               <div className="space-y-1">
                 <Label className="text-slate-700 font-semibold">Título (ES)</Label>
-                <Input
+                <Input aria-label="Título ES"
                   value={editedSection.content.title_es || ''}
                   onChange={(e) => handleContentChange(JSON.stringify({
                     ...editedSection.content,
                     title_es: e.target.value
                   }))}
                   placeholder="Blog"
-                  className="focus-visible:ring-[#FD4345]"
+                  className="focus-visible:ring-[#B42335]"
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-slate-700 font-semibold">Description (EN)</Label>
-                <Textarea
+                <Textarea aria-label="Description EN"
                   value={editedSection.content.description_en || editedSection.content.description || ''}
                   onChange={(e) => handleContentChange(JSON.stringify({
                     ...editedSection.content,
                     description_en: e.target.value
                   }))}
                   placeholder="Sharing insights and experiences in software development"
-                  className="focus-visible:ring-[#FD4345]"
+                  className="focus-visible:ring-[#B42335]"
                 />
               </div>
               <div className="space-y-1">
                 <Label className="text-slate-700 font-semibold">Descripción (ES)</Label>
-                <Textarea
+                <Textarea aria-label="Descripción ES"
                   value={editedSection.content.description_es || ''}
                   onChange={(e) => handleContentChange(JSON.stringify({
                     ...editedSection.content,
                     description_es: e.target.value
                   }))}
                   placeholder="Compartiendo ideas y experiencias de desarrollo"
-                  className="focus-visible:ring-[#FD4345]"
+                  className="focus-visible:ring-[#B42335]"
                 />
               </div>
             </div>
@@ -681,52 +685,52 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-slate-700 font-semibold">Title (EN)</Label>
-                <Input
+                <Input aria-label="Title EN"
                   value={editedSection.content.title_en || ''}
                   onChange={(e) => handleContentChange(JSON.stringify({
                     ...editedSection.content,
                     title_en: e.target.value
                   }))}
                   placeholder="Skills & Technologies"
-                  className="focus-visible:ring-[#FD4345]"
+                  className="focus-visible:ring-[#B42335]"
                 />
               </div>
               <div className="space-y-1">
                 <Label className="text-slate-700 font-semibold">Título (ES)</Label>
-                <Input
+                <Input aria-label="Título ES"
                   value={editedSection.content.title_es || ''}
                   onChange={(e) => handleContentChange(JSON.stringify({
                     ...editedSection.content,
                     title_es: e.target.value
                   }))}
                   placeholder="Habilidades y Tecnologías"
-                  className="focus-visible:ring-[#FD4345]"
+                  className="focus-visible:ring-[#B42335]"
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-slate-700 font-semibold">Description (EN)</Label>
-                <Textarea
+                <Textarea aria-label="Description EN"
                   value={editedSection.content.description_en || editedSection.content.description || ''}
                   onChange={(e) => handleContentChange(JSON.stringify({
                     ...editedSection.content,
                     description_en: e.target.value
                   }))}
                   placeholder="A comprehensive set of technical skills across various domains"
-                  className="focus-visible:ring-[#FD4345]"
+                  className="focus-visible:ring-[#B42335]"
                 />
               </div>
               <div className="space-y-1">
                 <Label className="text-slate-700 font-semibold">Descripción (ES)</Label>
-                <Textarea
+                <Textarea aria-label="Descripción ES"
                   value={editedSection.content.description_es || ''}
                   onChange={(e) => handleContentChange(JSON.stringify({
                     ...editedSection.content,
                     description_es: e.target.value
                   }))}
                   placeholder="Conjunto integral de habilidades técnicas en varios dominios"
-                  className="focus-visible:ring-[#FD4345]"
+                  className="focus-visible:ring-[#B42335]"
                 />
               </div>
             </div>
@@ -737,7 +741,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
         return (
           <div className="space-y-2">
             <Label className="text-gray-900">Content (JSON)</Label>
-            <Textarea
+            <Textarea aria-label="Content JSON"
               value={JSON.stringify(editedSection.content, null, 2)}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleContentChange(e.target.value)}
               placeholder="Enter content in JSON format"
@@ -755,11 +759,11 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Label className="text-slate-700 font-semibold">Order</Label>
-              <Input
+              <Input aria-label="Order"
                 type="number"
                 value={editedSection.order || 0}
                 onChange={(e) => handleOrderChange(e.target.value)}
-                className="w-20 border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
+                className="w-20 border-slate-300 focus:border-[#B42335] focus:ring-[#B42335] focus:ring-1"
               />
             </div>
             <div className="flex items-center border rounded-md overflow-hidden border-slate-300">
@@ -786,7 +790,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             size="icon"
             onClick={() => setJsonEditorOpen(true)}
             title="Edit JSON"
-            className="border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#FD4345] hover:border-[#FD4345]"
+            className="border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#B42335] hover:border-[#B42335]"
           >
             <Code className="h-4 w-4" />
           </Button>
@@ -806,7 +810,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
           <Button
             type="submit"
             disabled={isSubmitting || !!contentError}
-            className="bg-[#FD4345] hover:bg-[#ff5456] text-white disabled:bg-slate-400 shadow-md"
+            className="bg-[#B42335] hover:bg-[#941B2B] text-white disabled:bg-slate-400 shadow-md"
           >
             {isSubmitting ? 'Saving...' : (
                 <>
@@ -833,6 +837,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
           </DialogHeader>
           <div className="mt-4">
             <TinyMCE
+              label="Section content"
               value={editedContent}
               onChange={setEditedContent}
               height={500}
@@ -848,7 +853,7 @@ export default function SectionEditor({ section, onSave }: SectionEditorProps) {
             </Button>
             <Button
               onClick={handleSave}
-              className="bg-[#FD4345] hover:bg-[#ff5456] text-white"
+              className="bg-[#B42335] hover:bg-[#941B2B] text-white"
             >
               Save Changes
             </Button>

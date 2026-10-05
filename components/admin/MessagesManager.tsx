@@ -1,5 +1,7 @@
 'use client'
 
+import { adminFetch } from '@/lib/admin-fetch';
+
 import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -30,7 +32,7 @@ export default function MessagesManager() {
 
   const fetchMessages = useCallback(async () => {
     try {
-      const response = await fetch('/api/messages');
+      const response = await adminFetch('/api/messages');
       if (!response.ok) throw new Error('Failed to fetch messages');
       const data = await response.json();
       setMessages(data);
@@ -49,7 +51,7 @@ export default function MessagesManager() {
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      const response = await fetch(`/api/messages/${id}`, {
+      const response = await adminFetch(`/api/messages/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +114,7 @@ export default function MessagesManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col space-y-4 p-4 md:p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
+      <div className="flex flex-col space-y-4 p-4 md:p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#B42335]">
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-slate-900">Messages</h2>
@@ -123,7 +125,7 @@ export default function MessagesManager() {
               onClick={() => setFilter('priority')}
               variant="ghost"
               size="sm"
-              className={`rounded-md transition-all ${filter === 'priority' ? 'bg-white text-[#FD4345] shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              className={`rounded-md transition-all ${filter === 'priority' ? 'bg-white text-[#B42335] shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
             >
               Priority
             </Button>
@@ -147,12 +149,12 @@ export default function MessagesManager() {
         </div>
         
         <div className="relative max-w-md w-full">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-600" />
             <Input 
                 placeholder="Search messages..." 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-white focus-visible:ring-[#FD4345]"
+                className="pl-9 bg-white focus-visible:ring-[#B42335]"
             />
         </div>
       </div>
@@ -161,7 +163,7 @@ export default function MessagesManager() {
           {currentMessages.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-lg border border-dashed border-slate-200 shadow-sm">
               <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Inbox className="w-8 h-8 text-slate-400" />
+                <Inbox className="w-8 h-8 text-slate-600" />
               </div>
               <h3 className="text-lg font-medium text-slate-900">No messages found</h3>
               <p className="text-slate-500 text-sm mt-1">
@@ -173,20 +175,20 @@ export default function MessagesManager() {
           ) : (
             <div className="grid gap-4">
                 {currentMessages.map((message) => (
-                <Card key={message._id} className={`group transition-all duration-200 border hover:border-[#FD4345]/30 bg-white ${!message.read ? 'shadow-md border-l-4 border-l-[#FD4345]' : 'shadow-sm border-slate-200 opacity-90 hover:opacity-100'}`}>
+                <Card key={message._id} className={`group transition-all duration-200 border hover:border-[#B42335]/30 bg-white ${!message.read ? 'shadow-md border-l-4 border-l-[#B42335]' : 'shadow-sm border-slate-200 opacity-90 hover:opacity-100'}`}>
                     <CardContent className="p-5">
                     <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                         <div className="space-y-2 flex-1 w-full">
                         <div className="flex items-center gap-3 flex-wrap">
                             <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
                                 {message.name}
-                                <span className="text-xs font-normal text-slate-400 flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+                                <span className="text-xs font-normal text-slate-600 flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
                                     <Mail className="w-3 h-3" /> {message.email}
                                 </span>
                             </h3>
                             <div className="flex items-center gap-2">
                                 {!message.read ? (
-                                    <Badge className="bg-[#FD4345] hover:bg-[#ff5456] border-none text-white shadow-sm">
+                                    <Badge className="bg-[#B42335] hover:bg-[#941B2B] border-none text-white shadow-sm">
                                         New Message
                                     </Badge>
                                 ) : (
@@ -206,7 +208,7 @@ export default function MessagesManager() {
                             {message.message}
                         </div>
                         
-                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                        <div className="flex items-center gap-2 text-xs text-slate-600 mt-1">
                             <Clock className="w-3 h-3" />
                             {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
                         </div>
@@ -216,7 +218,7 @@ export default function MessagesManager() {
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="text-slate-500 hover:text-[#FD4345] hover:bg-[#FD4345]/10 shrink-0 whitespace-nowrap"
+                            className="text-slate-500 hover:text-[#B42335] hover:bg-[#B42335]/10 shrink-0 whitespace-nowrap"
                             onClick={() => handleMarkAsRead(message._id)}
                         >
                             <CheckCircle className="w-4 h-4 mr-2" />
@@ -238,7 +240,7 @@ export default function MessagesManager() {
               key={page}
               variant={currentPage === page ? 'default' : 'outline'}
               size="sm"
-              className={currentPage === page ? 'bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-sm' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}
+              className={currentPage === page ? 'bg-[#B42335] hover:bg-[#941B2B] text-white shadow-sm' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}
               onClick={() => setCurrentPage(page)}
             >
               {page}

@@ -1,6 +1,8 @@
 /// <reference types="react" />
 'use client';
 
+import { adminFetch } from '@/lib/admin-fetch';
+
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -75,6 +77,7 @@ const AdminDashboard: FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedCacheType, setSelectedCacheType] = useState('all');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const { toast } = useToast();
 
   const selectSection = (sectionId: string) => {
@@ -92,9 +95,11 @@ const AdminDashboard: FC = () => {
 
   // Start with the sidebar closed on small screens (mobile drawer pattern).
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      setSidebarOpen(false);
-    }
+    const media = window.matchMedia('(max-width: 767px)');
+    const sync = () => { setIsMobile(media.matches); setSidebarOpen(!media.matches); };
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
   }, []);
 
   useEffect(() => {
@@ -111,7 +116,7 @@ const AdminDashboard: FC = () => {
   useEffect(() => {
     const loadSkills = async () => {
       try {
-        const res = await fetch('/api/skills')
+        const res = await adminFetch('/api/skills')
         if (!res.ok) throw new Error('Failed to fetch skills')
         const data = await res.json()
         setSkills(Array.isArray(data) ? data : [])
@@ -125,19 +130,20 @@ const AdminDashboard: FC = () => {
   useEffect(() => {
     const refresh = async () => {
       try {
-        const response = await fetch('/api/admin/comments?summary=1');
+        const response = await adminFetch('/api/admin/comments?summary=1');
         if (response.ok) setPendingComments((await response.json()).pending || 0);
       } catch { /* A subsequent refresh retries the count. */ }
     };
     void refresh();
     const timer = setInterval(refresh, 60000);
-    return () => clearInterval(timer);
-  }, [activeSection]);
+    window.addEventListener('admin-comments-changed', refresh);
+    return () => { clearInterval(timer); window.removeEventListener('admin-comments-changed', refresh); };
+  }, []);
 
   const handleSaveSkill = async (skill: Skill) => {
     try {
       const method = skill._id ? 'PUT' : 'POST';
-      const response = await fetch('/api/skills', {
+      const response = await adminFetch('/api/skills', {
         method,
         headers: {
           'Content-Type': 'application/json'
@@ -180,7 +186,7 @@ const AdminDashboard: FC = () => {
   const handleCacheRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const response = await fetch('/api/cache/refresh', {
+      const response = await adminFetch('/api/cache/refresh', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -222,6 +228,9 @@ const AdminDashboard: FC = () => {
 
       {/* Sidebar — off-canvas drawer on mobile, collapsible rail on desktop */}
       <aside
+        id="admin-navigation"
+        data-admin-sidebar
+        inert={isMobile && !sidebarOpen}
         className={`bg-[#263547] text-white flex flex-col flex-shrink-0
           fixed inset-y-0 left-0 z-40 w-[280px] transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -238,7 +247,7 @@ const AdminDashboard: FC = () => {
                 exit={{ opacity: 0 }}
                 className="font-bold text-xl tracking-tight flex items-center gap-2 overflow-hidden"
               >
-                <div className="w-8 h-8 bg-[#FD4345] rounded-lg flex items-center justify-center text-white flex-shrink-0">
+                <div className="w-8 h-8 bg-[#B42335] rounded-lg flex items-center justify-center text-white flex-shrink-0">
                     A
                 </div>
                 <span className="whitespace-nowrap">Admin</span>
@@ -284,10 +293,11 @@ const AdminDashboard: FC = () => {
                   }}
                   variant="ghost"
                   aria-label={item.label}
+                  aria-current={isActive ? 'page' : undefined}
                   title={sidebarOpen ? undefined : item.label}
                   className={`w-full justify-start h-11 px-3 relative transition-all duration-200 ${
                     isActive
-                      ? 'bg-[#FD4345] text-white shadow-md hover:bg-[#FD4345] hover:text-white'
+                      ? 'bg-[#B42335] text-white shadow-md hover:bg-[#B42335] hover:text-white'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
                   }`}
                 >
@@ -299,7 +309,7 @@ const AdminDashboard: FC = () => {
                       transition={{ delay: 0.1 }}
                       className="whitespace-nowrap"
                     >
-                      {item.label}{item.id === 'comments' && pendingComments > 0 && <span className="ml-2 rounded-full bg-amber-500 px-2 py-0.5 text-xs text-white" aria-label={`${pendingComments} comments need review`}>{pendingComments}</span>}
+                      {item.label}{item.id === 'comments' && pendingComments > 0 && <span className="ml-2 rounded-full bg-amber-200 px-2 py-0.5 text-xs text-amber-950" aria-label={`${pendingComments} comments need review`}>{pendingComments}</span>}
                     </motion.span>
                   )}
                   {isActive && sidebarOpen && (
@@ -326,7 +336,7 @@ const AdminDashboard: FC = () => {
                 value={selectedCacheType}
                 onValueChange={setSelectedCacheType}
               >
-                <SelectTrigger className="w-full bg-slate-800 border-slate-600 text-slate-200 h-9 text-xs">
+                <SelectTrigger aria-label="Cache to refresh" className="w-full bg-slate-800 border-slate-600 text-slate-200 h-9 text-xs">
                   <SelectValue placeholder="Select cache" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
@@ -364,7 +374,7 @@ const AdminDashboard: FC = () => {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
+      <div data-admin-shell className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 shadow-sm z-10 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
@@ -374,6 +384,8 @@ const AdminDashboard: FC = () => {
               onClick={() => setSidebarOpen(true)}
               className="md:hidden text-slate-600 hover:bg-slate-100 flex-shrink-0"
               aria-label="Open menu"
+              aria-expanded={sidebarOpen}
+              aria-controls="admin-navigation"
             >
               <Menu className="w-5 h-5" />
             </Button>
@@ -400,15 +412,7 @@ const AdminDashboard: FC = () => {
         {/* Scrollable Content Area */}
         <main className={`flex-1 bg-[#F8F9FA] min-h-0 ${['projects', 'blogs'].includes(activeSection) ? 'overflow-hidden' : 'overflow-y-auto p-4 md:p-6'}`}>
           <div className="max-w-7xl mx-auto w-full h-full min-h-0">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeSection}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className={['projects', 'blogs'].includes(activeSection) ? 'h-full min-h-0' : ''}
-              >
+            <div key={activeSection} className={['projects', 'blogs'].includes(activeSection) ? 'h-full min-h-0' : ''}>
                 {activeSection === 'overview' && (
                   <div className="space-y-6 md:space-y-8">
                     <StatusCards />
@@ -419,19 +423,19 @@ const AdminDashboard: FC = () => {
                         return (
                           <Card
                             key={item.id}
-                            className="group hover:shadow-xl transition-all duration-300 border-slate-100 hover:border-[#FD4345]/20 overflow-hidden"
+                            className="group hover:shadow-xl transition-all duration-300 border-slate-100 hover:border-[#B42335]/20 overflow-hidden"
                           >
                             <button
                               type="button"
                               onClick={() => selectSection(item.id)}
-                              className="block w-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2"
+                              className="block w-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B42335] focus-visible:ring-offset-2"
                             >
                               <CardContent className="p-4 md:p-6 flex flex-col items-center text-center gap-3 md:gap-4">
-                                <div className="p-3 md:p-4 rounded-full bg-slate-50 text-slate-600 group-hover:bg-[#FD4345] group-hover:text-white transition-colors duration-300">
+                                <div className="p-3 md:p-4 rounded-full bg-slate-50 text-slate-600 group-hover:bg-[#B42335] group-hover:text-white transition-colors duration-300">
                                   <Icon className="w-6 h-6" />
                                 </div>
                                 <div>
-                                  <h3 className="font-semibold text-slate-900 group-hover:text-[#FD4345] transition-colors">
+                                  <h3 className="font-semibold text-slate-900 group-hover:text-[#B42335] transition-colors">
                                     {item.label}
                                   </h3>
                                   <p className="text-xs text-slate-500 mt-1">
@@ -461,8 +465,7 @@ const AdminDashboard: FC = () => {
                     <EmailDiagnostics />
                   </div>
                 )}
-              </motion.div>
-            </AnimatePresence>
+            </div>
           </div>
         </main>
       </div>

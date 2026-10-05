@@ -1,5 +1,7 @@
 'use client'
 
+import { adminFetch } from '@/lib/admin-fetch';
+
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MessageSquare, Briefcase, Wrench, FileText } from 'lucide-react'
@@ -18,7 +20,7 @@ export default function StatusCards() {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await fetch('/api/stats')
+                const res = await adminFetch('/api/stats')
                 if (!res.ok) throw new Error('Failed to fetch stats')
                 const data = await res.json()
                 setCounts(data)
@@ -43,7 +45,7 @@ export default function StatusCards() {
             value: counts.messages,
             icon: MessageSquare,
             subtext: `${counts.unread} unread`,
-            subtextClass: counts.unread > 0 ? 'text-[#FD4345] font-semibold' : 'text-slate-400',
+            subtextClass: counts.unread > 0 ? 'text-[#B42335] font-semibold' : 'text-slate-600',
             color: 'bg-blue-50 text-blue-600'
         },
         {
@@ -51,7 +53,7 @@ export default function StatusCards() {
             value: counts.projects,
             icon: Briefcase,
             subtext: 'Portfolio Items',
-            subtextClass: 'text-slate-400',
+            subtextClass: 'text-slate-600',
             color: 'bg-indigo-50 text-indigo-600'
         },
         {
@@ -59,7 +61,7 @@ export default function StatusCards() {
             value: counts.skills,
             icon: Wrench,
             subtext: 'Technical Capabilities',
-            subtextClass: 'text-slate-400',
+            subtextClass: 'text-slate-600',
             color: 'bg-emerald-50 text-emerald-600'
         },
         {
@@ -67,8 +69,8 @@ export default function StatusCards() {
             value: counts.blogs,
             icon: FileText,
             subtext: 'Published Articles',
-            subtextClass: 'text-slate-400',
-            color: 'bg-[#FD4345]/10 text-[#FD4345]'
+            subtextClass: 'text-slate-600',
+            color: 'bg-[#B42335]/10 text-[#B42335]'
         }
     ]
 

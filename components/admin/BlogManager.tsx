@@ -1,5 +1,7 @@
 'use client'
 
+import { adminFetch } from '@/lib/admin-fetch';
+
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -132,7 +134,7 @@ export default function BlogManager() {
         setFetchError(null)
         setLoading(true)
         try {
-            const response = await fetch('/api/blogs?view=summary')
+            const response = await adminFetch('/api/blogs?view=summary')
             if (!response.ok) {
                 throw new Error('Failed to fetch blogs')
             }
@@ -148,7 +150,7 @@ export default function BlogManager() {
 
     async function fetchSubscribers() {
         try {
-            const response = await fetch('/api/subscribers')
+            const response = await adminFetch('/api/subscribers')
             if (!response.ok) {
                 throw new Error('Failed to fetch subscribers')
             }
@@ -210,7 +212,7 @@ export default function BlogManager() {
     const loadBlog = async (blog: Blog) => {
         setLoading(true)
         try {
-            const response = await fetch(`/api/blogs/${blog._id}`)
+            const response = await adminFetch(`/api/blogs/${blog._id}`)
             if (!response.ok) throw new Error('Failed to load blog')
             handleSelectBlog(await response.json())
         } catch {
@@ -346,7 +348,7 @@ export default function BlogManager() {
     const handleDelete = async (id: string, e?: React.MouseEvent) => {
         e?.stopPropagation();
         try {
-            const response = await fetch(`/api/blogs/${id}`, {
+            const response = await adminFetch(`/api/blogs/${id}`, {
                 method: 'DELETE',
             })
 
@@ -381,7 +383,7 @@ export default function BlogManager() {
     const openNewsletterModal = async (blog: Blog, e?: React.MouseEvent) => {
         e?.stopPropagation();
         try {
-            const [response, recipients] = await Promise.all([fetch(`/api/blogs/${blog._id}`), fetchSubscribers()])
+            const [response, recipients] = await Promise.all([adminFetch(`/api/blogs/${blog._id}`), fetchSubscribers()])
             if (!response.ok) throw new Error('Failed to load blog')
             setNewsletterBlog(await response.json())
             setSelectedRecipients(recipients.filter(sub => !sub.unsubscribed).map(sub => sub._id?.toString() || ''))
@@ -401,7 +403,7 @@ export default function BlogManager() {
         const controller = new AbortController()
         const timeout = setTimeout(() => controller.abort(), NEWSLETTER_SEND_TIMEOUT_MS)
         try {
-            const response = await fetch(`/api/blogs/${newsletterBlog._id}/send-newsletter`, {
+            const response = await adminFetch(`/api/blogs/${newsletterBlog._id}/send-newsletter`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ subscriberIds: selectedRecipients }),
@@ -454,7 +456,7 @@ export default function BlogManager() {
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div className="min-w-0">
                                 <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
-                                    <FileText className="w-5 h-5 text-[#FD4345]" />
+                                    <FileText className="w-5 h-5 text-[#B42335]" />
                                     Blog Library
                                 </CardTitle>
                                 <p className="mt-1 text-sm text-slate-500">
@@ -463,16 +465,16 @@ export default function BlogManager() {
                             </div>
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                                 <div className="relative w-full sm:w-72">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-600" />
                                     <Input
                                         aria-label="Search blogs"
                                         placeholder="Search title or subtitle..."
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
-                                        className="w-full pl-9 h-9 border-slate-200 focus-visible:ring-[#FD4345]"
+                                        className="w-full pl-9 h-9 border-slate-200 focus-visible:ring-[#B42335]"
                                     />
                                 </div>
-                                <Button type="button" onClick={handleNewPost} className="bg-[#FD4345] hover:bg-[#ff5456] text-white">
+                                <Button type="button" onClick={handleNewPost} className="bg-[#B42335] hover:bg-[#941B2B] text-white">
                                     <Plus className="w-4 h-4 mr-2" />
                                     New Post
                                 </Button>
@@ -559,12 +561,12 @@ export default function BlogManager() {
                         <CardTitle className="flex items-center gap-2 text-base md:text-lg text-white">
                             {selectedBlog._id ? (
                                 <>
-                                    <Edit className="w-5 h-5 text-[#FD4345]" />
+                                    <Edit className="w-5 h-5 text-[#B42335]" />
                                     Edit Blog Post
                                 </>
                             ) : (
                                 <>
-                                    <Plus className="w-5 h-5 text-[#FD4345]" />
+                                    <Plus className="w-5 h-5 text-[#B42335]" />
                                     Create New Blog Post
                                 </>
                             )}
@@ -604,38 +606,39 @@ export default function BlogManager() {
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
                                         <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-0 uppercase tracking-wider font-bold px-2.5">English</Badge>
-                                        <Globe className="w-4 h-4 text-slate-400" />
+                                        <Globe className="w-4 h-4 text-slate-600" />
                                     </div>
                                     
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <Label className="text-slate-700 font-semibold" htmlFor="title-en">Title <span className="text-red-500">*</span></Label>
+                                            <Label className="text-slate-700 font-semibold" htmlFor="title-en">Title <span className="text-red-700">*</span></Label>
                                             <Input
                                                 id="title-en"
                                                 value={selectedBlog.title_en || ''}
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, title_en: e.target.value})}
                                                 placeholder="Enter English title"
-                                                className="focus-visible:ring-[#FD4345]"
+                                                className="focus-visible:ring-[#B42335]"
                                                 disabled={isSubmitting}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-slate-700 font-semibold" htmlFor="subtitle-en">Subtitle <span className="text-red-500">*</span></Label>
+                                            <Label className="text-slate-700 font-semibold" htmlFor="subtitle-en">Subtitle <span className="text-red-700">*</span></Label>
                                             <Input
                                                 id="subtitle-en"
                                                 value={selectedBlog.subtitle_en || ''}
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, subtitle_en: e.target.value})}
                                                 placeholder="Enter English subtitle"
-                                                className="focus-visible:ring-[#FD4345]"
+                                                className="focus-visible:ring-[#B42335]"
                                                 disabled={isSubmitting}
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-slate-700 font-semibold" htmlFor="manager-content-en">Content</Label>
-                                            <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
+                                            <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#B42335]">
                                                 <TinyMCE 
                                                     ref={contentEnEditorRef}
                                                     id="manager-content-en"
+                                                    label="Blog content (English)"
                                                     value={selectedBlog.content_en || ''} 
                                                     onChange={(val) => setSelectedBlog({...selectedBlog, content_en: val})} 
                                                     disabled={isSubmitting}
@@ -649,7 +652,7 @@ export default function BlogManager() {
                                                 value={selectedBlog.footer_en || ''}
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, footer_en: e.target.value})}
                                                 placeholder="Optional English footer"
-                                                className="focus-visible:ring-[#FD4345]"
+                                                className="focus-visible:ring-[#B42335]"
                                                 disabled={isSubmitting}
                                             />
                                         </div>
@@ -660,7 +663,7 @@ export default function BlogManager() {
                                                 value={selectedBlog.bibliography_en || ''}
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, bibliography_en: e.target.value})}
                                                 placeholder="Optional English bibliography"
-                                                className="focus-visible:ring-[#FD4345]"
+                                                className="focus-visible:ring-[#B42335]"
                                                 disabled={isSubmitting}
                                             />
                                         </div>
@@ -671,38 +674,39 @@ export default function BlogManager() {
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
                                         <Badge className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-0 uppercase tracking-wider font-bold px-2.5">Español</Badge>
-                                        <Globe className="w-4 h-4 text-slate-400" />
+                                        <Globe className="w-4 h-4 text-slate-600" />
                                     </div>
 
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <Label className="text-slate-700 font-semibold" htmlFor="title-es">Título <span className="text-red-500">*</span></Label>
+                                            <Label className="text-slate-700 font-semibold" htmlFor="title-es">Título <span className="text-red-700">*</span></Label>
                                             <Input
                                                 id="title-es"
                                                 value={selectedBlog.title_es || ''}
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, title_es: e.target.value})}
                                                 placeholder="Introduce el título en español"
-                                                className="focus-visible:ring-[#FD4345]"
+                                                className="focus-visible:ring-[#B42335]"
                                                 disabled={isSubmitting}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-slate-700 font-semibold" htmlFor="subtitle-es">Subtítulo <span className="text-red-500">*</span></Label>
+                                            <Label className="text-slate-700 font-semibold" htmlFor="subtitle-es">Subtítulo <span className="text-red-700">*</span></Label>
                                             <Input
                                                 id="subtitle-es"
                                                 value={selectedBlog.subtitle_es || ''}
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, subtitle_es: e.target.value})}
                                                 placeholder="Introduce el subtítulo en español"
-                                                className="focus-visible:ring-[#FD4345]"
+                                                className="focus-visible:ring-[#B42335]"
                                                 disabled={isSubmitting}
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-slate-700 font-semibold" htmlFor="manager-content-es">Contenido</Label>
-                                            <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#FD4345]">
+                                            <div className="border rounded-md focus-within:ring-1 focus-within:ring-[#B42335]">
                                                 <TinyMCE 
                                                     ref={contentEsEditorRef}
                                                     id="manager-content-es"
+                                                    label="Blog content (Spanish)"
                                                     value={selectedBlog.content_es || ''} 
                                                     onChange={(val) => setSelectedBlog({...selectedBlog, content_es: val})} 
                                                     disabled={isSubmitting}
@@ -716,7 +720,7 @@ export default function BlogManager() {
                                                 value={selectedBlog.footer_es || ''}
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, footer_es: e.target.value})}
                                                 placeholder="Pie de página opcional"
-                                                className="focus-visible:ring-[#FD4345]"
+                                                className="focus-visible:ring-[#B42335]"
                                                 disabled={isSubmitting}
                                             />
                                         </div>
@@ -727,7 +731,7 @@ export default function BlogManager() {
                                                 value={selectedBlog.bibliography_es || ''}
                                                 onChange={(e) => setSelectedBlog({...selectedBlog, bibliography_es: e.target.value})}
                                                 placeholder="Bibliografía opcional"
-                                                className="focus-visible:ring-[#FD4345]"
+                                                className="focus-visible:ring-[#B42335]"
                                                 disabled={isSubmitting}
                                             />
                                         </div>
@@ -738,7 +742,7 @@ export default function BlogManager() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 pt-6 border-t border-slate-100 mt-6">
                                 <div className="space-y-2">
                                     <Label className="text-slate-700 font-semibold" htmlFor="tags">Tags</Label>
-                                    <div className="rounded-md border border-slate-200 bg-white p-2 focus-within:ring-2 focus-within:ring-[#FD4345] focus-within:ring-offset-2 transition-all">
+                                    <div className="rounded-md border border-slate-200 bg-white p-2 focus-within:ring-2 focus-within:ring-[#B42335] focus-within:ring-offset-2 transition-all">
                                         <div className="flex flex-wrap gap-2">
                                             {(selectedBlog.tags || []).map((tag) => (
                                                 <Badge
@@ -766,7 +770,7 @@ export default function BlogManager() {
                                                 onBlur={() => commitPendingTag()}
                                                 onKeyDown={handleTagInputKeyDown}
                                                 placeholder={selectedBlog.tags?.length ? '' : 'Add tags (press Enter)...'}
-                                                className="flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none min-w-[120px]"
+                                                className="flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-600 focus:outline-none min-w-[120px]"
                                                 disabled={isSubmitting}
                                             />
                                         </div>
@@ -783,7 +787,7 @@ export default function BlogManager() {
                                             checked={selectedBlog.published}
                                             onCheckedChange={(checked) => setSelectedBlog({...selectedBlog, published: checked})}
                                             id="published"
-                                            className="data-[state=checked]:bg-[#FD4345]"
+                                            className="data-[state=checked]:bg-[#B42335]"
                                             disabled={isSubmitting}
                                         />
                                         <div className="flex flex-col">
@@ -824,7 +828,7 @@ export default function BlogManager() {
                             <Button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-md transition-all min-w-[140px]"
+                                className="bg-[#B42335] hover:bg-[#941B2B] text-white shadow-md transition-all min-w-[140px]"
                             >
                                 {isSubmitting ? (
                                     <>
@@ -889,7 +893,7 @@ export default function BlogManager() {
                                     </div>
                                 </div>
                                 <div className="relative">
-                                    <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+                                    <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-600" />
                                     <Input
                                         value={recipientSearch}
                                         onChange={(e) => setRecipientSearch(e.target.value)}
@@ -914,13 +918,13 @@ export default function BlogManager() {
                                                 <Checkbox
                                                     checked={checked}
                                                     onCheckedChange={() => toggleRecipient(id)}
-                                                    className="mt-0.5 data-[state=checked]:bg-[#FD4345] data-[state=checked]:border-[#FD4345]"
+                                                    className="mt-0.5 data-[state=checked]:bg-[#B42335] data-[state=checked]:border-[#B42335]"
                                                 />
                                                 <div className="space-y-0.5 flex-1">
                                                     <p className="font-medium text-slate-800 text-sm">{sub.email}</p>
                                                     <div className="flex flex-wrap gap-2 text-[10px] text-slate-500 uppercase tracking-wide font-medium">
-                                                        <span className="text-slate-400">{(sub.language || 'en')}</span>
-                                                        <span className={sub.unsubscribed ? 'text-red-500' : 'text-emerald-600'}>
+                                                        <span className="text-slate-600">{(sub.language || 'en')}</span>
+                                                        <span className={sub.unsubscribed ? 'text-red-700' : 'text-emerald-600'}>
                                                             {sub.unsubscribed ? 'Unsubscribed' : 'Active'}
                                                         </span>
                                                     </div>
@@ -947,7 +951,7 @@ export default function BlogManager() {
                                     <div className="flex flex-col h-full">
                                         <div className="bg-[#263547] text-white px-4 py-3 border-b border-slate-700">
                                             <div className="flex gap-3 text-sm">
-                                                <span className="text-slate-400 font-medium w-14">Subject:</span>
+                                                <span className="text-slate-600 font-medium w-14">Subject:</span>
                                                 <span className="font-medium">{emailPreview.subject}</span>
                                             </div>
                                         </div>
@@ -974,7 +978,7 @@ export default function BlogManager() {
                         <Button 
                             onClick={handleSendNewsletter} 
                             disabled={isSending || selectedRecipients.length === 0}
-                            className="bg-[#FD4345] hover:bg-[#ff5456] text-white pl-5 pr-6"
+                            className="bg-[#B42335] hover:bg-[#941B2B] text-white pl-5 pr-6"
                         >
                             {isSending ? (
                                 <>Sending...</>

@@ -1,5 +1,7 @@
 'use client'
 
+import { adminFetch } from '@/lib/admin-fetch';
+
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,7 +21,7 @@ export default function AssetsManager() {
             setUploading(true)
             const form = new FormData()
             form.append('file', file)
-            const res = await fetch(url, { method: 'POST', body: form })
+            const res = await adminFetch(url, { method: 'POST', body: form })
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}))
                 throw new Error(data?.error || 'Upload failed')
@@ -37,7 +39,7 @@ export default function AssetsManager() {
 
     return (
         <div className="space-y-6">
-            <div className="p-4 md:p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
+            <div className="p-4 md:p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#B42335]">
                 <h2 className="text-xl md:text-2xl font-bold text-slate-900">Assets Manager</h2>
                 <p className="text-slate-500 text-sm mt-1">Manage your global assets like CV and Profile Picture</p>
             </div>
@@ -59,6 +61,7 @@ export default function AssetsManager() {
                         <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 md:p-8 text-center transition-all hover:border-blue-400 hover:bg-blue-50/30 group cursor-pointer relative">
                             <input
                                 type="file"
+                                aria-label="Profile picture file"
                                 accept="image/jpeg,image/png,image/webp"
                                 onChange={(e) => setSelectedPfp(e.target.files?.[0] || null)}
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
@@ -70,7 +73,7 @@ export default function AssetsManager() {
                                 <p className="text-sm font-medium text-slate-700">
                                     {selectedPfp ? selectedPfp.name : "Click to select image"}
                                 </p>
-                                <p className="text-xs text-slate-400">
+                                <p className="text-xs text-slate-600">
                                     {selectedPfp ? `${(selectedPfp.size / 1024).toFixed(1)} KB` : "JPEG, PNG, WebP (max 2MB)"}
                                 </p>
                             </div>
@@ -111,18 +114,19 @@ export default function AssetsManager() {
                         <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 md:p-8 text-center transition-all hover:border-red-400 hover:bg-red-50/30 group cursor-pointer relative">
                             <input
                                 type="file"
+                                aria-label="CV PDF file"
                                 accept="application/pdf"
                                 onChange={(e) => setSelectedCv(e.target.files?.[0] || null)}
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                             />
                             <div className="flex flex-col items-center gap-2 pointer-events-none">
                                 <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                                    <FileType className="w-6 h-6 text-red-500" />
+                                    <FileType className="w-6 h-6 text-red-700" />
                                 </div>
                                 <p className="text-sm font-medium text-slate-700">
                                     {selectedCv ? selectedCv.name : "Click to select PDF"}
                                 </p>
-                                <p className="text-xs text-slate-400">
+                                <p className="text-xs text-slate-600">
                                     {selectedCv ? `${(selectedCv.size / 1024).toFixed(1)} KB` : "PDF files only (max 5MB)"}
                                 </p>
                             </div>
@@ -139,7 +143,7 @@ export default function AssetsManager() {
                             <Button
                                 onClick={() => selectedCv && upload(selectedCv, '/api/upload/cv', setCvUploading, 'CV updated')}
                                 disabled={!selectedCv || cvUploading}
-                                className="w-full bg-[#FD4345] hover:bg-[#ff5456] text-white"
+                                className="w-full bg-[#B42335] hover:bg-[#941B2B] text-white"
                             >
                                 {cvUploading ? 'Uploading...' : 'Upload New CV'}
                             </Button>

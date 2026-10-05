@@ -60,11 +60,11 @@ export default function AdminLogin() {
     return (
       <div className="min-h-screen bg-[#263547] flex items-center justify-center">
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
+          initial={false}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <Loader2 className="h-12 w-12 animate-spin text-[#FD4345]" />
+          <Loader2 className="h-12 w-12 animate-spin text-[#B42335]" />
         </motion.div>
       </div>
     );
@@ -73,14 +73,14 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen bg-[#263547] flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="w-full max-w-md"
       >
         <Card className="w-full shadow-2xl border-0 bg-white text-slate-900">
           <CardHeader className="space-y-1 text-center pb-8 pt-8">
-            <div className="mx-auto mb-4 w-12 h-12 bg-[#FD4345] rounded-xl flex items-center justify-center shadow-lg transform rotate-3">
+            <div className="mx-auto mb-4 w-12 h-12 bg-[#B42335] rounded-xl flex items-center justify-center shadow-lg transform rotate-3">
                 <Lock className="w-6 h-6 text-white" />
             </div>
             <CardTitle className="text-3xl font-bold tracking-tight text-[#263547]">Admin Access</CardTitle>
@@ -107,14 +107,14 @@ export default function AdminLogin() {
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-slate-700 font-semibold">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                  <Mail className="absolute left-3 top-3 h-5 w-5 text-slate-600" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#FD4345] focus:border-[#FD4345] h-11 shadow-sm"
+                    className="pl-10 bg-white border-slate-300 text-slate-900 placeholder:text-slate-600 focus-visible:ring-[#B42335] focus:border-[#B42335] h-11 shadow-sm"
                     required
                     disabled={loading}
                   />
@@ -124,22 +124,23 @@ export default function AdminLogin() {
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-slate-700 font-semibold">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-600" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#FD4345] focus:border-[#FD4345] h-11 shadow-sm"
+                    className="pl-10 pr-10 bg-white border-slate-300 text-slate-900 placeholder:text-slate-600 focus-visible:ring-[#B42335] focus:border-[#B42335] h-11 shadow-sm"
                     required
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
-                    tabIndex={-1}
+                    className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center text-slate-600 hover:text-slate-600 transition-colors focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5" />
@@ -152,7 +153,7 @@ export default function AdminLogin() {
 
               <Button
                 type="submit"
-                className="w-full bg-[#FD4345] hover:bg-[#ff5456] text-white h-11 font-bold text-base transition-all duration-200 shadow-md hover:shadow-lg mt-2"
+                className="w-full bg-[#B42335] hover:bg-[#941B2B] text-white h-11 font-bold text-base transition-all duration-200 shadow-md hover:shadow-lg mt-2"
                 disabled={loading}
               >
                 {loading ? (
@@ -167,7 +168,7 @@ export default function AdminLogin() {
             </form>
           </CardContent>
           <CardFooter className="flex justify-center pb-8 pt-2">
-            <p className="text-xs text-slate-400 flex items-center gap-1">
+            <p className="text-xs text-slate-600 flex items-center gap-1">
               <Lock className="w-3 h-3" />
               Protected area. Authorized personnel only.
             </p>

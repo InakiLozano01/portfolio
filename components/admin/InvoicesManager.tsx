@@ -1,5 +1,7 @@
 'use client'
 
+import { adminFetch } from '@/lib/admin-fetch';
+
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { calculate, decimal, displayDate, invoiceInput, type InvoiceInput, type InvoiceRecord, type PaymentStatus } from '@/lib/invoices/domain'
@@ -15,7 +17,7 @@ function blank(): InvoiceInput {
   }
 }
 async function api<T>(url: string, method = 'GET', body?: unknown): Promise<T> {
-  const response = await fetch('/api/admin/invoices' + url, { method, cache: 'no-store', headers: body ? { 'Content-Type': 'application/json' } : undefined, body: body ? JSON.stringify(body) : undefined })
+  const response = await adminFetch('/api/admin/invoices' + url, { method, cache: 'no-store', headers: body ? { 'Content-Type': 'application/json' } : undefined, body: body ? JSON.stringify(body) : undefined })
   const data = await response.json()
   if (!response.ok) throw new Error(data.fields?.length ? data.fields.map((v: { path: string; message: string }) => `${v.path}: ${v.message}`).join('; ') : data.error || 'Request failed')
   return data

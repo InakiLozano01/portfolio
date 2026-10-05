@@ -88,7 +88,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="p-4 md:p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
+      <div className="p-4 md:p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#B42335]">
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-slate-900">Skills Management</h2>
@@ -97,7 +97,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <Button
               onClick={() => setIsAddingSkill(true)}
-              className="bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-sm"
+              className="bg-[#B42335] hover:bg-[#941B2B] text-white shadow-sm"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Skill
@@ -106,13 +106,14 @@ export default function SkillsManager({ skills, onSave }: Props) {
               <Input
                 value={newCategory}
                 onChange={e => setNewCategory(e.target.value)}
+                aria-label="New category name"
                 placeholder="New category name"
-                className="w-full sm:w-48 border-slate-300 focus-visible:ring-[#FD4345] bg-white"
+                className="w-full sm:w-48 border-slate-300 focus-visible:ring-[#B42335] bg-white"
               />
               <Button
                 onClick={handleAddCategory}
                 variant="outline"
-                className="flex items-center justify-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#FD4345] hover:border-[#FD4345]"
+                className="flex items-center justify-center gap-2 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-[#B42335] hover:border-[#B42335]"
               >
                 <PlusCircle className="w-4 h-4" />
                 Add Category
@@ -132,11 +133,11 @@ export default function SkillsManager({ skills, onSave }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-slate-700 font-medium mb-1.5 block">Name</Label>
-                  <Input
+                  <Input aria-label="Name"
                     value={newSkill.name}
                     onChange={e => setNewSkill(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Skill name"
-                    className="border-slate-300 focus-visible:ring-[#FD4345]"
+                    className="border-slate-300 focus-visible:ring-[#B42335]"
                   />
                 </div>
                 <div>
@@ -145,7 +146,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                     value={newSkill.category}
                     onValueChange={val => setNewSkill(prev => ({ ...prev, category: val }))}
                   >
-                    <SelectTrigger className="border-slate-300 focus:ring-[#FD4345]">
+                    <SelectTrigger aria-label="Category" className="border-slate-300 focus:ring-[#B42335]">
                        <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -172,7 +173,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                 </Button>
                 <Button
                   onClick={handleAddSkill}
-                  className="bg-[#FD4345] hover:bg-[#ff5456] text-white"
+                  className="bg-[#B42335] hover:bg-[#941B2B] text-white"
                 >
                   Add Skill
                 </Button>
@@ -188,7 +189,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
             placeholder="Search skills..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border-slate-300 focus-visible:ring-[#FD4345]"
+            className="border-slate-300 focus-visible:ring-[#B42335]"
           />
         </div>
       </div>
@@ -198,7 +199,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
             <Card key={category} className="bg-white shadow-sm border border-slate-200 overflow-hidden">
               <CardHeader className="bg-slate-50 border-b border-slate-200 py-3 px-4">
                 <CardTitle className="capitalize text-slate-700 text-base font-semibold flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-[#FD4345]" />
+                  <div className="h-2 w-2 rounded-full bg-[#B42335]" />
                   {category}
                 </CardTitle>
               </CardHeader>
@@ -222,18 +223,19 @@ export default function SkillsManager({ skills, onSave }: Props) {
                       )
                       .map(skill => (
                         <TableRow key={skill._id} className="hover:bg-slate-50 transition-colors border-slate-100">
-                          <TableCell>
+                          <TableCell><span aria-hidden="true">
                             {skill.icon && (
                               isCustomIconPath(skill.icon) ? (
                                 <Image src={skill.icon.startsWith('/') ? skill.icon : `/${skill.icon}`} alt={skill.name || 'Icon'} width={24} height={24} className="w-6 h-6 object-contain" />
                               ) : (
-                                iconMap[skill.icon] ? React.createElement(iconMap[skill.icon], { className: 'w-6 h-6 text-slate-600' }) : <VscCode className="w-6 h-6 text-slate-600" />
+                                iconMap[skill.icon] ? React.createElement(iconMap[skill.icon], { className: 'w-6 h-6 text-slate-600' }) : <VscCode aria-hidden="true" className="w-6 h-6 text-slate-600" />
                               )
                             )}
-                          </TableCell>
+                          </span></TableCell>
                           <TableCell className="font-medium text-slate-900">
                             {editingSkill?._id === skill._id ? (
                                 <Input
+                                  aria-label="Skill name"
                                   value={editingSkill.name}
                                   onChange={e => setEditingSkill({ ...editingSkill, name: e.target.value })}
                                   className="h-8"
@@ -249,7 +251,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                                 <Button
                                   size="sm"
                                   onClick={() => handleSave(editingSkill)}
-                                  className="h-8 bg-[#FD4345] hover:bg-[#ff5456] text-white"
+                                  className="h-8 bg-[#B42335] hover:bg-[#941B2B] text-white"
                                 >
                                   Save
                                 </Button>
@@ -267,7 +269,7 @@ export default function SkillsManager({ skills, onSave }: Props) {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => setEditingSkill(skill)}
-                                className="h-8 text-slate-400 hover:text-[#FD4345] hover:bg-[#FD4345]/10"
+                                className="h-8 text-slate-600 hover:text-[#B42335] hover:bg-[#B42335]/10"
                               >
                                 Edit
                               </Button>

@@ -1,5 +1,7 @@
 'use client';
 
+import { adminFetch } from '@/lib/admin-fetch';
+
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { PlusCircle, Trash2, AlertCircle, RefreshCw } from 'lucide-react'
-import SectionEditor from './SectionEditor'
+import dynamic from 'next/dynamic'
+const SectionEditor = dynamic(() => import('./SectionEditor'), { loading: () => <p role="status" className="p-4 text-slate-600">Loading editor…</p> })
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -29,6 +32,7 @@ interface Section {
 }
 
 export default function SectionsManager() {
+  const [openedEditors, setOpenedEditors] = useState<Set<string>>(() => new Set());
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +52,7 @@ export default function SectionsManager() {
 
   const fetchSections = async () => {
     try {
-      const response = await fetch('/api/sections');
+      const response = await adminFetch('/api/sections');
       if (!response.ok) {
         throw new Error('Failed to fetch sections');
       }
@@ -63,7 +67,7 @@ export default function SectionsManager() {
 
   const handleAddSection = async () => {
     try {
-      const response = await fetch('/api/sections', {
+      const response = await adminFetch('/api/sections', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +101,7 @@ export default function SectionsManager() {
     if (!sectionToDelete) return;
 
     try {
-      const response = await fetch(`/api/sections/${sectionToDelete._id}`, {
+      const response = await adminFetch(`/api/sections/${sectionToDelete._id}`, {
         method: 'DELETE',
       });
 
@@ -116,7 +120,7 @@ export default function SectionsManager() {
 
   const handleSaveSection = async (updatedSection: Section) => {
     try {
-      const response = await fetch(`/api/sections/${updatedSection._id}`, {
+      const response = await adminFetch(`/api/sections/${updatedSection._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +159,7 @@ export default function SectionsManager() {
   const handleRefreshCache = async () => {
     try {
       setRefreshing(true);
-      const response = await fetch('/api/sections/refresh', {
+      const response = await adminFetch('/api/sections/refresh', {
         method: 'POST',
       });
 
@@ -173,11 +177,11 @@ export default function SectionsManager() {
   };
 
   if (loading) return <div>Loading sections...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  if (error) return <div className="text-red-700">{error}</div>;
 
   return (
     <div className="flex flex-col space-y-6 sm:space-y-8">
-      <div className="p-4 md:p-6 bg-white rounded-lg shadow-md border-l-4 border-[#FD4345]">
+      <div className="p-4 md:p-6 bg-white rounded-lg shadow-md border-l-4 border-[#B42335]">
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-slate-900">Sections Management</h2>
@@ -209,7 +213,7 @@ export default function SectionsManager() {
             </Button>
             <Button
               onClick={() => setIsAddingSection(true)}
-              className="flex items-center gap-2 bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-sm"
+              className="flex items-center gap-2 bg-[#B42335] hover:bg-[#941B2B] text-white shadow-sm"
             >
               <PlusCircle className="w-4 h-4" />
               Add Section
@@ -229,26 +233,29 @@ export default function SectionsManager() {
                 <div className="space-y-2">
                   <Label className="text-slate-700 font-semibold">Title</Label>
                   <Input
+                    aria-label="Section title"
                     value={newSection.title}
                     onChange={e => setNewSection({ ...newSection, title: e.target.value })}
                     placeholder="Section title"
-                    className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
+                    className="border-slate-300 focus:border-[#B42335] focus:ring-[#B42335] focus:ring-1"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-slate-700 font-semibold">Order</Label>
                   <Input
+                    aria-label="Section order"
                     type="number"
                     value={newSection.order}
                     onChange={e => setNewSection({ ...newSection, order: parseInt(e.target.value) })}
                     placeholder="Display order"
-                    className="border-slate-300 focus:border-[#FD4345] focus:ring-[#FD4345] focus:ring-1"
+                    className="border-slate-300 focus:border-[#B42335] focus:ring-[#B42335] focus:ring-1"
                   />
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
                 <Label className="text-slate-700 font-semibold">Visible</Label>
                 <Switch
+                  aria-label="New section visible"
                   checked={newSection.visible}
                   onCheckedChange={checked => setNewSection({ ...newSection, visible: checked })}
                 />
@@ -266,7 +273,7 @@ export default function SectionsManager() {
                 </Button>
                 <Button
                   onClick={handleAddSection}
-                  className="bg-[#FD4345] hover:bg-[#ff5456] text-white"
+                  className="bg-[#B42335] hover:bg-[#941B2B] text-white"
                 >
                   Create Section
                 </Button>
@@ -286,6 +293,7 @@ export default function SectionsManager() {
                   <div className="flex items-center gap-2">
                     <Label className="text-white text-sm font-medium">Visible</Label>
                     <Switch
+                      aria-label={`${section.title} visible`}
                       checked={section.visible}
                       onCheckedChange={() => handleVisibilityChange(section)}
                     />
@@ -293,7 +301,7 @@ export default function SectionsManager() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-white hover:bg-white/20 transition-colors"
+                    className="text-white hover:text-white hover:bg-white/20 transition-colors"
                     onClick={() => handleDeleteSection(section)}
                     aria-label="Delete section"
                   >
@@ -303,10 +311,14 @@ export default function SectionsManager() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <SectionEditor
-                section={section}
-                onSave={handleSaveSection}
-              />
+              <div className="p-4">
+                <Button variant="outline" aria-expanded={openedEditors.has(section._id)} aria-controls={`section-editor-${section._id}`}
+                  onClick={() => setOpenedEditors(previous => new Set(previous).add(section._id))} disabled={openedEditors.has(section._id)}
+                >{openedEditors.has(section._id) ? 'Editor open' : `Edit ${section.title}`}</Button>
+              </div>
+              <div id={`section-editor-${section._id}`}>
+                {openedEditors.has(section._id) && <SectionEditor section={section} onSave={handleSaveSection} />}
+              </div>
             </CardContent>
           </Card>
         ))}

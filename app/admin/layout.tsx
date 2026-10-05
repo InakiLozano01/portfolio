@@ -1,4 +1,5 @@
 import '../globals.css'
+import './admin.css'
 import { AdminProviders } from './providers'
 import { Metadata } from 'next'
 import Script from 'next/script'
@@ -19,21 +20,18 @@ export default function AdminRootLayout({
 }) {
   return (
     <>
-        <Script id="admin-force-light" strategy="beforeInteractive">
+        <Script id="admin-ui-theme" strategy="beforeInteractive">
           {`
             try {
               const root = document.documentElement;
-              root.classList.remove('dark');
-              root.classList.add('light');
-              root.style.colorScheme = 'light';
-              localStorage.setItem('theme', 'light');
+              root.setAttribute('data-admin-ui', '');
             } catch (error) {
-              console.warn('Unable to force admin light mode', error);
+              console.warn('Unable to initialize admin theme', error);
             }
           `}
         </Script>
         <AdminProviders>
-          <div className="h-screen overflow-hidden bg-slate-50">
+          <div className="admin-ui h-screen overflow-hidden bg-slate-50 text-slate-900">
             {children}
           </div>
         </AdminProviders>

@@ -1,5 +1,7 @@
 'use client'
 
+import { adminFetch } from '@/lib/admin-fetch';
+
 import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -76,7 +78,7 @@ export default function CommentsManager() {
   const fetchComments = useCallback(async () => {
     try {
       const query = filter === 'all' ? '' : `?status=${filter}`
-      const response = await fetch(`/api/admin/comments${query}`)
+      const response = await adminFetch(`/api/admin/comments${query}`)
       if (!response.ok) throw new Error('Failed to fetch comments')
       const data = await response.json()
       setComments(Array.isArray(data) ? data : [])
@@ -99,7 +101,7 @@ export default function CommentsManager() {
 
   const handleStatusChange = async (id: string, status: CommentStatus) => {
     try {
-      const response = await fetch(`/api/admin/comments/${id}`, {
+      const response = await adminFetch(`/api/admin/comments/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -118,7 +120,7 @@ export default function CommentsManager() {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/admin/comments/${id}`, { method: 'DELETE' })
+      const response = await adminFetch(`/api/admin/comments/${id}`, { method: 'DELETE' })
       if (!response.ok) throw new Error('Failed to delete comment')
       const data = await response.json()
       await fetchComments()
@@ -155,7 +157,7 @@ export default function CommentsManager() {
 
     setReplySubmitting(true)
     try {
-      const response = await fetch('/api/admin/comments', {
+      const response = await adminFetch('/api/admin/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -202,14 +204,14 @@ export default function CommentsManager() {
 
   const filterTabs: { id: FilterType; label: string; activeClass: string }[] = [
     { id: 'all', label: 'All', activeClass: 'bg-white text-slate-900 shadow-sm' },
-    { id: 'pending', label: 'Needs review', activeClass: 'bg-white text-amber-600 shadow-sm' },
-    { id: 'approved', label: 'Approved', activeClass: 'bg-white text-green-600 shadow-sm' },
+    { id: 'pending', label: 'Needs review', activeClass: 'bg-white text-amber-800 shadow-sm' },
+    { id: 'approved', label: 'Approved', activeClass: 'bg-white text-green-700 shadow-sm' },
     { id: 'rejected', label: 'Rejected', activeClass: 'bg-white text-red-600 shadow-sm' },
   ]
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col space-y-4 p-4 md:p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#FD4345]">
+      <div className="flex flex-col space-y-4 p-4 md:p-6 bg-white rounded-lg shadow-sm border-l-4 border-[#B42335]">
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-slate-900">Comments</h2>
@@ -231,12 +233,12 @@ export default function CommentsManager() {
         </div>
 
         <div className="relative max-w-md w-full">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-600" />
           <Input
             placeholder="Search comments..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-white focus-visible:ring-[#FD4345]"
+            className="pl-9 bg-white focus-visible:ring-[#B42335]"
           />
         </div>
       </div>
@@ -250,7 +252,7 @@ export default function CommentsManager() {
         {currentComments.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-lg border border-dashed border-slate-200 shadow-sm">
             <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageCircle className="w-8 h-8 text-slate-400" />
+              <MessageCircle className="w-8 h-8 text-slate-600" />
             </div>
             <h3 className="text-lg font-medium text-slate-900">No comments found</h3>
             <p className="text-slate-500 text-sm mt-1">
@@ -267,14 +269,14 @@ export default function CommentsManager() {
               return (
                 <Card
                   key={comment._id}
-                  className={`group transition-all duration-200 border bg-white hover:border-[#FD4345]/30 ${comment.isOfficial ? 'border-l-4 border-l-[#FD4345] shadow-md' : 'border-slate-200 shadow-sm'}`}
+                  className={`group transition-all duration-200 border bg-white hover:border-[#B42335]/30 ${comment.isOfficial ? 'border-l-4 border-l-[#B42335] shadow-md' : 'border-slate-200 shadow-sm'}`}
                 >
                   <CardContent className="p-4 md:p-5">
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-slate-900">{comment.alias}</span>
                         {comment.isOfficial && (
-                          <Badge className="bg-[#FD4345] hover:bg-[#ff5456] border-none text-white shadow-sm flex items-center gap-1">
+                          <Badge className="bg-[#B42335] hover:bg-[#941B2B] border-none text-white shadow-sm flex items-center gap-1">
                             <ShieldCheck className="w-3 h-3" /> Author
                           </Badge>
                         )}
@@ -282,11 +284,11 @@ export default function CommentsManager() {
                           {badge.label}
                         </Badge>
                         {comment.parent && (
-                          <span className="text-xs text-slate-400 flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+                          <span className="text-xs text-slate-600 flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
                             <CornerDownRight className="w-3 h-3" /> Reply
                           </span>
                         )}
-                        <span className="text-xs text-slate-400 truncate">on “{blogTitle}”</span>
+                        <span className="text-xs text-slate-600 truncate">on “{blogTitle}”</span>
                       </div>
 
                       <div className="bg-slate-50 p-3 rounded-md border border-slate-100 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
@@ -305,7 +307,7 @@ export default function CommentsManager() {
                           {!!comment.overrides?.length && <p>Admin override: {comment.overrides.at(-1)?.status}. Original moderation retained.</p>}
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <div className="flex items-center gap-2 text-xs text-slate-600">
                         <Clock className="w-3 h-3" />
                         {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                       </div>
@@ -315,7 +317,7 @@ export default function CommentsManager() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            className="text-green-700 hover:text-green-700 hover:bg-green-50"
                             onClick={() => handleStatusChange(comment._id, 'approved')}
                           >
                             <CheckCircle className="w-4 h-4 mr-1.5" /> Approve
@@ -325,7 +327,7 @@ export default function CommentsManager() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                            className="text-amber-800 hover:text-amber-700 hover:bg-amber-50"
                             onClick={() => handleStatusChange(comment._id, 'rejected')}
                           >
                             <XCircle className="w-4 h-4 mr-1.5" /> Reject
@@ -339,7 +341,7 @@ export default function CommentsManager() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-slate-600 hover:text-[#FD4345] hover:bg-[#FD4345]/10"
+                          className="text-slate-600 hover:text-[#B42335] hover:bg-[#B42335]/10"
                           onClick={() => {
                             setReplyOpen(replyOpen === comment._id ? null : comment._id)
                             setReplyText('')
@@ -350,7 +352,7 @@ export default function CommentsManager() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-slate-400 hover:text-red-600 hover:bg-red-50"
+                          className="text-slate-600 hover:text-red-600 hover:bg-red-50"
                           onClick={() => setCommentToDelete(comment)}
                         >
                           <Trash2 className="w-4 h-4 mr-1.5" /> Delete
@@ -363,9 +365,9 @@ export default function CommentsManager() {
                             placeholder="Write a public reply as the author..."
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
-                            className="focus-visible:ring-[#FD4345] focus:border-[#FD4345]"
+                            className="focus-visible:ring-[#B42335] focus:border-[#B42335]"
                           />
-                          <p className="text-xs text-slate-400 flex items-center gap-1">
+                          <p className="text-xs text-slate-600 flex items-center gap-1">
                             <ShieldCheck className="w-3 h-3" />
                             Replies post publicly as “Iñaki Fernando Lozano” with the Author badge.
                           </p>
@@ -383,7 +385,7 @@ export default function CommentsManager() {
                             </Button>
                             <Button
                               size="sm"
-                              className="bg-[#FD4345] hover:bg-[#ff5456] text-white disabled:bg-slate-200 disabled:text-slate-400"
+                              className="bg-[#B42335] hover:bg-[#941B2B] text-white disabled:bg-slate-200 disabled:text-slate-600"
                               disabled={!replyText.trim() || replySubmitting}
                               onClick={() => handleReplySubmit(comment)}
                             >
@@ -408,7 +410,7 @@ export default function CommentsManager() {
               key={page}
               variant={currentPage === page ? 'default' : 'outline'}
               size="sm"
-              className={currentPage === page ? 'bg-[#FD4345] hover:bg-[#ff5456] text-white shadow-sm' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}
+              className={currentPage === page ? 'bg-[#B42335] hover:bg-[#941B2B] text-white shadow-sm' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}
               onClick={() => setCurrentPage(page)}
             >
               {page}

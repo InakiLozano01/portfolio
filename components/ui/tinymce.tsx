@@ -36,6 +36,7 @@ interface TinyMCEProps {
     height?: number;
     disabled?: boolean;
     id?: string;
+    label?: string;
 }
 
 export interface TinyMCEHandle {
@@ -85,7 +86,7 @@ const uploadTinyMCEImage = async (blobInfo: any, progress: (value: number) => vo
 };
 
 export const TinyMCE = forwardRef<TinyMCEHandle, TinyMCEProps>(function TinyMCE(
-    { value, onChange, height = 400, disabled = false, id },
+    { value, onChange, height = 400, disabled = false, id, label = 'Rich text editor' },
     ref
 ) {
     const editorRef = useRef<TinyMCEEditor | null>(null);
@@ -127,11 +128,20 @@ export const TinyMCE = forwardRef<TinyMCEHandle, TinyMCEProps>(function TinyMCE(
             disabled={disabled}
             onInit={(evt: EditorEvent<any>, editor: TinyMCEEditor) => {
                 editorRef.current = editor;
+                // TinyMCE 8 labels the editable body but leaves its document role.
+                const body = editor.getBody();
+                body.setAttribute('role', 'textbox');
+                body.setAttribute('aria-multiline', 'true');
+                const menu = editor.getContainer().querySelector('[role="menubar"]');
+                menu?.setAttribute('tabindex', '0');
+                menu?.setAttribute('aria-label', `${label} formatting menu`);
             }}
             value={value}
             onEditorChange={onChange}
             init={{
                 height,
+                iframe_aria_text: label,
+                iframe_attrs: { title: label },
                 // Core settings
                 promotion: false,
                 branding: false,

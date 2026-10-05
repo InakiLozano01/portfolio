@@ -1,5 +1,7 @@
 'use client'
 
+import { adminFetch } from '@/lib/admin-fetch';
+
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,7 +18,7 @@ export default function EmailDiagnostics() {
         setVerifying(true)
         setVerifyResult({status: null, message: null})
         try {
-            const res = await fetch('/api/contact/test', { method: 'GET' })
+            const res = await adminFetch('/api/contact/test', { method: 'GET' })
             const data = await res.json()
             if (!res.ok) throw new Error(data?.message || 'Verification failed')
             setVerifyResult({status: 'success', message: data?.message || 'Email configuration OK'})
@@ -30,7 +32,7 @@ export default function EmailDiagnostics() {
     const testSend = async () => {
         setSending(true)
         try {
-            const res = await fetch('/api/contact/test', { method: 'POST' })
+            const res = await adminFetch('/api/contact/test', { method: 'POST' })
             const data = await res.json()
             if (!res.ok) throw new Error(data?.message || 'Test email failed')
             toast({ title: 'Test email', description: 'Sent successfully' })
@@ -65,7 +67,7 @@ export default function EmailDiagnostics() {
                             disabled={verifying} 
                             onClick={testVerify}
                         >
-                            <CheckCircle className="w-5 h-5 text-green-600" />
+                            <CheckCircle className="w-5 h-5 text-green-700" />
                             <span>{verifying ? 'Verifying...' : 'Verify Connection'}</span>
                         </Button>
                         <Button 
