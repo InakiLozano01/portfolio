@@ -65,6 +65,27 @@ const config: Config = {
 					DEFAULT: '#faf8f5',
 					dark: '#f0ece6',
 				},
+				coral: {
+					DEFAULT: '#fd4345',
+					hi: '#ff6b6d',
+				},
+				// Synapse fields: each section sets these roles for its colour field (see globals.css)
+				field: 'rgb(var(--field) / <alpha-value>)',
+				fg: {
+					DEFAULT: 'rgb(var(--fg) / <alpha-value>)',
+					soft: 'rgb(var(--fg-soft) / <alpha-value>)',
+					dim: 'rgb(var(--fg-dim) / <alpha-value>)',
+				},
+				line: 'rgb(var(--line) / <alpha-value>)',
+				surface: 'rgb(var(--surface) / <alpha-value>)',
+				signal: {
+					DEFAULT: 'rgb(var(--signal) / <alpha-value>)',
+					text: 'rgb(var(--signal-text) / <alpha-value>)',
+				},
+				action: {
+					DEFAULT: 'rgb(var(--action) / <alpha-value>)',
+					fg: 'rgb(var(--on-action) / <alpha-value>)',
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -73,6 +94,7 @@ const config: Config = {
 			},
 			fontFamily: {
 				sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+				mono: ['var(--font-geist-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
 			},
 			letterSpacing: {
 				display: '-0.035em',

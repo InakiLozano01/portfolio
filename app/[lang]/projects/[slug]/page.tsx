@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Badge } from '@/components/ui/badge'
 import { Github, ArrowLeft, ExternalLink } from 'lucide-react'
 import SkillIcon from '@/components/SkillIcon'
 import DOMPurify from 'isomorphic-dompurify'
@@ -19,6 +18,8 @@ import {
     selectHostsForLanguage
 } from '@/lib/seo'
 import { JsonLd } from '@/components/JsonLd'
+import DetailShell from '@/components/synapse/DetailShell'
+import { getCachedSections } from '@/lib/cache'
 
 type SupportedLang = 'en' | 'es'
 
@@ -230,101 +231,89 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         ...(project.publicUrl ? { sameAs: [project.publicUrl] } : {})
     }
 
+    const contactSection = await getCachedSections('contact').catch(() => [])
+    const contact = Array.isArray(contactSection) ? (contactSection[0] as any)?.content ?? null : null
+
     return (
-        <div className="flex min-h-screen bg-[#263547]">
+        <DetailShell lang={lang} dictionary={dict} contact={JSON.parse(JSON.stringify(contact))}>
             <BackNavigationHandler />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={projectJsonLd} />
+            <div className="field-navy">
+            <div className="mx-auto max-w-5xl px-5 pb-36 pt-32 sm:px-8 lg:pt-40">
+                <Link
+                    href={`/${lang}#projects`}
+                    prefetch={false}
+                    className="group inline-flex items-center gap-2 text-sm text-fg-dim transition-colors hover:text-fg"
+                >
+                    <ArrowLeft size={16} strokeWidth={1.75} className="transition-transform group-hover:-translate-x-0.5" />
+                    {dict.projects?.view?.backToHome || 'Back to Home'}
+                </Link>
 
-            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
+                <h1 className="mt-8 max-w-[20ch] text-[clamp(2.4rem,5.5vw,4.5rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-fg text-balance">
+                    {localized.title}
+                </h1>
+                {localized.subtitle && <p className="mt-6 max-w-[60ch] text-xl leading-relaxed text-fg-soft">{localized.subtitle}</p>}
 
-            <div className="relative flex-1 overflow-x-hidden overflow-y-auto bg-white">
-                <div className="pointer-events-none absolute inset-0 -z-10">
-                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <pattern id="project-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E5E5E5" strokeWidth="1.5" />
-                            </pattern>
-                        </defs>
-                        <rect width="100%" height="100%" fill="url(#project-grid)" />
-                    </svg>
-                </div>
-
-                <article className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
-                    <Link
-                        href={`/${lang}`}
-                        prefetch={false}
-                        className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-6"
-                    >
-                        <ArrowLeft size={20} />
-                        {dict.projects?.view?.backToHome || 'Back to Home'}
-                    </Link>
-
-                    <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">
-                        {localized.title}
-                    </h1>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
-                        <p className="text-xl text-muted-foreground">{localized.subtitle}</p>
-                        <ShareActions url={canonicalUrl} title={localized.title || project.title} dict={dict.share} />
-                    </div>
-
-                    {project.thumbnail && (
-                        <div className="relative w-full mb-8">
-                            <Image
-                                src={project.thumbnail}
-                                alt={localized.title}
-                                width={1920}
-                                height={1080}
-                                className="w-full rounded-lg shadow-lg"
-                                priority
-                                placeholder="blur"
-                                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTkyMCcgaGVpZ2h0PScxMDgwJyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnPjxyZWN0IGZpbGw9IiNlZWUiIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiLz48L3N2Zz4="
-                            />
-                        </div>
-                    )}
-
-                    <div className="flex flex-wrap gap-2 mb-8 justify-center border-b border-[#263547]/20 pb-8">
-                    {project.technologies.map((tech: any) => (
-                            <Badge
-                                key={(tech as any)._id.toString()}
-                                variant="outline"
-                                className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 inline-flex items-center gap-1"
-                            >
-                                <SkillIcon name={(tech as any).name} icon={(tech as any).icon} size={14} className="w-3.5 h-3.5" />
-                                <span>{(tech as any).name}</span>
-                            </Badge>
-                        ))}
-                    </div>
-
-                    {project.githubUrl && (
-                        <div className="mb-8 pb-8 border-b border-[#263547]/20">
-                            <Link
-                                href={project.githubUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-primary hover:text-primary/80"
-                            >
-                                <Github size={20} />
-                                {dict.projects?.view?.viewOnGithub || 'View on GitHub'}
-                            </Link>
-                        </div>
-                    )}
+                <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
                     {project.publicUrl && (
-                        <div className="mb-8 pb-8 border-b border-[#263547]/20">
-                            <Link
-                                href={project.publicUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-primary hover:text-primary/80"
-                            >
-                                <ExternalLink size={20} />
-                                {dict.projects?.view?.visitLiveSite || 'Visit live site'}
-                            </Link>
-                        </div>
+                        <Link
+                            href={project.publicUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-11 items-center gap-2 rounded-full bg-action px-5 text-sm font-medium text-action-fg transition-colors hover:bg-coral"
+                        >
+                            <ExternalLink size={16} strokeWidth={1.75} />
+                            {dict.projects?.view?.visitLiveSite || 'Visit live site'}
+                        </Link>
                     )}
+                    {project.githubUrl && (
+                        <Link
+                            href={project.githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-11 items-center gap-2 rounded-full border border-line/15 px-5 text-sm font-medium text-fg transition-colors hover:border-line/40"
+                        >
+                            <Github size={16} strokeWidth={1.75} />
+                            {dict.projects?.view?.viewOnGithub || 'View on GitHub'}
+                        </Link>
+                    )}
+                    <ShareActions url={canonicalUrl} title={localized.title || project.title} dict={dict.share} />
+                </div>
+            </div>
+            </div>
 
+            <article className="relative mx-auto max-w-5xl px-5 pb-24 sm:px-8">
+                {project.thumbnail && (
+                    <div className="relative -mt-24 overflow-hidden rounded-2xl ring-1 ring-line/10">
+                        <Image
+                            src={project.thumbnail}
+                            alt={localized.title}
+                            width={1920}
+                            height={1080}
+                            className="h-auto w-full"
+                            priority
+                            placeholder="blur"
+                            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTYnIGhlaWdodD0nOScgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCBmaWxsPSIjZjBlY2U2IiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+PC9zdmc+"
+                        />
+                    </div>
+                )}
+
+                <ul className="mt-10 flex flex-wrap gap-2" aria-label={dict.projects?.filtersLabel || 'Technologies'}>
+                    {project.technologies.map((tech: any) => (
+                        <li
+                            key={(tech as any)._id.toString()}
+                            className="inline-flex h-9 items-center gap-2 rounded-full border border-line/10 px-3.5 text-sm text-fg-soft"
+                        >
+                            <SkillIcon name={(tech as any).name} icon={(tech as any).icon} size={14} className="h-3.5 w-3.5 text-fg/80" />
+                            <span>{(tech as any).name}</span>
+                        </li>
+                    ))}
+                </ul>
+
+                <div className="mt-14 border-t border-line/[0.08] pt-14">
                     <div
-                        className="space-y-6 text-muted-foreground"
+                        className="synapse-prose max-w-[72ch]"
                         dangerouslySetInnerHTML={{
                             __html: (() => {
                                 const allowedTags = [
@@ -335,28 +324,28 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                                     ALLOWED_TAGS: allowedTags,
                                     ALLOWED_ATTR: allowedAttrs
                                 })
-                                return sanitized
-                                    .replace(/<h1>/g, '<h1 class="text-3xl font-bold text-primary mt-10 mb-6">')
-                                    .replace(/<h2>/g, '<h2 class="text-2xl font-semibold text-primary mt-8 mb-4">')
-                                    .replace(/<h3>/g, '<h3 class="text-xl font-medium text-primary mt-6 mb-3">')
+                                // Plain-text descriptions keep their line breaks; HTML ones already carry structure.
+                                const isHtml = /<(p|ul|ol|h[1-6]|div|li|table|blockquote)\b/i.test(sanitized)
+                                const html = sanitized
+                                    .replace(/<h1>/g, '<h1 class="text-3xl font-semibold mt-10 mb-6">')
+                                    .replace(/<h2>/g, '<h2 class="text-2xl font-semibold mt-10 mb-4">')
+                                    .replace(/<h3>/g, '<h3 class="text-xl font-medium mt-8 mb-3">')
                                     .replace(/<p>/g, '<p class="leading-relaxed mb-4">')
-                                    .replace(/<ul>/g, '<ul class="list-disc list-inside space-y-2 ml-4">')
-                                    .replace(/<ol>/g, '<ol class="list-decimal list-inside space-y-2 ml-4">')
-                                    .replace(/<blockquote>/g, '<blockquote class="border-l-4 border-primary/30 pl-4 italic">')
-                                    .replace(/<pre>/g, '<pre class="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto my-4">')
-                                    .replace(/<code>/g, '<code class="bg-gray-100 text-gray-800 rounded px-1 py-0.5">')
+                                    .replace(/<ul>/g, '<ul class="list-disc pl-5 space-y-1.5">')
+                                    .replace(/<ol>/g, '<ol class="list-decimal pl-5 space-y-1.5">')
+                                    .replace(/<blockquote>/g, '<blockquote class="pl-4 italic">')
+                                    .replace(/<pre>/g, '<pre class="rounded-xl p-4 overflow-x-auto my-4">')
+                                    .replace(/<code>/g, '<code class="rounded px-1 py-0.5">')
                                     .replace(/<table>/g, '<table class="w-full border-collapse my-4">')
-                                    .replace(/<th>/g, '<th class="border px-3 py-2 bg-gray-50 text-left">')
+                                    .replace(/<th>/g, '<th class="border px-3 py-2 text-left">')
                                     .replace(/<td>/g, '<td class="border px-3 py-2">')
-                                    .replace(/<img/g, '<img class="rounded-lg shadow-lg my-4 max-w-full h-auto"')
-                                    .replace(/\n/g, '<br />')
+                                    .replace(/<img/g, '<img class="rounded-xl my-6 max-w-full h-auto"')
+                                return isHtml ? html : html.replace(/\n/g, '<br />')
                             })()
                         }}
                     />
-                </article>
-            </div>
-
-            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
-        </div>
+                </div>
+            </article>
+        </DetailShell>
     )
 } 

@@ -86,8 +86,13 @@
             "devops": "DevOps",
             "framework": "Frameworks",
             "language": "Languages",
-            "tool": "Tools"
-        }
+            "tool": "Tools",
+            "ide": "IDEs",
+            "libraries": "Libraries"
+        },
+        "inProjects": "{count} projects",
+        "inProject": "1 project",
+        "selectHint": "Select a technology to light up the projects that use it."
     },
     "projects": {
         "heading": "Projects",
@@ -103,7 +108,11 @@
             "backToHome": "Back to Home",
             "viewOnGithub": "View on GitHub",
             "visitLiveSite": "Visit live site"
-        }
+        },
+        "open": "Open project",
+        "showAll": "Show all",
+        "usingTech": "Projects using {tech}",
+        "noMatch": "No project uses {tech} yet."
     },
     "blog": {
         "list": {
@@ -187,7 +196,8 @@
         "messageRequired": "Message is required",
         "sendEmailAria": "Send email",
         "githubAria": "Visit GitHub profile",
-        "linkedinAria": "Visit LinkedIn profile"
+        "linkedinAria": "Visit LinkedIn profile",
+        "orWrite": "Or write directly"
     },
     "unsubscribe": {
         "status": {
@@ -251,5 +261,9 @@
         "location": "Tucumán, Argentina",
         "jobTitle": "Software Engineer SSr · Computer Engineering, UNT",
         "organization": "Court of Accounts of Tucumán"
+    },
+    "hero": {
+        "getInTouch": "Get in touch",
+        "viewWork": "View work"
     }
 }

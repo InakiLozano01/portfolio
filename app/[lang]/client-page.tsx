@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import dynamic from 'next/dynamic'
+import { MotionConfig } from 'framer-motion'
 import type { ComponentType } from 'react'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
+import SiteHeader from '@/components/synapse/SiteHeader'
+import SiteFooter from '@/components/synapse/SiteFooter'
 import { orderedVisibleSections } from '@/lib/utils'
 
 type SectionComponent = ComponentType<any>
@@ -25,15 +26,32 @@ interface DBSection {
 }
 
 const sectionComponents: Record<string, SectionComponent> = {
-    home: dynamic(() => import('@/components/sections/Home'), { loading: () => null }),
-    about: dynamic(() => import('@/components/sections/About'), { loading: () => null }),
-    education: dynamic(() => import('@/components/sections/Education'), { loading: () => null }),
-    experience: dynamic(() => import('@/components/sections/Experience'), { loading: () => null }),
-    skills: dynamic(() => import('@/components/sections/Skills'), { loading: () => null }),
-    projects: dynamic(() => import('@/components/sections/Projects'), { loading: () => null }),
-    blog: dynamic(() => import('@/components/sections/Blog'), { loading: () => null }),
-    contact: dynamic(() => import('@/components/sections/Contact'), { loading: () => null }),
+    home: dynamic(() => import('@/components/synapse/HomeHero')),
+    about: dynamic(() => import('@/components/synapse/AboutSection')),
+    education: dynamic(() => import('@/components/synapse/EducationSection')),
+    experience: dynamic(() => import('@/components/synapse/ExperienceSection')),
+    skills: dynamic(() => import('@/components/synapse/StackSection')),
+    projects: dynamic(() => import('@/components/synapse/ProjectsSection')),
+    blog: dynamic(() => import('@/components/synapse/WritingSection')),
+    contact: dynamic(() => import('@/components/synapse/ContactSection')),
 }
+
+/** Sections that draw edge to edge; the rest sit in the page column. */
+const FULL_BLEED = new Set(['home', 'projects'])
+/** Colour field per section, by role: navy = the machine, cream/paper = reading, bordeaux = the personal voice. */
+const FIELD: Record<string, string> = {
+    home: '',
+    about: 'field-cream',
+    education: 'field-navy',
+    experience: 'field-navy',
+    skills: 'field-navy',
+    projects: 'field-cream',
+    blog: 'field-paper',
+    contact: 'field-bordeaux',
+}
+
+/** Sections drawn on the signal trace; adjacent ones join into one line. */
+const TRACE = new Set(['education', 'experience'])
 
 interface ClientPageProps {
     lang: 'en' | 'es'
@@ -41,6 +59,7 @@ interface ClientPageProps {
     initialSections?: DBSection[]
     initialProjects?: any[]
     initialBlogs?: any[]
+    initialSkills?: any[]
     initialYear: number
 }
 
@@ -60,7 +79,7 @@ function buildUiSections(data: DBSection[], dictionary: any): Section[] {
         }, [])
 }
 
-export default function ClientPage({ lang, dictionary, initialSections, initialProjects, initialBlogs, initialYear }: ClientPageProps) {
+export default function ClientPage({ lang, dictionary, initialSections, initialProjects, initialBlogs, initialSkills, initialYear }: ClientPageProps) {
     const seededSections = useMemo(() => initialSections ?? [], [initialSections])
     const hasSeededSections = seededSections.length > 0
     const [currentIndex, setCurrentIndex] = useState(0)
@@ -145,42 +164,47 @@ export default function ClientPage({ lang, dictionary, initialSections, initialP
     if (loading) return null
 
     return (
-        <div className="min-h-screen bg-cream text-navy">
-            <Header
-                staticSections={sections}
-                currentIndex={currentIndex}
-                onSectionChange={updateSection}
-                dictionary={dictionary.header}
-                languageSwitcherDict={dictionary.languageSwitcher}
-                lang={lang}
-            />
-            <main id="content" tabIndex={-1}>
-                {sections.map(({ id, component: Component, content }, index) => (
-                    <section
-                        key={id}
-                        id={id}
-                        aria-label={dictionary.sections[id] || id}
-                        className={id === 'home' ? 'bg-navy text-cream' : index % 2 ? 'bg-cream' : 'bg-cream-dark'}
-                    >
-                        <div className={id === 'home' ? '' : 'max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24'}>
-                            <Component
-                                lang={lang}
-                                initialContent={content}
-                                initialProjects={id === 'projects' ? initialProjects : undefined}
-                                initialBlogs={id === 'blog' ? initialBlogs : undefined}
-                                dictionary={dictionary}
-                            />
-                        </div>
-                    </section>
-                ))}
-            </main>
+        <MotionConfig reducedMotion="user">
+            <div className="synapse min-h-screen">
+                <SiteHeader
+                    staticSections={sections}
+                    currentIndex={currentIndex}
+                    onSectionChange={updateSection}
+                    dictionary={dictionary.header}
+                    languageSwitcherDict={dictionary.languageSwitcher}
+                    lang={lang}
+                />
+                <main id="content" tabIndex={-1} className="focus:outline-none">
+                    {sections.map(({ id, component: Component, content }, index) => (
+                        <section
+                            key={id}
+                            id={id}
+                            aria-label={dictionary.sections[id] || id}
+                            className={`relative overflow-x-clip ${FIELD[id] ?? 'field-cream'}`}
+                        >
+                            <div className={FULL_BLEED.has(id) ? '' : 'mx-auto max-w-[1400px] px-5 py-20 sm:px-8 md:py-28'}>
+                                <Component
+                                    lang={lang}
+                                    initialContent={content}
+                                    initialProjects={id === 'projects' || id === 'home' || id === 'skills' ? initialProjects : undefined}
+                                    initialBlogs={id === 'blog' ? initialBlogs : undefined}
+                                    initialSkills={id === 'skills' ? initialSkills : undefined}
+                                    dictionary={dictionary}
+                                    traceTop={TRACE.has(id) && TRACE.has(sections[index - 1]?.id ?? '')}
+                                    traceBottom={TRACE.has(id) && TRACE.has(sections[index + 1]?.id ?? '')}
+                                />
+                            </div>
+                        </section>
+                    ))}
+                </main>
 
-            <Footer
-                dictionary={dictionary.footer}
-                initialContact={sections.find(section => section.id === 'contact')?.content as any}
-                currentYear={initialYear}
-                lang={lang}
-            />
-        </div>
+                <SiteFooter
+                    dictionary={dictionary.footer}
+                    initialContact={sections.find(section => section.id === 'contact')?.content as any}
+                    currentYear={initialYear}
+                    lang={lang}
+                />
+            </div>
+        </MotionConfig>
     )
 }

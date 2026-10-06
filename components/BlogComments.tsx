@@ -105,11 +105,11 @@ export default function BlogComments({ blogId, lang = 'en', dict = {} }: { blogI
     return (
       <div
         key={n._id}
-        className={`p-3 rounded border ${n.isOfficial ? 'border-l-2 border-l-[#800020] bg-[#800020]/[0.04]' : ''}`}
+        className={`rounded-2xl border p-4 ${n.isOfficial ? 'border-bordeaux/40 bg-bordeaux/[0.06]' : 'border-line/[0.08] bg-surface'}`}
         style={{ marginLeft: depth * 16 }}
       >
-        <p className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className={n.isOfficial ? 'font-semibold text-foreground' : ''}>{n.alias}</span>
+        <p className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg-dim">
+          <span className={n.isOfficial ? 'font-semibold text-fg' : 'text-fg-soft'}>{n.alias}</span>
           {n.isOfficial && (
             <span className="inline-flex items-center gap-1 rounded-full bg-[#800020] px-2 py-0.5 text-[11px] font-semibold leading-none text-white">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-3 w-3" aria-hidden="true">
@@ -120,11 +120,11 @@ export default function BlogComments({ blogId, lang = 'en', dict = {} }: { blogI
           )}
           <span>• {new Date(n.createdAt).toLocaleString(lang)}</span>
         </p>
-        <p className="whitespace-pre-wrap mb-2">{n.content}</p>
+        <p className="mb-3 whitespace-pre-wrap text-[15px] leading-relaxed text-fg/90">{n.content}</p>
         <div className="flex items-center gap-3 text-sm">
-          <button onClick={() => vote(n._id, 'up')} className="text-primary hover:underline" aria-label={dict?.upvote || 'Upvote'}>▲ {up}</button>
-          <button onClick={() => vote(n._id, 'down')} className="text-primary hover:underline" aria-label={dict?.downvote || 'Downvote'}>▼ {down}</button>
-          <button onClick={() => setReplyTo(n._id)} className="text-primary hover:underline" aria-label={dict?.reply || 'Reply'}>{dict?.reply || 'Reply'}</button>
+          <button onClick={() => vote(n._id, 'up')} className="text-fg-soft transition-colors hover:text-fg" aria-label={dict?.upvote || 'Upvote'}>▲ {up}</button>
+          <button onClick={() => vote(n._id, 'down')} className="text-fg-soft transition-colors hover:text-fg" aria-label={dict?.downvote || 'Downvote'}>▼ {down}</button>
+          <button onClick={() => setReplyTo(n._id)} className="text-fg-soft transition-colors hover:text-fg" aria-label={dict?.reply || 'Reply'}>{dict?.reply || 'Reply'}</button>
         </div>
         {replyTo === n._id && (
           <div className="mt-2 space-y-2">
@@ -134,18 +134,18 @@ export default function BlogComments({ blogId, lang = 'en', dict = {} }: { blogI
               aria-label={dict?.aliasPlaceholder || 'Your alias'}
               value={alias}
               onChange={e => setAlias(e.target.value)}
-              className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              className="w-full h-11 rounded-xl border border-line/15 bg-surface px-4 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-none"
             />
             <textarea
               placeholder={dict?.replyPlaceholder || 'Your reply'}
               aria-label={dict?.replyPlaceholder || 'Your reply'}
               value={content}
               onChange={e => setContent(e.target.value)}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              className="w-full min-h-[110px] rounded-xl border border-line/15 bg-surface px-4 py-3 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-none"
             />
             <div className="flex gap-2">
-              <button onClick={submit} disabled={!isValid || isSubmitting} className="h-9 px-4 rounded-md bg-primary text-white text-sm font-medium disabled:opacity-50">{isSubmitting ? (dict?.posting || 'Posting...') : (dict?.reply || 'Reply')}</button>
-              <button onClick={() => { setReplyTo(null); setContent('') }} className="h-9 px-4 rounded-md border text-sm">{dict?.cancel || 'Cancel'}</button>
+              <button onClick={submit} disabled={!isValid || isSubmitting} className="h-10 rounded-full bg-action px-5 text-sm font-medium text-action-fg transition-colors hover:bg-navy disabled:opacity-50">{isSubmitting ? (dict?.posting || 'Posting...') : (dict?.reply || 'Reply')}</button>
+              <button onClick={() => { setReplyTo(null); setContent('') }} className="h-10 rounded-full border border-line/15 px-5 text-sm text-fg-soft hover:text-fg">{dict?.cancel || 'Cancel'}</button>
             </div>
           </div>
         )}
@@ -159,35 +159,35 @@ export default function BlogComments({ blogId, lang = 'en', dict = {} }: { blogI
   }
 
   return (
-    <div className="mt-12">
-      <h3 className="text-2xl font-semibold mb-4">{dict?.heading || 'Comments'}</h3>
+    <div className="mt-16">
+      <h3 className="mb-6 text-2xl font-semibold tracking-[-0.02em] text-fg">{dict?.heading || 'Comments'}</h3>
       <div className="space-y-4 mb-8">
         {tree.map(node => renderNode(node))}
-        {tree.length === 0 && <p>{dict?.empty || 'No comments yet.'}</p>}
+        {tree.length === 0 && <p className="text-fg-soft">{dict?.empty || 'No comments yet.'}</p>}
       </div>
-      <div className="space-y-2">
+      <div className="space-y-3">
         <input
           type="text"
           placeholder={dict?.aliasPlaceholder || 'Your alias'}
               aria-label={dict?.aliasPlaceholder || 'Your alias'}
           value={alias}
           onChange={e => setAlias(e.target.value)}
-          className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          className="w-full h-11 rounded-xl border border-line/15 bg-surface px-4 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-none"
         />
         <textarea
           placeholder={dict?.commentPlaceholder || 'Your comment'}
           aria-label={dict?.commentPlaceholder || 'Your comment'}
           value={content}
           onChange={e => setContent(e.target.value)}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          className="w-full min-h-[110px] rounded-xl border border-line/15 bg-surface px-4 py-3 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-none"
         />
-        <div role="alert" aria-live="assertive">{error && <p className="text-red-500 text-sm">{error}</p>}</div>
+        <div role="alert" aria-live="assertive">{error && <p className="text-sm text-signal-text">{error}</p>}</div>
         <p className="sr-only" role="status" aria-live="polite">{posted}</p>
         <button
           onClick={submit}
           disabled={!isValid || isSubmitting}
           aria-disabled={!isValid || isSubmitting}
-          className="h-10 px-4 rounded-md bg-primary text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-11 rounded-full bg-action px-6 text-sm font-medium text-action-fg transition-colors hover:bg-navy disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? (dict?.posting || 'Posting...') : (dict?.post || 'Post Comment')}
         </button>

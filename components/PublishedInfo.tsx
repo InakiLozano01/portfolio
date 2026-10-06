@@ -31,7 +31,7 @@ export function PublishedInfo({ createdAt, updatedAt, lang = 'en', dict = {} }: 
   if (!label) return null
 
   return (
-    <p className="text-sm text-muted-foreground" suppressHydrationWarning>
+    <p className="font-mono text-[13px] text-fg-dim" suppressHydrationWarning>
       {label}
     </p>
   )

@@ -15,7 +15,7 @@ beforeEach(() => {
     window.history.replaceState(null, '', '/es')
     Element.prototype.scrollIntoView = scrollIntoView
     scrollIntoView.mockClear()
-    window.matchMedia = jest.fn().mockReturnValue({ matches: true })
+    window.matchMedia = jest.fn().mockReturnValue({ matches: true, addListener: jest.fn(), removeListener: jest.fn(), addEventListener: jest.fn(), removeEventListener: jest.fn() })
     global.IntersectionObserver = jest.fn().mockImplementation(() => ({ observe: jest.fn(), disconnect: jest.fn() }))
     jest.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => { callback(0); return 1 })
     global.fetch = jest.fn()

@@ -8,7 +8,9 @@ import BackNavigationHandler from '@/components/BackNavigationHandler'
 import BlogComments from '@/components/BlogComments'
 import ShareActions from '@/components/ShareActions'
 import BlogArticle from '@/components/BlogArticle'
-import NewsletterSignup from '@/components/NewsletterSignup'
+import NewsletterInline from '@/components/synapse/NewsletterInline'
+import DetailShell from '@/components/synapse/DetailShell'
+import { getCachedSections } from '@/lib/cache'
 import { PublishedInfo } from '@/components/PublishedInfo'
 import type { Metadata } from 'next'
 import {
@@ -232,52 +234,37 @@ export default async function BlogPage({ params, searchParams }: BlogPageProps) 
         ...(keywords.length ? { keywords } : {})
     }
 
+    const contactSection = await getCachedSections('contact').catch(() => [])
+    const contact = Array.isArray(contactSection) ? (contactSection[0] as any)?.content ?? null : null
+
     return (
-        <div className="flex min-h-screen bg-[#263547]">
+        <DetailShell lang={resolvedLang} dictionary={dict} contact={JSON.parse(JSON.stringify(contact))}>
             <BackNavigationHandler />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={blogPostingJsonLd} />
+            <article className="relative mx-auto max-w-3xl px-5 pb-24 pt-32 sm:px-8 lg:pt-40">
+                <Link
+                    href={`/${resolvedLang}#blog`}
+                    prefetch={false}
+                    className="group inline-flex items-center gap-2 text-sm text-fg-dim transition-colors hover:text-fg"
+                >
+                    <ArrowLeft size={16} strokeWidth={1.75} className="transition-transform group-hover:-translate-x-0.5" />
+                    {dict.blog?.view?.backToHome || 'Back to Home'}
+                </Link>
 
-            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
-
-            <div className="relative flex-1 overflow-x-hidden overflow-y-auto bg-white">
-                <div className="pointer-events-none absolute inset-0 -z-10">
-                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <pattern id="blog-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E5E5E5" strokeWidth="1.5" />
-                            </pattern>
-                        </defs>
-                        <rect width="100%" height="100%" fill="url(#blog-grid)" />
-                    </svg>
+                <div className="mb-10 mt-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <PublishedInfo createdAt={blog.createdAt} updatedAt={blog.updatedAt} lang={resolvedLang} dict={dict.blog?.view} />
+                    <ShareActions url={canonicalUrl} title={localized.title || blog.title} dict={dict.share} />
                 </div>
 
-                <article className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
-                    <Link
-                        href={`/${lang}`}
-                        prefetch={false}
-                        className="inline-flex items-center gap-2 text-primary hover:text-primary/80 mb-6"
-                    >
-                        <ArrowLeft size={20} />
-                        {dict.blog?.view?.backToHome || 'Back to Home'}
-                    </Link>
+                <BlogArticle blog={blog as any} initialLang={initialLang} dict={dict.blog?.view} />
 
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-8">
-                        <PublishedInfo createdAt={blog.createdAt} updatedAt={blog.updatedAt} lang={resolvedLang} dict={dict.blog?.view} />
-                        <ShareActions url={canonicalUrl} title={localized.title || blog.title} dict={dict.share} />
-                    </div>
+                <div className="my-16 rounded-3xl border border-line/[0.08] bg-surface p-6 sm:p-8">
+                    <NewsletterInline lang={initialLang} dict={dict.newsletter} />
+                </div>
 
-                    <BlogArticle blog={blog as any} initialLang={initialLang} dict={dict.blog?.view} />
-
-                    <div className="my-10">
-                        <NewsletterSignup compact lang={initialLang} dict={dict.newsletter} />
-                    </div>
-
-                    <BlogComments blogId={blog._id} lang={resolvedLang} dict={dict.blog?.comments} />
-                </article>
-            </div>
-
-            <div className="hidden lg:block w-16 xl:w-24 bg-[#263547]" aria-hidden="true" />
-        </div>
+                <BlogComments blogId={blog._id} lang={resolvedLang} dict={dict.blog?.comments} />
+            </article>
+        </DetailShell>
     )
 }

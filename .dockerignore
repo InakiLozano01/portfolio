@@ -46,3 +46,12 @@ LICENSE
 .prettierrc
 .eslintrc*
 jest.config.*
+
+# Agent and design-tool working folders
+.impeccable
+.worktrees
+.remember
+.claude
+.codex
+.agents
+.cursor

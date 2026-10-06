@@ -150,7 +150,7 @@ export default function BlogArticle({ blog, initialLang, dict = {} }: BlogArticl
     <div>
       <div className="flex items-start flex-col gap-3 mb-6">
         <div className="flex w-full justify-center">
-          <div className="inline-flex border rounded overflow-hidden whitespace-nowrap text-xs sm:text-sm">
+          <div className="inline-flex overflow-hidden whitespace-nowrap rounded-full border border-line/15 p-0.5 text-xs sm:text-sm">
           {LANGUAGES.map(({ code, label, icon }) => {
             const disabled = code === 'en' ? !hasEn : !hasEs
             const srLabel = code === 'en' ? (dict?.langEnglish || label) : (dict?.langSpanish || label)
@@ -159,11 +159,11 @@ export default function BlogArticle({ blog, initialLang, dict = {} }: BlogArticl
                 key={code}
                 type="button"
                 onClick={() => handleLangChange(code)}
-                className={`px-2.5 sm:px-3 py-1 transition flex items-center gap-1.5 ${lang === code
-                  ? 'bg-primary text-white'
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${lang === code
+                  ? 'bg-navy text-cream'
                   : disabled
-                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                    : 'bg-transparent text-primary hover:bg-primary/10'
+                    ? 'cursor-not-allowed text-fg-dim opacity-60'
+                    : 'text-fg-soft hover:text-fg'
                   }`}
                 disabled={disabled}
               >
@@ -172,7 +172,7 @@ export default function BlogArticle({ blog, initialLang, dict = {} }: BlogArticl
                   alt=""
                   width={20}
                   height={20}
-                  className="h-4 w-6 sm:h-5 sm:w-7 object-cover shrink-0"
+                  className="h-3.5 w-5 shrink-0 rounded-[2px] object-cover"
                   aria-hidden
                 />
                 <span className="uppercase tracking-wide font-medium text-[11px] sm:text-sm leading-none">
@@ -185,9 +185,9 @@ export default function BlogArticle({ blog, initialLang, dict = {} }: BlogArticl
         </div>
         </div>
         <div className="text-center w-full">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">{current.title}</h1>
-          <p className="text-xl text-muted-foreground">{current.subtitle}</p>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="mx-auto mb-4 mt-6 max-w-[22ch] text-[clamp(2.2rem,5vw,3.75rem)] font-semibold leading-[1.05] tracking-[-0.04em] text-fg text-balance">{current.title}</h1>
+          <p className="mx-auto max-w-[52ch] text-xl leading-relaxed text-fg-soft">{current.subtitle}</p>
+          <p className="mt-4 font-mono text-[13px] text-fg-dim">
             {(dict?.minRead || '{minutes} min read').replace('{minutes}', String(reading))}
           </p>
         </div>
@@ -195,8 +195,8 @@ export default function BlogArticle({ blog, initialLang, dict = {} }: BlogArticl
 
       {(blog.pdf_en || blog.pdf_es) && (
         <div className="mb-4 text-sm">
-          {blog.pdf_en && <a className="text-primary underline mr-4" href={blog.pdf_en} target="_blank" rel="noreferrer">{dict?.downloadPdfEn || 'Download PDF (EN)'}</a>}
-          {blog.pdf_es && <a className="text-primary underline" href={blog.pdf_es} target="_blank" rel="noreferrer">{dict?.downloadPdfEs || 'Download PDF (ES)'}</a>}
+          {blog.pdf_en && <a className="mr-4 text-signal-text underline underline-offset-4" href={blog.pdf_en} target="_blank" rel="noreferrer">{dict?.downloadPdfEn || 'Download PDF (EN)'}</a>}
+          {blog.pdf_es && <a className="text-signal-text underline underline-offset-4" href={blog.pdf_es} target="_blank" rel="noreferrer">{dict?.downloadPdfEs || 'Download PDF (ES)'}</a>}
         </div>
       )}
 

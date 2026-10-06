@@ -4,6 +4,7 @@ import { getCachedSections } from '@/lib/cache'
 import { orderedVisibleSections } from '@/lib/utils'
 import { getProjectCards } from '@/lib/projects'
 import { getPublishedBlogCards } from '@/lib/blog'
+import { getSkillSummaries } from '@/lib/skills'
 import ClientPage from './client-page'
 
 export const revalidate = 300
@@ -26,11 +27,15 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
     const { lang } = await params
     if (lang !== 'en' && lang !== 'es') notFound()
 
-    const [dictionary, initialSections, initialProjects, initialBlogs] = await Promise.all([
+    const [dictionary, initialSections, initialProjects, initialBlogs, initialSkills] = await Promise.all([
         getDictionary(lang),
         getInitialSections(),
         getProjectCards(),
         getPublishedBlogCards(),
+        getSkillSummaries().catch(error => {
+            console.error('Failed to load skills:', error)
+            return []
+        }),
     ])
 
     return (
@@ -40,6 +45,7 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
             initialSections={initialSections}
             initialProjects={initialProjects}
             initialBlogs={initialBlogs}
+            initialSkills={initialSkills}
             initialYear={new Date().getFullYear()}
         />
     )

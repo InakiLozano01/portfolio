@@ -24,3 +24,9 @@ redis_data
 
 # Agent content-staging scratch area (blog drafts + source images)
 blogs_for_agent_to_post/
+
+# Impeccable working files (screenshots, decision payloads, hook cache); design records stay tracked
+.impeccable/review/
+.impeccable/decision/
+.impeccable/mocks/
+.impeccable/hook.cache.json

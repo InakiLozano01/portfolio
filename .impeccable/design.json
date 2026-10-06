@@ -1,0 +1,608 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-06T13:56:31+00:00",
+  "title": "Design System: Iñaki F. Lozano",
+  "extensions": {
+    "colorMeta": {
+      "navy": {
+        "role": "neutral",
+        "displayName": "Machine Navy",
+        "canonical": "rgb(26, 36, 51)",
+        "purpose": "Field: hero, trace, skills, header, footer. Text on light fields.",
+        "tonalRamp": [
+          "#1a2433",
+          "#2d3e58",
+          "#40587d",
+          "#5372a2",
+          "#7590b8",
+          "#9aaecb",
+          "#c2cee0",
+          "#eef1f6"
+        ]
+      },
+      "navy-raise": {
+        "role": "neutral",
+        "displayName": "Navy Raise",
+        "canonical": "rgb(38, 53, 71)",
+        "purpose": "Surface role on navy.",
+        "tonalRamp": [
+          "#1b2532",
+          "#2e4056",
+          "#425c7b",
+          "#55779f",
+          "#7794b6",
+          "#9bb0ca",
+          "#c3d0df",
+          "#eef2f6"
+        ]
+      },
+      "cream": {
+        "role": "neutral",
+        "displayName": "Reading Cream",
+        "canonical": "rgb(250, 248, 245)",
+        "purpose": "Field: statement, about, projects, detail bodies. Text and action fill on navy and bordeaux.",
+        "tonalRamp": [
+          "#33291a",
+          "#58472c",
+          "#7e653f",
+          "#a38352",
+          "#b99d74",
+          "#ccb899",
+          "#e0d4c2",
+          "#f7f3ee"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Writing Paper",
+        "canonical": "rgb(240, 236, 230)",
+        "purpose": "Field: writing (blog list).",
+        "tonalRamp": [
+          "#30281d",
+          "#534632",
+          "#766347",
+          "#99815c",
+          "#b19c7c",
+          "#c6b69f",
+          "#ddd3c6",
+          "#f5f3ef"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "Card White",
+        "canonical": "rgb(255, 255, 255)",
+        "purpose": "Surface role on cream and paper: cards, fields.",
+        "tonalRamp": [
+          "#262626",
+          "#424242",
+          "#5e5e5e",
+          "#7a7a7a",
+          "#969696",
+          "#b2b2b2",
+          "#d1d1d1",
+          "#f2f2f2"
+        ]
+      },
+      "bordeaux": {
+        "role": "secondary",
+        "displayName": "Voice Bordeaux",
+        "canonical": "rgb(128, 0, 32)",
+        "purpose": "Field: contact. Action fill and signal text on cream; card hover border.",
+        "tonalRamp": [
+          "#4c0013",
+          "#850021",
+          "#bd002f",
+          "#f5003d",
+          "#ff2e62",
+          "#ff668c",
+          "#ffa3ba",
+          "#ffe5ec"
+        ]
+      },
+      "bordeaux-deep": {
+        "role": "secondary",
+        "displayName": "Bordeaux Deep",
+        "canonical": "rgb(107, 0, 27)",
+        "purpose": "Surface role on bordeaux.",
+        "tonalRamp": [
+          "#4c0013",
+          "#850021",
+          "#bd0030",
+          "#f5003e",
+          "#ff2e63",
+          "#ff668d",
+          "#ffa3ba",
+          "#ffe5ec"
+        ]
+      },
+      "coral": {
+        "role": "primary",
+        "displayName": "Signal Coral",
+        "canonical": "rgb(253, 67, 69)",
+        "purpose": "Signal only: nodes, traces, dashes, focus, progress.",
+        "tonalRamp": [
+          "#4c0102",
+          "#830103",
+          "#bb0204",
+          "#f20305",
+          "#fd3032",
+          "#fd6869",
+          "#fea4a5",
+          "#ffe6e6"
+        ]
+      },
+      "coral-hi": {
+        "role": "primary",
+        "displayName": "Coral Hi",
+        "canonical": "rgb(255, 107, 109)",
+        "purpose": "Signal text on navy.",
+        "tonalRamp": [
+          "#4c0001",
+          "#850002",
+          "#bd0003",
+          "#f50003",
+          "#ff2e31",
+          "#ff6668",
+          "#ffa3a4",
+          "#ffe5e6"
+        ]
+      },
+      "blush": {
+        "role": "primary",
+        "displayName": "Blush Signal",
+        "canonical": "rgb(255, 179, 181)",
+        "purpose": "Signal and signal text on bordeaux.",
+        "tonalRamp": [
+          "#4c0002",
+          "#850003",
+          "#bd0005",
+          "#f50006",
+          "#ff2e33",
+          "#ff666a",
+          "#ffa3a6",
+          "#ffe5e6"
+        ]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Ink Soft",
+        "canonical": "rgb(59, 70, 87)",
+        "purpose": "fg-soft on cream and paper.",
+        "tonalRamp": [
+          "#1f252e",
+          "#36404f",
+          "#4c5a70",
+          "#637592",
+          "#8292ab",
+          "#a4afc1",
+          "#c8cfda",
+          "#f0f2f5"
+        ]
+      },
+      "ink-dim": {
+        "role": "neutral",
+        "displayName": "Ink Dim",
+        "canonical": "rgb(92, 102, 119)",
+        "purpose": "fg-dim on cream and paper.",
+        "tonalRamp": [
+          "#21252b",
+          "#3a404b",
+          "#525b6a",
+          "#6b768a",
+          "#8993a4",
+          "#a9b0bc",
+          "#cbd0d7",
+          "#f1f2f4"
+        ]
+      },
+      "mist-soft": {
+        "role": "neutral",
+        "displayName": "Mist Soft",
+        "canonical": "rgb(195, 201, 211)",
+        "purpose": "fg-soft on navy.",
+        "tonalRamp": [
+          "#20252c",
+          "#38404c",
+          "#505b6d",
+          "#68768d",
+          "#8692a7",
+          "#a7b0be",
+          "#cacfd8",
+          "#f0f2f4"
+        ]
+      },
+      "mist-dim": {
+        "role": "neutral",
+        "displayName": "Mist Dim",
+        "canonical": "rgb(154, 164, 180)",
+        "purpose": "fg-dim on navy.",
+        "tonalRamp": [
+          "#21252c",
+          "#39404c",
+          "#505b6c",
+          "#68768c",
+          "#8793a6",
+          "#a7b0be",
+          "#cad0d8",
+          "#f0f2f4"
+        ]
+      },
+      "rose-soft": {
+        "role": "neutral",
+        "displayName": "Rose Soft",
+        "canonical": "rgb(232, 211, 213)",
+        "purpose": "fg-soft on bordeaux.",
+        "tonalRamp": [
+          "#321a1d",
+          "#572e31",
+          "#7c4146",
+          "#a1545b",
+          "#b7767c",
+          "#ca9b9f",
+          "#dfc3c5",
+          "#f6eeef"
+        ]
+      },
+      "rose-dim": {
+        "role": "neutral",
+        "displayName": "Rose Dim",
+        "canonical": "rgb(220, 186, 192)",
+        "purpose": "fg-dim on bordeaux.",
+        "tonalRamp": [
+          "#331a1e",
+          "#582d34",
+          "#7d404a",
+          "#a25261",
+          "#b97480",
+          "#cc99a2",
+          "#e0c2c7",
+          "#f6eef0"
+        ]
+      }
+    },
+    "fieldRoles": {
+      "source": "app/globals.css (.field-*) exposed by tailwind.config.ts as fg, fg-soft, fg-dim, line, surface, signal, signal-text, action, action-fg, field",
+      "field-navy": {
+        "field": "navy",
+        "fg": "cream",
+        "fg-soft": "mist-soft",
+        "fg-dim": "mist-dim",
+        "line": "cream",
+        "surface": "navy-raise",
+        "signal": "coral",
+        "signal-text": "coral-hi",
+        "action": "cream",
+        "on-action": "navy"
+      },
+      "field-cream": {
+        "field": "cream",
+        "fg": "navy",
+        "fg-soft": "ink-soft",
+        "fg-dim": "ink-dim",
+        "line": "navy",
+        "surface": "white",
+        "signal": "coral",
+        "signal-text": "bordeaux",
+        "action": "bordeaux",
+        "on-action": "cream"
+      },
+      "field-paper": {
+        "field": "paper",
+        "fg": "navy",
+        "fg-soft": "ink-soft",
+        "fg-dim": "ink-dim",
+        "line": "navy",
+        "surface": "white",
+        "signal": "coral",
+        "signal-text": "bordeaux",
+        "action": "bordeaux",
+        "on-action": "cream"
+      },
+      "field-bordeaux": {
+        "field": "bordeaux",
+        "fg": "cream",
+        "fg-soft": "rose-soft",
+        "fg-dim": "rose-dim",
+        "line": "cream",
+        "surface": "bordeaux-deep",
+        "signal": "blush",
+        "signal-text": "blush",
+        "action": "cream",
+        "on-action": "bordeaux"
+      },
+      "assignment": {
+        "field-navy": [
+          "hero",
+          "education",
+          "experience",
+          "skills",
+          "header",
+          "footer",
+          "project-page title band",
+          "newsletter panel"
+        ],
+        "field-cream": [
+          "statement",
+          "about",
+          "projects",
+          "project, blog and legal bodies",
+          "contact form panel"
+        ],
+        "field-paper": [
+          "writing"
+        ],
+        "field-bordeaux": [
+          "contact"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero name only; smaller steps for project and essay titles; largest for the footer name."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings, after the signal node."
+      },
+      "statement": {
+        "displayName": "Statement",
+        "purpose": "Scroll-lit statement under the hero; essay-row titles at 600."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Role titles and project-card titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "About-text, leads and long-form prose (1.8 line-height in prose)."
+      },
+      "body-sm": {
+        "displayName": "Body Small",
+        "purpose": "Card subtitles, button labels, input text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Nav links."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Dates, periods, counts (Geist Mono)."
+      },
+      "data-sm": {
+        "displayName": "Data Small",
+        "purpose": "Counts, character counters, EN/ES codes, canvas labels."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Default easing for entrances and reveals (EASE_OUT)."
+      },
+      {
+        "name": "synapse-rise",
+        "value": "1s ease-out from translateY(22px) opacity 0; stagger via --d",
+        "purpose": "Hero entrance in CSS, runs before hydration."
+      },
+      {
+        "name": "heading-reveal",
+        "value": "0.9s ease-out, y 24px, blur 10px to 0, once at 60 percent in view",
+        "purpose": "Section headings; leads follow at 0.8s with 0.1s delay. Reveal blocks use y 28px, blur 8px."
+      },
+      {
+        "name": "synapse-pulse",
+        "value": "2.4s ease-in-out infinite, opacity 0.35 to 1, scale 1 to 1.6",
+        "purpose": "Live dots only."
+      },
+      {
+        "name": "synapse-orbit",
+        "value": "38s and 64s linear infinite (one reversed)",
+        "purpose": "Portrait orbit rings."
+      },
+      {
+        "name": "synapse-dash",
+        "value": "dasharray 12 248, offset 0 to -260, 2.6s to 3.4s linear infinite, staggered",
+        "purpose": "Signal dashes on every skills synapse."
+      },
+      {
+        "name": "trace-spring",
+        "value": "spring stiffness 90, damping 24, mass 0.5",
+        "purpose": "Scroll-drawn signal trace fill."
+      },
+      {
+        "name": "swarm-cycle",
+        "value": "mark assembly, dissolve to rotating brain; recall every 16s or on click; static brain under reduced motion",
+        "purpose": "Hero Neural Swarm canvas."
+      },
+      {
+        "name": "footer-sweep",
+        "value": "96px coral line, 6s linear across, 4s repeat delay",
+        "purpose": "Footer top edge signal."
+      },
+      {
+        "name": "hover-fast",
+        "value": "200ms",
+        "purpose": "Nav links, language pill, small text."
+      },
+      {
+        "name": "hover-standard",
+        "value": "300ms",
+        "purpose": "Buttons, icon nudges, card border, social links."
+      },
+      {
+        "name": "hover-slow",
+        "value": "500ms to 700ms",
+        "purpose": "Essay-row slide and arrow turn, image zoom, header background."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "MotionConfig reducedMotion=\"user\" plus CSS reduce rule collapsing animation and transition to 0.01ms",
+        "purpose": "All motion honours prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "container",
+        "value": "1400px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (navy field)",
+      "kind": "button",
+      "refersTo": "button-primary-navy",
+      "description": "Main action on navy: cream pill with navy label; hover fills coral.",
+      "html": "<div class=\"ds-field-navy\"><a class=\"ds-btn-primary\" href=\"#\">Get in touch <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 17 17 7\"/><path d=\"M7 7h10v10\"/></svg></a></div>",
+      "css": ".ds-field-navy{background:#1a2433;padding:32px;} .ds-btn-primary{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 24px;border-radius:9999px;background:#faf8f5;color:#1a2433;font:500 15px/1 Geist,system-ui,sans-serif;text-decoration:none;transition:background-color .3s,color .3s;} .ds-btn-primary svg{transition:transform .3s;} .ds-btn-primary:hover{background:#fd4345;color:#1a2433;} .ds-btn-primary:hover svg{transform:translate(2px,-2px);} .ds-btn-primary:focus-visible{outline:2px solid #fd4345;outline-offset:3px;}"
+    },
+    {
+      "name": "Primary Button (cream field)",
+      "kind": "button",
+      "refersTo": "button-primary-cream",
+      "description": "Main action on cream or paper: bordeaux pill with cream label; hover turns navy.",
+      "html": "<div class=\"ds-field-cream\"><a class=\"ds-btn-primary-c\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\"/><path d=\"m7 10 5 5 5-5\"/><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/></svg> Download CV</a></div>",
+      "css": ".ds-field-cream{background:#faf8f5;padding:32px;} .ds-btn-primary-c{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 24px;border-radius:9999px;background:#800020;color:#faf8f5;font:500 15px/1 Geist,system-ui,sans-serif;text-decoration:none;transition:background-color .3s;} .ds-btn-primary-c:hover{background:#1a2433;} .ds-btn-primary-c:focus-visible{outline:2px solid #fd4345;outline-offset:3px;}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary action: transparent pill with a hairline outline in the field line colour.",
+      "html": "<div class=\"ds-field-navy-g\"><a class=\"ds-btn-ghost\" href=\"#\">View work <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m7 7 10 10\"/><path d=\"M17 7v10H7\"/></svg></a></div>",
+      "css": ".ds-field-navy-g{background:#1a2433;padding:32px;} .ds-btn-ghost{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 24px;border-radius:9999px;border:1px solid rgba(250,248,245,.25);color:#faf8f5;font:500 15px/1 Geist,system-ui,sans-serif;text-decoration:none;transition:border-color .3s;} .ds-btn-ghost:hover{border-color:rgba(250,248,245,.6);} .ds-btn-ghost:focus-visible{outline:2px solid #fd4345;outline-offset:3px;}"
+    },
+    {
+      "name": "Technology Chip",
+      "kind": "chip",
+      "refersTo": "chip-tech",
+      "description": "Static technology label on project cards.",
+      "html": "<ul class=\"ds-chips\"><li class=\"ds-chip\">Next.js</li><li class=\"ds-chip\">PostgreSQL</li><li class=\"ds-chip\">Docker</li></ul>",
+      "css": ".ds-chips{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:24px;background:#ffffff;} .ds-chip{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:9999px;background:rgba(26,36,51,.06);color:#3b4657;font:500 12px/1 Geist,system-ui,sans-serif;}"
+    },
+    {
+      "name": "Project Card",
+      "kind": "card",
+      "refersTo": "card-project",
+      "description": "White surface on cream with a hairline edge that turns bordeaux on hover; no shadow.",
+      "html": "<div class=\"ds-pc-wrap\"><article class=\"ds-pc\"><div class=\"ds-pc-img\"></div><div class=\"ds-pc-body\"><h3>Real Estate CMS Site</h3><p>A bilingual real estate platform and CMS built for international investors.</p><span class=\"ds-pc-open\">Open project &#8599;</span></div></article></div>",
+      "css": ".ds-pc-wrap{background:#faf8f5;padding:32px;} .ds-pc{max-width:400px;overflow:hidden;border-radius:16px;border:1px solid rgba(26,36,51,.12);background:#ffffff;color:#1a2433;font-family:Geist,system-ui,sans-serif;transition:border-color .3s;} .ds-pc:hover{border-color:#800020;} .ds-pc-img{aspect-ratio:16/9;background:rgba(26,36,51,.04);border-bottom:1px solid rgba(26,36,51,.08);} .ds-pc-body{padding:24px;} .ds-pc h3{margin:0;font-size:1.5rem;font-weight:600;letter-spacing:-.025em;} .ds-pc p{margin:12px 0 0;font-size:15px;line-height:1.625;color:#3b4657;} .ds-pc-open{display:inline-block;margin-top:28px;font-size:14px;font-weight:500;}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Contact field on cream: white surface, hairline outline, signal on focus, mono counter.",
+      "html": "<div class=\"ds-field-wrap\"><div class=\"ds-lbl\"><label for=\"ds-n\">Name <span>*</span></label><small>0/80</small></div><input id=\"ds-n\" class=\"ds-input\" placeholder=\"Your name\"></div>",
+      "css": ".ds-field-wrap{background:#faf8f5;padding:32px;font-family:Geist,system-ui,sans-serif;} .ds-lbl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;} .ds-lbl label{font-size:14px;color:#3b4657;} .ds-lbl span{color:#800020;} .ds-lbl small{font:11px \"Geist Mono\",ui-monospace,monospace;color:#5c6677;} .ds-input{width:100%;height:48px;padding:0 20px;border-radius:16px;border:1px solid rgba(26,36,51,.15);background:#ffffff;color:#1a2433;font-size:15px;caret-color:#fd4345;outline:none;transition:border-color .2s;} .ds-input::placeholder{color:#5c6677;} .ds-input:focus{border-color:rgba(253,67,69,.7);}"
+    },
+    {
+      "name": "Site Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Slim navy bar: mark and name, centred links with a sliding 1px signal underline, EN/ES pill, 2px progress bar.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-brand\">Iñaki F. Lozano</span><div class=\"ds-links\"><a class=\"ds-link ds-active\" href=\"#\">Home</a><a class=\"ds-link\" href=\"#\">About</a><a class=\"ds-link\" href=\"#\">Projects</a></div><div class=\"ds-lang\"><span class=\"ds-on\">EN</span><span>ES</span></div><i class=\"ds-progress\"></i></nav>",
+      "css": ".ds-nav{position:relative;display:flex;align-items:center;justify-content:space-between;gap:24px;height:64px;padding:0 32px;background:rgba(26,36,51,.9);border-bottom:1px solid rgba(250,248,245,.08);font-family:Geist,system-ui,sans-serif;} .ds-brand{color:#faf8f5;font-size:15px;font-weight:500;} .ds-links{display:flex;gap:4px;} .ds-link{position:relative;padding:8px 12px;border-radius:6px;color:#9aa4b4;font-size:13px;font-weight:500;text-decoration:none;transition:color .2s;} .ds-link:hover,.ds-active{color:#faf8f5;} .ds-active::after{content:\"\";position:absolute;left:12px;right:12px;bottom:-1px;height:1px;background:#fd4345;} .ds-link:focus-visible{outline:2px solid #fd4345;outline-offset:3px;} .ds-lang{display:flex;padding:2px;border:1px solid rgba(250,248,245,.1);border-radius:9999px;font:11px \"Geist Mono\",ui-monospace,monospace;color:#9aa4b4;} .ds-lang span{padding:4px 10px;border-radius:9999px;} .ds-lang .ds-on{background:#faf8f5;color:#1a2433;} .ds-progress{position:absolute;left:0;bottom:-2px;height:2px;width:40%;background:#fd4345;}"
+    },
+    {
+      "name": "Section Heading",
+      "kind": "custom",
+      "refersTo": "typography.headline",
+      "description": "Every section opens with a 10px signal node then the headline; works on any field.",
+      "html": "<div class=\"ds-sh\"><h2><span class=\"ds-node\"></span>Projects</h2><p>Real products, real stacks.</p></div>",
+      "css": ".ds-sh{background:#faf8f5;padding:32px;font-family:Geist,system-ui,sans-serif;} .ds-sh h2{display:flex;align-items:baseline;gap:16px;margin:0;font-size:3rem;font-weight:600;letter-spacing:-.035em;color:#1a2433;} .ds-node{position:relative;top:-.12em;flex:none;width:10px;height:10px;border-radius:50%;background:#fd4345;} .ds-sh p{margin:20px 0 0;max-width:60ch;font-size:1.125rem;line-height:1.75;color:#3b4657;}"
+    },
+    {
+      "name": "Trace Entry with Live Dot",
+      "kind": "custom",
+      "refersTo": "typography.data",
+      "description": "An entry on the navy signal trace: pulsing coral dot for ongoing, mono period, title.",
+      "html": "<div class=\"ds-trace\"><span class=\"ds-line\"></span><span class=\"ds-fill\"></span><div class=\"ds-entry\"><span class=\"ds-live\"></span><p class=\"ds-period\">Nov 2023 – present</p><h3>SSr Software Engineer</h3></div></div>",
+      "css": ".ds-trace{position:relative;background:#1a2433;padding:32px 32px 32px 64px;font-family:Geist,system-ui,sans-serif;} .ds-line,.ds-fill{position:absolute;left:36px;top:24px;bottom:24px;width:1px;background:rgba(250,248,245,.09);} .ds-fill{bottom:55%;background:#fd4345;} .ds-entry{position:relative;} .ds-live{position:absolute;left:-32px;top:6px;width:8px;height:8px;border-radius:50%;background:#fd4345;animation:ds-pulse 2.4s ease-in-out infinite;} @keyframes ds-pulse{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:1;transform:scale(1.6)}} @media (prefers-reduced-motion:reduce){.ds-live{animation:none;}} .ds-period{margin:0;font:13px \"Geist Mono\",ui-monospace,monospace;color:#9aa4b4;} .ds-entry h3{margin:12px 0 0;font-size:1.5rem;font-weight:600;letter-spacing:-.025em;color:#faf8f5;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Living Synapse",
+    "overview": "The public site is a neural map in which the work itself forms the network. Projects and the technologies they use are real nodes, wired by thin synapses, and coral signals travel along them. The map is laid out as a sequence of flat colour fields, one per section, and each field is chosen by role. Navy is the machine: the hero swarm, the education and experience trace, the skills constellations, the header and the footer. Cream and paper are for reading: the statement, about, projects, writing and every detail-page body. Bordeaux is the personal voice, used for contact. The world is scoped to the `.synapse` frame (home, project, blog and legal pages). The admin keeps its own light theme and is not governed by this file.\n\nThe surfaces are flat and calm. There are no gradients, glows, grain or duotone. Depth comes from the change from one field to the next, from hairlines, from white cards on cream and from an image overlapping a band edge. Motion is the main expressive layer. The hero particles assemble the IL monogram and then dissolve into a turning brain. Names decode, headings rise out of a blur, the trace fills as the reader scrolls, and every skills synapse carries a travelling signal. All of it honours reduced motion. The world turns down the category's dark bento grid and terminal costume. There are no fake terminals and no fake dashboards, and the data shown is real.",
+    "keyCharacteristics": [
+      "Flat colour fields by role: navy for the machine, cream and paper for reading, bordeaux for contact. No section is dark by default.",
+      "Components read role colours (fg, fg-soft, fg-dim, line, surface, signal, signal-text, action, on-action) from their field. They never hard-code a hex.",
+      "Coral is signal only: nodes, live dots, traces, synapse dashes, the active underline, progress and focus.",
+      "No gradients, glows, drop shadows, grain or colour washes on imagery.",
+      "Geist for all reading text. Geist Mono only for data: dates, counts, character limits, canvas labels and language codes.",
+      "Fully rounded controls; 16px cards and fields; 24px panels; 1px hairlines."
+    ],
+    "rules": [
+      {
+        "name": "The Field By Role Rule",
+        "body": "Every section is one flat field chosen by what it does: navy for the machine, cream or paper for reading, bordeaux for the personal voice. A component takes its colours from the field's roles, so the same card or button is correct on any field without a variant.",
+        "section": "colors"
+      },
+      {
+        "name": "The Coral Is Signal Rule",
+        "body": "Coral marks a signal, a live state, focus, position or progress. It is never a background block, a section fill or a decorative wash. Readable text that carries signal meaning uses the signal-text role (bordeaux on cream, coral-hi on navy, blush on bordeaux), never raw coral on a light field. The one coral fill is the transient hover of a primary button on a navy field.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Is Data Rule",
+        "body": "Geist Mono sets only values a machine would emit: dates, counts, limits, codes and canvas labels. Role lines, headings, leads and buttons stay in Geist.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tight Display Rule",
+        "body": "Letter-spacing tightens with size: about -0.02em at 1.25 to 2rem, -0.03em at 2 to 3rem, and -0.04em to -0.05em at display sizes. Body text keeps normal tracking.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Column Rule",
+        "body": "Content aligns to the 1400px container. Only the fields themselves, the hero swarm and the projects pan track run full-bleed.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Field Rule",
+        "body": "Nothing glows and nothing casts a shadow. A raised or active element changes its border, its fill or its position, never its shadow. Visible colour gradients, bloom fields, grain and colour washes on photographs have no place in this world. One-pixel rings are borders, not shadows.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** assign each section one flat field by role (navy machine, cream or paper reading, bordeaux contact) and let components read fg, line, surface, signal and action from it (The Field By Role Rule).",
+      "**Do** keep coral for signals: nodes, live dots, traces, synapse dashes, the active underline, progress and focus (The Coral Is Signal Rule).",
+      "**Do** use the signal-text role for readable signal text: bordeaux on cream, coral-hi on navy, blush on bordeaux.",
+      "**Do** build depth from field changes, white surfaces with hairlines and overlap, never from shadow (The Flat Field Rule).",
+      "**Do** set dates, counts, limits and canvas labels in Geist Mono, and everything a person reads as prose in Geist.",
+      "**Do** make graph, swarm and trace visuals from real data (projects, technologies, roles).",
+      "**Do** run entrance motion in CSS (synapse-rise) where it must not hide content before hydration, and keep every animation under the reduced-motion settings (MotionConfig reducedMotion=\"user\" plus the CSS reduce rule).",
+      "**Do** keep controls as pills and cards at a 16px radius."
+    ],
+    "donts": [
+      "**Don't** use colour gradients, radial blooms, glow shadows, drop shadows, grain or noise overlays.",
+      "**Don't** colour-wash or duotone photographs. The portrait and project thumbnails show natural colour.",
+      "**Don't** make the site dark by default. Reading sections sit on cream or paper.",
+      "**Don't** use coral as a background block, a section fill or body text on a light field.",
+      "**Don't** build fake terminals, command prompts or fake dashboards. The IL monogram's prompt block is the only terminal reference, and it belongs to the mark.",
+      "**Don't** set role lines, leads, headings or buttons in Geist Mono to look \"technical\".",
+      "**Don't** lay sections out as a bento grid of cards. Cards belong to projects. The other sections are traces, constellations, ruled lists and prose.",
+      "**Don't** put a small label or eyebrow above a heading. A section opens with its signal node and its headline.",
+      "**Don't** apply this world to the admin. It keeps its own light theme."
+    ]
+  }
+}

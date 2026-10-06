@@ -33,24 +33,22 @@ export default function ShareActions({ url, title, dict = {} }: ShareActionsProp
     }, [url])
 
     return (
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <button
                 onClick={shareOnTwitter}
-                className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
-                aria-label={dict?.shareOnTwitter || 'Share on Twitter'}
+                className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-fg-soft transition-colors hover:text-fg"
             >
-                <Twitter size={16} /> {dict?.share || 'Share'}
+                <Twitter size={16} /> {dict?.shareOnTwitter || 'Share on Twitter'}
             </button>
             <button
                 onClick={shareOnLinkedIn}
-                className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
-                aria-label={dict?.shareOnLinkedin || 'Share on LinkedIn'}
+                className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-fg-soft transition-colors hover:text-fg"
             >
-                <Linkedin size={16} /> {dict?.share || 'Share'}
+                <Linkedin size={16} /> {dict?.shareOnLinkedin || 'Share on LinkedIn'}
             </button>
             <button
                 onClick={copyLink}
-                className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
+                className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-fg-soft transition-colors hover:text-fg"
                 aria-label={dict?.copyLinkAria || 'Copy link'}
             >
                 <LinkIcon size={16} /> {copied ? (dict?.copied || 'Copied!') : (dict?.copyLink || 'Copy link')}

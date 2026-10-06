@@ -81,19 +81,19 @@ export default async function LegalPage({ params }: LegalPageProps) {
     ]
 
     return (
-        <main className="min-h-screen bg-[#f7f7f5] text-[#1a2433]">
-            <header className="border-b border-[#1a2433]/10 bg-white">
+        <main className="synapse field-cream min-h-screen">
+            <header className="border-b border-line/[0.07]">
                 <div className="mx-auto flex min-h-16 max-w-5xl items-center justify-between px-5 sm:px-8">
                     <Link
                         href={`/${resolved}`}
-                        className="font-semibold tracking-tight transition-colors hover:text-[#FD4345] focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4"
+                        className="font-semibold tracking-tight transition-colors hover:text-signal-text focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
                     >
                         Iñaki Fernando Lozano
                     </Link>
                     <Link
                         href={`/${alternateLang}/legal`}
                         hrefLang={alternateLang}
-                        className="text-sm font-medium text-[#1a2433]/65 transition-colors hover:text-[#1a2433] focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4"
+                        className="text-sm font-medium text-fg-dim transition-colors hover:text-fg focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
                     >
                         {copy.switchLanguage}
                     </Link>
@@ -101,32 +101,32 @@ export default async function LegalPage({ params }: LegalPageProps) {
             </header>
 
             <article className="mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-20">
-                <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-[#FD4345]">
+                <p className="mb-4 text-sm font-medium text-signal-text">
                     {copy.eyebrow}
                 </p>
-                <h1 className="max-w-2xl text-4xl font-bold tracking-[-0.035em] sm:text-5xl">
+                <h1 className="max-w-2xl text-4xl font-semibold tracking-[-0.04em] text-fg sm:text-6xl">
                     {copy.title}
                 </h1>
                 <p className="mt-8 max-w-2xl text-xl font-medium leading-8 sm:text-2xl sm:leading-9">
                     {copy.statement}
                 </p>
-                <p className="mt-4 max-w-2xl text-base leading-7 text-[#1a2433]/70">
+                <p className="mt-4 max-w-2xl text-base leading-7 text-fg-soft">
                     {copy.detail}
                 </p>
-                <p className="mt-4 max-w-2xl text-base leading-7 text-[#1a2433]/70">
+                <p className="mt-4 max-w-2xl text-base leading-7 text-fg-soft">
                     {copy.ethos}{' '}
                     <a
                         href="https://ethos.ar"
-                        className="font-medium text-[#1a2433] underline decoration-[#FD4345] decoration-2 underline-offset-4 transition-colors hover:text-[#FD4345] focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4"
+                        className="font-medium text-fg underline decoration-[#FD4345] decoration-2 underline-offset-4 transition-colors hover:text-signal-text focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
                     >
                         {copy.ethosLink}
                     </a>
                 </p>
 
-                <dl className="mt-12 divide-y divide-[#1a2433]/10 border-y border-[#1a2433]/10">
+                <dl className="mt-12 divide-y divide-line/[0.1] border-y border-line/[0.08]">
                     {details.map(([label, value]) => (
                         <div key={label} className="grid gap-1 py-5 sm:grid-cols-[10rem_1fr] sm:gap-6">
-                            <dt className="text-sm font-medium text-[#1a2433]/60">{label}</dt>
+                            <dt className="text-sm font-medium text-fg-dim">{label}</dt>
                             <dd className="break-words font-medium">{value}</dd>
                         </div>
                     ))}
@@ -134,7 +134,7 @@ export default async function LegalPage({ params }: LegalPageProps) {
 
                 <Link
                     href={`/${resolved}`}
-                    className="mt-10 inline-flex min-h-11 items-center border-b-2 border-[#FD4345] font-semibold transition-colors hover:text-[#FD4345] focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4"
+                    className="mt-10 inline-flex min-h-11 items-center font-semibold underline decoration-signal decoration-2 underline-offset-8 transition-colors hover:text-signal-text focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
                 >
                     ← {copy.back}
                 </Link>
