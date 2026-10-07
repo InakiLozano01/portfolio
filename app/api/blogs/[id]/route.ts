@@ -1,4 +1,5 @@
 'use server';
+import { toUpdate } from '@/lib/update-doc';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
@@ -39,7 +40,7 @@ export async function GET(
             );
         }
 
-        return NextResponse.json(blog);
+        return NextResponse.json(blog, { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } });
     } catch (error) {
         console.error('Failed to fetch blog:', error);
         return NextResponse.json(
@@ -72,7 +73,7 @@ export async function PUT(
         const previous = await BlogModel.findById(id).lean();
         const blog = await BlogModel.findByIdAndUpdate(
             id,
-            body,
+            toUpdate(body, raw),
             { new: true, runValidators: true }
         );
 
@@ -99,6 +100,8 @@ export async function PUT(
                 { status: error.status }
             );
         }
+        const invalid = validationResponse(error);
+        if (invalid) return invalid;
         if (isMongoDocumentSizeError(error)) {
             return NextResponse.json(
                 { error: BLOG_DOCUMENT_TOO_LARGE_MESSAGE },
@@ -147,3 +150,12 @@ export async function DELETE(
         );
     }
 } 
+
+// Mongoose validation errors name the missing fields; say which, without internals.
+function validationResponse(error: unknown) {
+    if (!(error instanceof Error) || error.name !== 'ValidationError') return null;
+    const fields = Object.keys((error as Error & { errors?: Record<string, unknown> }).errors || {});
+    const parts = [...new Set(fields.map((f) => f.replace(/_(en|es)$/, '')).filter((f) => ['title', 'subtitle', 'content'].includes(f)))];
+    const label = parts.map((f) => (f === 'content' ? 'body' : f)).join(', ') || 'required fields';
+    return NextResponse.json({ error: `Add the ${label} before saving.` }, { status: 400 });
+}

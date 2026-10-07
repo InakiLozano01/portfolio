@@ -82,13 +82,15 @@ export async function proxy(request: NextRequest) {
         secret: process.env.NEXTAUTH_SECRET,
       })
 
-      if (pathname === '/admin/login' && token) {
+      // ?expired=1: the cookie is still there but the server no longer accepts it; let the login page clear it.
+      if (pathname === '/admin/login' && token && !request.nextUrl.searchParams.has('expired')) {
         return NextResponse.redirect(new URL('/admin', request.url))
       }
 
       if (pathname !== '/admin/login' && !token) {
         const loginUrl = new URL('/admin/login', request.url)
-        loginUrl.searchParams.set('callbackUrl', pathname === '/admin/blog' ? '/admin#blogs' : pathname)
+        // Only same-site admin paths ever become a post-login destination.
+        loginUrl.searchParams.set('callbackUrl', /^\/admin(\/[\w\-/]*)?$/.test(pathname) ? pathname : '/admin')
         return NextResponse.redirect(loginUrl)
       }
 

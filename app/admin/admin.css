@@ -1,57 +1,55 @@
-/* Admin tokens also reach dialogs, menus and toasts portaled into body. */
+/* The admin console lives in the Synapse world: a navy rail (the machine) and a cream work surface (reading),
+   coral only as signal, bordeaux as the action. The shadcn variables below map that palette onto the Radix
+   pieces that portal into <body> (dialogs, popovers, the command palette, toasts). */
 html[data-admin-ui], .admin-ui {
-  --admin-action-rgb: 180 35 53;
+  --admin-action-rgb: 128 0 32;
   --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
+  --foreground: 216 33% 15%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
+  --card-foreground: 216 33% 15%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 214 32% 91%;
-  --secondary-foreground: 215 25% 27%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 25% 35%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222 47% 11%;
-  --destructive: 0 74% 42%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 214 32% 85%;
-  --input: 215 20% 55%;
-  --ring: 350 67% 42%;
+  --popover-foreground: 216 33% 15%;
+  --primary-foreground: 36 33% 97%;
+  --secondary: 36 24% 93%;
+  --secondary-foreground: 216 19% 29%;
+  --muted: 36 24% 93%;
+  --muted-foreground: 216 13% 41%;
+  --accent: 36 24% 93%;
+  --accent-foreground: 216 33% 15%;
+  --destructive: 345 100% 25%;
+  --destructive-foreground: 36 33% 97%;
+  --border: 216 15% 86%;
+  --input: 216 15% 78%;
+  --ring: 359 98% 63%;
+  --radius: 1rem;
   color-scheme: light;
-  color: hsl(var(--foreground));
 }
-html[data-admin-ui] :is(button, a, input, textarea, select, [tabindex]):focus-visible {
-  outline: 2px solid #b42335;
-  outline-offset: 3px;
+
+html[data-admin-ui] body { background: #faf8f5; }
+html[data-admin-ui] :is(button, a, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid #fd4345;
+  outline-offset: 2px;
+  border-radius: 6px;
 }
-html[data-admin-ui] [data-admin-sidebar] :focus-visible { outline-color: white; }
-html[data-admin-ui] :is(input, textarea, select):not([type="file"]) { border-color: #64748b; }
-html[data-admin-ui] :is(button, input, textarea, select):disabled {
-  opacity: 1;
-  cursor: not-allowed;
+html[data-admin-ui] :is(input, textarea, select):focus-visible { outline: none; box-shadow: 0 0 0 3px rgb(253 67 69 / 0.18); }
+html[data-admin-ui] ::selection { background: rgb(253 67 69 / 0.25); color: #1a2433; }
+html[data-admin-ui] :is(input, textarea) { caret-color: #fd4345; }
+html[data-admin-ui] .admin-ui { min-height: 100dvh; }
+/* Tabular numerals wherever numbers line up. */
+html[data-admin-ui] .tabular { font-variant-numeric: tabular-nums; }
+/* Quiet scrollbars in the palette. */
+html[data-admin-ui] * { scrollbar-width: thin; scrollbar-color: rgb(26 36 51 / 0.25) transparent; }
+html[data-admin-ui] .field-navy * { scrollbar-color: rgb(250 248 245 / 0.2) transparent; }
+
+/* Rich-text editor frame inherits the console's hairlines and radius. */
+html[data-admin-ui] .tox.tox-tinymce {
+  border: 1px solid rgb(26 36 51 / 0.15) !important;
+  border-radius: 16px !important;
 }
-html[data-admin-ui] button:disabled {
-  background: #e2e8f0;
-  color: #475569;
-  border-color: #94a3b8;
-}
-html[data-admin-ui] :is(input, textarea, select):disabled {
-  background: #f1f5f9;
-  color: #475569;
-}
-html[data-admin-ui] [role="switch"][data-state="checked"] {
-  background: #15803d;
-  border-color: #15803d;
-}
-html[data-admin-ui] [role="switch"][data-state="unchecked"] { border-color: #64748b; }
-html[data-admin-ui] ::selection { background: #fce7eb; color: #881b2b; }
-html[data-admin-ui] :is(input, textarea) { caret-color: #b42335; }
-html[data-admin-ui] .admin-ui { height: 100dvh; }
-html[data-admin-ui] .admin-ui [data-admin-shell] { height: 100%; }
+html[data-admin-ui] .tox .tox-statusbar { border-top-color: rgb(26 36 51 / 0.08) !important; }
+
 @media (pointer: coarse) {
-  html[data-admin-ui] button:not([role="switch"]) { min-height: 44px; min-width: 44px; }
+  html[data-admin-ui] :is(button, [role="button"], a.admin-hit):not(.tox *) { min-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html[data-admin-ui] *, html[data-admin-ui] *::before, html[data-admin-ui] *::after {

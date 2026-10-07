@@ -1,12 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
-import { clearAdminCache } from '@/lib/admin-fetch';
 import { SessionProvider } from 'next-auth/react';
-import { ToastProvider as CustomToastProvider } from '@/components/ui/use-toast';
-import { ToastProvider, ToastViewport } from '@/components/ui/toast';
-import { CustomToaster } from '@/components/ui/custom-toaster';
-import { Toaster } from '@/components/ui/sonner';
+import { clearAdminCache } from '@/lib/admin-fetch';
+import { Toasts } from '@/components/admin/console/Toasts';
 
 export function AdminProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -16,15 +13,9 @@ export function AdminProviders({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <SessionProvider refetchInterval={0}>
-      <ToastProvider>
-        <CustomToastProvider>
-          {children}
-          <ToastViewport />
-          <CustomToaster />
-        </CustomToastProvider>
-        <Toaster theme="light" />
-      </ToastProvider>
+    <SessionProvider refetchInterval={0} refetchOnWindowFocus>
+      {children}
+      <Toasts />
     </SessionProvider>
   );
 }

@@ -9,8 +9,12 @@ export async function GET(request: Request) {
         if (!admin.ok) return admin.response
 
         await connectToDatabase()
-        const subscribers = await Subscriber.find({}).sort({ createdAt: -1 }).lean()
-        return NextResponse.json(subscribers)
+        // Unsubscribe and confirmation tokens stay on the server.
+        const subscribers = await Subscriber.find({})
+            .select('email language unsubscribed confirmed confirmedAt createdAt')
+            .sort({ createdAt: -1 })
+            .lean()
+        return NextResponse.json(subscribers, { headers: { 'Cache-Control': 'private, no-store' } })
     } catch (error) {
         console.error('Failed to fetch subscribers', error)
         return NextResponse.json({ error: 'Failed to fetch subscribers' }, { status: 500 })

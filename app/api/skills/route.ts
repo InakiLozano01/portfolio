@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Skill from '@/models/Skill';
+import Project from '@/models/Project';
 import { headers } from 'next/headers';
 import { requireAdmin } from '@/lib/admin-auth';
 import mongoose from 'mongoose';
@@ -151,3 +152,32 @@ export async function PUT(request: Request) {
     );
   }
 } 
+
+export async function DELETE(request: Request) {
+  try {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
+
+    const id = new URL(request.url).searchParams.get('id') || '';
+    if (!/^[a-f0-9]{24}$/i.test(id)) {
+      return NextResponse.json({ error: 'Invalid skill ID' }, { status: 400 });
+    }
+
+    await connectToDatabase();
+    // A skill that projects still list would leave them pointing at nothing; detach it from them first.
+    // Technology ids are stored as hex strings.
+    const inUse = await Project.countDocuments({ technologies: id });
+    if (inUse > 0) {
+      return NextResponse.json(
+        { error: `Used by ${inUse} project${inUse === 1 ? '' : 's'}. Remove it from them first.`, inUse },
+        { status: 409 }
+      );
+    }
+    const deleted = await Skill.findByIdAndDelete(id);
+    if (!deleted) return NextResponse.json({ error: 'Skill not found' }, { status: 404 });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('[Skills API] Failed to delete skill:', error);
+    return NextResponse.json({ error: 'Failed to delete skill' }, { status: 500 });
+  }
+}

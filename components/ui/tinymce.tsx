@@ -33,6 +33,8 @@ const FREE_PLUGINS = [
 interface TinyMCEProps {
     value: string;
     onChange: (value: string) => void;
+    /** Called once the editor is ready; its first change event after this is only normalisation. */
+    onReady?: () => void;
     height?: number;
     disabled?: boolean;
     id?: string;
@@ -86,7 +88,7 @@ const uploadTinyMCEImage = async (blobInfo: any, progress: (value: number) => vo
 };
 
 export const TinyMCE = forwardRef<TinyMCEHandle, TinyMCEProps>(function TinyMCE(
-    { value, onChange, height = 400, disabled = false, id, label = 'Rich text editor' },
+    { value, onChange, onReady, height = 400, disabled = false, id, label = 'Rich text editor' },
     ref
 ) {
     const editorRef = useRef<TinyMCEEditor | null>(null);
@@ -128,6 +130,7 @@ export const TinyMCE = forwardRef<TinyMCEHandle, TinyMCEProps>(function TinyMCE(
             disabled={disabled}
             onInit={(evt: EditorEvent<any>, editor: TinyMCEEditor) => {
                 editorRef.current = editor;
+                onReady?.();
                 // TinyMCE 8 labels the editable body but leaves its document role.
                 const body = editor.getBody();
                 body.setAttribute('role', 'textbox');

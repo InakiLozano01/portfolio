@@ -6,6 +6,8 @@ declare module 'next-auth' {
       id: string;
       email: string;
       name: string;
+      /** When this session signed in (ms); sessions older than the last password change are refused. */
+      authAt?: number;
     };
   }
 

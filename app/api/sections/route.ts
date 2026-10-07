@@ -29,14 +29,14 @@ export async function GET() {
     if (sections && sections.length > 0) {
       // Filter out invisible sections for non-admin requests
       const filteredSections = isAdminRequest ? sections : sections.filter((s: Section) => s.visible);
-      return NextResponse.json(filteredSections);
+      return NextResponse.json(filteredSections, isAdminRequest ? { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } } : undefined);
     }
 
     // If not in cache or cache failed, get from database
     await connectToDatabase();
     const query = isAdminRequest ? {} : { visible: true };
     const dbSections = await SectionModel.find(query).sort({ order: 1 });
-    return NextResponse.json(dbSections);
+    return NextResponse.json(dbSections, isAdminRequest ? { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } } : undefined);
   } catch (error) {
     console.error('Failed to fetch sections:', error);
     return NextResponse.json(

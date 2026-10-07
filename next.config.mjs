@@ -45,6 +45,11 @@ const nextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
           },
+          {
+            // Directives that cannot break scripts or styles: no framing, no plugins, no <base> or form hijacking.
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+          },
         ],
       },
       {

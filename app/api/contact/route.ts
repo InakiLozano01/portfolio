@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Contact from '@/models/Contact';
-import { headers } from 'next/headers';
+import { getClientIp } from '@/lib/client-ip';
+import { hit } from '@/lib/rate-limit';
 import { emailService } from '@/lib/email';
 import { requireAdmin } from '@/lib/admin-auth';
 
@@ -12,8 +13,17 @@ const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const headersList = await headers();
-    const ipAddress = headersList.get('x-forwarded-for') || 'unknown';
+    const ipAddress = getClientIp(request);
+    const name = typeof body?.name === 'string' ? body.name.trim().slice(0, 80) : '';
+    const email = typeof body?.email === 'string' ? body.email.trim().slice(0, 100) : '';
+    const message = typeof body?.message === 'string' ? body.message.trim().slice(0, 1000) : '';
+
+    if (!hit(`contact:${ipAddress}`, RATE_LIMIT, RATE_LIMIT_WINDOW).ok) {
+      return NextResponse.json(
+        { error: 'Too many messages. Please try again later.' },
+        { status: 429 }
+      );
+    }
 
     await connectToDatabase();
 
@@ -32,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     // Validate input
-    if (!body.name || !body.email || !body.message) {
+    if (!name || !email || !message || !/^\S+@\S+\.\S+$/.test(email)) {
       return NextResponse.json(
         { error: 'Name, email, and message are required' },
         { status: 400 }
@@ -40,24 +50,17 @@ export async function POST(request: Request) {
     }
 
     // Create contact message
-    const contact = await Contact.create({
-      ...body,
-      ipAddress
-    });
+    // Only these fields are accepted; createdAt and read come from the server.
+    await Contact.create({ name, email, message, ipAddress });
 
     // Send email to admin (best-effort, don't block response on failure)
     try {
-      await emailService.sendContactEmail({
-        name: body.name,
-        email: body.email,
-        message: body.message,
-        ipAddress,
-      });
+      await emailService.sendContactEmail({ name, email, message, ipAddress });
     } catch (e) {
       console.error('Contact email sending failed:', e);
     }
 
-    return NextResponse.json(contact);
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to send message' },
@@ -81,7 +84,7 @@ export async function GET(request: Request) {
     const messages = await Contact.find({})
       .sort({ createdAt: -1 })
       .limit(100); // Limit to last 100 messages
-    return NextResponse.json(messages);
+    return NextResponse.json(messages, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch messages' },

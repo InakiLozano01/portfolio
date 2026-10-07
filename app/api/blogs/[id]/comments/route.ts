@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Comment from '@/models/Comment'
 import Blog from '@/models/Blog'
+import { getClientIp } from '@/lib/client-ip'
+import { hit } from '@/lib/rate-limit'
 import { isValidObjectId, moderateComment, sanitizeAlias, sanitizeCommentText } from '@/lib/comments'
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -28,7 +30,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   }
   try {
     const { alias, content, parentId } = await req.json()
-    const ip = (req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown').split(',')[0].trim()
+    const ip = getClientIp(req)
+    if (!hit(`comment:${ip}`, 6, 10 * 60 * 1000).ok) {
+      return NextResponse.json({ error: 'Too many comments' }, { status: 429 })
+    }
     const cleanAlias = sanitizeAlias(alias).trim()
     const cleanContent = sanitizeCommentText(content).trim()
     if (typeof alias !== 'string' || typeof content !== 'string' || cleanAlias.length < 2 || cleanContent.length < 3 || content.length > 5000 || alias.length > 40) {

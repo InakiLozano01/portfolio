@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server';
 import { emailService } from '@/lib/email';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { requireAdmin } from '@/lib/admin-auth';
 
 // This endpoint is for testing email configuration
 // Remove or secure this in production
-export async function GET() {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export async function GET(request: Request) {
+    const admin = await requireAdmin(request);
+    if (!admin.ok) return admin.response;
     try {
         // Test the email connection
         const isConnected = await emailService.testConnection();

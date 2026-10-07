@@ -1,180 +1,124 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { signIn, useSession } from 'next-auth/react';
+import { Suspense, useEffect, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Button, Input } from '@/components/admin/console/kit';
 
-export default function AdminLogin() {
+/** Only console paths can be a post-login destination; anything else (other sites, javascript:) goes home. */
+function safeCallback(raw: string | null) {
+  if (!raw || raw.includes('//') || raw.includes('\\')) return '/admin';
+  return /^\/admin(?:[/?#][^\s]*)?$/.test(raw) ? raw : '/admin';
+}
+
+const MESSAGES: Record<string, string> = {
+  CredentialsSignin: 'Email or password is incorrect.',
+  SessionRequired: 'Sign in to continue.',
+};
+
+const DOTS = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Crect x='10' y='10' width='1.6' height='1.6' fill='%23faf8f5' fill-opacity='0.14'/%3E%3C/svg%3E")`;
+
+function LoginForm() {
+  const params = useSearchParams();
+  const callbackUrl = safeCallback(params.get('callbackUrl'));
+  const { status } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [show, setShow] = useState(false);
+  const expired = params.has('expired');
+  const [error, setError] = useState(() => (expired ? 'Your session ended. Sign in again.' : MESSAGES[params.get('error') || ''] || ''));
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const { data: session, status } = useSession();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/admin';
 
-  // Redirect if already authenticated
   useEffect(() => {
-    if (status === 'authenticated' && session) {
-      window.location.href = callbackUrl;
+    // A revoked session still has a cookie: drop it instead of bouncing back to the console.
+    if (expired) {
+      if (status === 'authenticated') signOut({ redirect: false });
+      return;
     }
-  }, [session, status, callbackUrl]);
+    if (status === 'authenticated') window.location.replace(callbackUrl);
+  }, [status, callbackUrl, expired]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email.trim() || !password) {
+      setError('Enter your email and password.');
+      return;
+    }
     setError('');
     setLoading(true);
-
     try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-        callbackUrl,
-      });
-
+      const result = await signIn('credentials', { redirect: false, email, password, callbackUrl });
       if (result?.error) {
-        setError(result.error);
+        setError(MESSAGES[result.error] || result.error);
+        setPassword('');
       } else if (result?.ok) {
-        // Force a hard redirect to ensure complete state refresh
-        window.location.href = callbackUrl;
+        // A full navigation so the console renders with the new session from the server.
+        window.location.replace(callbackUrl);
+        return;
       }
-    } catch (err) {
-      setError('An error occurred during login');
-      console.error('Login error:', err);
-    } finally {
-      setLoading(false);
+    } catch {
+      setError('Sign-in is unavailable right now. Try again in a minute.');
     }
+    setLoading(false);
   };
 
-  // Show loading state while checking session
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-[#263547] flex items-center justify-center">
-        <motion.div
-          initial={false}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Loader2 className="h-12 w-12 animate-spin text-[#B42335]" />
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#263547] flex items-center justify-center p-4">
-      <motion.div
-        initial={false}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md"
-      >
-        <Card className="w-full shadow-2xl border-0 bg-white text-slate-900">
-          <CardHeader className="space-y-1 text-center pb-8 pt-8">
-            <div className="mx-auto mb-4 w-12 h-12 bg-[#B42335] rounded-xl flex items-center justify-center shadow-lg transform rotate-3">
-                <Lock className="w-6 h-6 text-white" />
-            </div>
-            <CardTitle className="text-3xl font-bold tracking-tight text-[#263547]">Admin Access</CardTitle>
-            <CardDescription className="text-slate-500 text-base">
-              Enter your credentials to access the dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                >
-                  <Alert variant="destructive" className="border-red-500 bg-red-50 text-red-900">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                </motion.div>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-700 font-semibold">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-5 w-5 text-slate-600" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-white border-slate-300 text-slate-900 placeholder:text-slate-600 focus-visible:ring-[#B42335] focus:border-[#B42335] h-11 shadow-sm"
-                    required
-                    disabled={loading}
-                  />
-                </div>
-              </div>
+    <form onSubmit={submit} className="field-cream mt-8 rounded-3xl p-6 sm:p-8" noValidate aria-describedby={error ? 'login-error' : undefined}>
+      <h1 className="text-2xl font-semibold tracking-[-0.025em] text-fg">Sign in</h1>
+      <p className="mt-1 text-sm text-fg-soft">To edit the site, answer messages and send invoices.</p>
+      <div className="mt-7 space-y-4">
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-medium text-fg-soft">Email</span>
+          <Input type="email" autoComplete="username" autoFocus required value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={error ? true : undefined} className="h-11" />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 flex items-center justify-between text-[13px] font-medium text-fg-soft">
+            Password
+            <button type="button" onClick={() => setShow((v) => !v)} className="inline-flex items-center gap-1 rounded-md text-[12px] font-normal text-fg-dim hover:text-fg" aria-pressed={show}>
+              {show ? <EyeOff size={13} aria-hidden="true" /> : <Eye size={13} aria-hidden="true" />}
+              {show ? 'Hide' : 'Show'}
+            </button>
+          </span>
+          <Input type={show ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={error ? true : undefined} className="h-11" />
+        </label>
+      </div>
+      {error && (
+        <p id="login-error" role="alert" className="mt-4 flex items-start gap-2 text-[13px] font-medium text-signal-text">
+          <AlertCircle size={15} strokeWidth={2} className="mt-px shrink-0" aria-hidden="true" />
+          {error}
+        </p>
+      )}
+      <Button type="submit" variant="primary" loading={loading} className="mt-6 h-11 w-full">
+        {loading ? 'Signing in…' : 'Sign in'}
+      </Button>
+    </form>
+  );
+}
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-700 font-semibold">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-600" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 bg-white border-slate-300 text-slate-900 placeholder:text-slate-600 focus-visible:ring-[#B42335] focus:border-[#B42335] h-11 shadow-sm"
-                    required
-                    disabled={loading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center text-slate-600 hover:text-slate-600 transition-colors focus:outline-none"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    aria-pressed={showPassword}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-[#B42335] hover:bg-[#941B2B] text-white h-11 font-bold text-base transition-all duration-200 shadow-md hover:shadow-lg mt-2"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Logging in...
-                  </>
-                ) : (
-                  'Sign In'
-                )}
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="flex justify-center pb-8 pt-2">
-            <p className="text-xs text-slate-600 flex items-center gap-1">
-              <Lock className="w-3 h-3" />
-              Protected area. Authorized personnel only.
-            </p>
-          </CardFooter>
-        </Card>
-      </motion.div>
-    </div>
+export default function AdminLogin() {
+  return (
+    <main className="synapse admin-ui field-navy relative grid min-h-dvh place-items-center overflow-hidden px-5 py-12">
+      <div aria-hidden="true" className="absolute inset-0" style={{ backgroundImage: DOTS }} />
+      <span aria-hidden="true" className="absolute left-0 top-0 h-0.5 w-full bg-coral" />
+      <div className="relative w-full max-w-[400px]">
+        <div className="flex items-center gap-3">
+          <Image src="/il-logo-mark.png" alt="" width={36} height={36} priority />
+          <div className="leading-tight">
+            <p className="text-[15px] font-semibold tracking-tight text-fg">Iñaki F. Lozano</p>
+            <p className="text-[13px] text-fg-dim">Console</p>
+          </div>
+        </div>
+        <Suspense fallback={<div className="field-cream mt-8 h-[380px] rounded-3xl" />}>
+          <LoginForm />
+        </Suspense>
+        <Link href="/en" className="mt-6 inline-flex items-center gap-1.5 rounded-md text-[13px] text-fg-dim transition-colors hover:text-fg">
+          <ArrowLeft size={14} strokeWidth={1.75} aria-hidden="true" />
+          Back to the site
+        </Link>
+      </div>
+    </main>
   );
 }

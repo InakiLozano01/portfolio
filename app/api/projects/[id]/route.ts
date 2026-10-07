@@ -1,3 +1,4 @@
+import { toUpdate } from '@/lib/update-doc'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import Project from '@/models/Project'
@@ -47,7 +48,8 @@ export async function PUT(
         if (!admin.ok) return admin.response
 
         await connectToDatabase()
-        const data = normalizeProjectPayload(await request.json())
+        const raw = await request.json()
+        const data = normalizeProjectPayload(raw)
         const optimizedThumbnail = await optimizeExistingProjectThumbnail(data.thumbnail, data.thumbnailOptimization)
         if (optimizedThumbnail) data.thumbnail = optimizedThumbnail
         const variants = await ensureProjectThumbnailVariants(data.thumbnail)
@@ -56,7 +58,7 @@ export async function PUT(
 
         const project = await Project.findByIdAndUpdate(
             id,
-            { $set: data },
+            toUpdate(data, raw),
             { new: true, runValidators: true }
         ).populate('technologies')
 
@@ -76,7 +78,7 @@ export async function PUT(
     } catch (error: any) {
         console.error('Error updating project:', error)
         return NextResponse.json(
-            { error: error.message || 'Failed to update project' },
+            { error: 'Failed to update project' },
             { status: 500 }
         )
     }

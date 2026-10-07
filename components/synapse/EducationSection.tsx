@@ -30,7 +30,7 @@ export default function EducationSection({ lang = 'en', initialContent = null, d
                             <TraceNode live={isOngoing(edu.period)} />
                             <div className="grid gap-x-12 gap-y-4 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)]">
                                 <div>
-                                    <p className="font-mono text-[13px] text-fg-dim">{edu.period}</p>
+                                    <p className="font-mono text-[13px] text-fg-dim">{clean(pick(lang, edu, 'period'))}</p>
                                     <h3 className="mt-3 text-2xl font-semibold tracking-[-0.025em] text-fg sm:text-3xl">{clean(pick(lang, edu, 'degree'))}</h3>
                                 </div>
                                 <div className="text-[17px] leading-relaxed text-fg-soft lg:pt-8">

@@ -31,7 +31,7 @@ export default function ExperienceSection({ lang = 'en', initialContent = null, 
                             <TraceNode live={isOngoing(exp.period)} />
                             <div className="grid gap-x-12 gap-y-5 lg:grid-cols-[minmax(0,4fr)_minmax(0,6fr)]">
                                 <div>
-                                    <p className="font-mono text-[13px] text-fg-dim">{exp.period}</p>
+                                    <p className="font-mono text-[13px] text-fg-dim">{clean(pick(lang, exp, 'period'))}</p>
                                     <h3 className="mt-3 text-2xl font-semibold tracking-[-0.025em] text-fg sm:text-3xl">{clean(pick(lang, exp, 'title'))}</h3>
                                     <p className="mt-2 text-lg text-fg-soft">{clean(exp.company)}</p>
                                 </div>

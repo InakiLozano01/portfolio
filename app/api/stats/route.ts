@@ -4,6 +4,8 @@ import Contact from '@/models/Contact'
 import Project from '@/models/Project'
 import Skill from '@/models/Skill'
 import BlogModel from '@/models/Blog'
+import Comment from '@/models/Comment'
+import Subscriber from '@/models/Subscriber'
 import { requireAdmin } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
@@ -13,13 +15,16 @@ export async function GET(request: Request) {
 
 		await connectToDatabase()
 
-		// Use countDocuments for efficient counting
-		const [messagesCount, unreadCount, projectsCount, skillsCount, blogsCount] = await Promise.all([
+		// One request feeds the whole overview: what needs attention, and what exists.
+		const [messagesCount, unreadCount, projectsCount, skillsCount, blogsCount, draftsCount, pendingComments, subscribersCount] = await Promise.all([
 			Contact.countDocuments({}),
 			Contact.countDocuments({ read: { $ne: true } }),
 			Project.countDocuments({}),
 			Skill.countDocuments({}),
 			BlogModel.countDocuments({}),
+			BlogModel.countDocuments({ published: { $ne: true } }),
+			Comment.countDocuments({ status: 'pending' }),
+			Subscriber.countDocuments({ confirmed: true, unsubscribed: { $ne: true } }),
 		])
 
 		return NextResponse.json({
@@ -28,7 +33,10 @@ export async function GET(request: Request) {
 			projects: projectsCount,
 			skills: skillsCount,
 			blogs: blogsCount,
-		})
+			drafts: draftsCount,
+			pendingComments,
+			subscribers: subscribersCount,
+		}, { headers: { 'Cache-Control': 'private, no-store' } })
 	} catch (error) {
 		console.error('Error fetching stats:', error)
 		return NextResponse.json(

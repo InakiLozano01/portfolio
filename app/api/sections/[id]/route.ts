@@ -156,7 +156,7 @@ export async function PUT(
     if (mongoose.Types.ObjectId.isValid(id)) {
       const sectionById = await SectionModel.findByIdAndUpdate(
         id,
-        updateData,
+        { $set: updateData },
         { new: true, runValidators: true }
       );
 

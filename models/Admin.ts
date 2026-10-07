@@ -20,6 +20,10 @@ const AdminSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  // Sessions that signed in before this moment are no longer accepted.
+  passwordChangedAt: {
+    type: Date,
+  },
 });
 
 // Hash password before saving

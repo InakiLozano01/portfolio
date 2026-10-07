@@ -12,7 +12,7 @@ export async function GET(request: Request) {
         const messages = await Contact.find({})
             .sort({ createdAt: -1 })
             .lean();
-        return NextResponse.json(messages);
+        return NextResponse.json(messages, { headers: { 'Cache-Control': 'private, no-store' } });
     } catch (error) {
         return NextResponse.json(
             { error: 'Failed to fetch messages' },

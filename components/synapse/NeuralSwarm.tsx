@@ -43,6 +43,97 @@ function rng(seed: number) {
     }
 }
 
+/** A board trace in canvas pixels: a polyline with its cumulative segment lengths. */
+interface Wire {
+    pts: number[]
+    acc: number[]
+    total: number
+    coral: boolean
+}
+
+/**
+ * Interconnects on the dot grid, PCB style: bundles of parallel traces come in from the edges,
+ * run straight, jog 45° toward the centre, run straight again and stop in a via short of the swarm.
+ * Cells are claimed on a doubled grid (points and segment midpoints) so no two traces touch or cross.
+ */
+function routeWires(
+    cols: number,
+    rows: number,
+    toPx: (c: number, r: number) => [number, number],
+    centreCell: [number, number],
+    centrePx: [number, number],
+    keepOut: number,
+    avoid: (x: number, y: number) => boolean,
+    want: number,
+): Wire[] {
+    const rand = rng(29)
+    const taken = new Set<number>()
+    const key = (c2: number, r2: number) => (c2 + 4) * 100003 + (r2 + 4)
+    const wires: Wire[] = []
+    // Local frame per edge: u runs inward from the edge, v runs along it.
+    const frames = [
+        (u: number, v: number): [number, number] => [u, v],
+        (u: number, v: number): [number, number] => [cols - 1 - u, v],
+        (u: number, v: number): [number, number] => [v, u],
+        (u: number, v: number): [number, number] => [v, rows - 1 - u],
+    ]
+    const span = [rows, rows, cols, cols]
+    for (let attempt = 0; attempt < 1200 && wires.length < want; attempt++) {
+        const edge = Math.floor(rand() * 4)
+        const frame = frames[edge]
+        const b = 2 + Math.floor(rand() * 5)
+        const v0 = Math.floor(rand() * Math.max(1, span[edge] - b))
+        // Where the centre sits in this frame, to jog toward it.
+        const vc = edge < 2 ? centreCell[1] : centreCell[0]
+        const gap = vc - (v0 + b / 2)
+        const sigma = Math.abs(gap) < 2 ? (rand() < 0.5 ? -1 : 1) : Math.sign(gap)
+        const a = 1 + Math.floor(rand() * 9)
+        const d = Math.max(1, Math.min(Math.abs(gap) | 0, 2 + Math.floor(rand() * 6)))
+        for (let k = 0; k < b; k++) {
+            const v = v0 + k
+            const turn = a + (sigma < 0 ? k : b - 1 - k)
+            const cells: [number, number][] = []
+            for (let u = -1; u <= turn; u++) cells.push(frame(u, v))
+            for (let s = 1; s <= d; s++) cells.push(frame(turn + s, v + sigma * s))
+            let u = turn + d
+            const vEnd = v + sigma * d
+            for (let steps = 0; steps < 60; steps++) {
+                const [c, r] = frame(u + 1, vEnd)
+                if (c < 0 || r < 0 || c >= cols || r >= rows) break
+                const [px, py] = toPx(c, r)
+                if (Math.hypot(px - centrePx[0], py - centrePx[1]) < keepOut) break
+                cells.push([c, r])
+                u++
+            }
+            if (u - (turn + d) < 2) continue
+            // Claim the cells and the midpoints between them; reject any trace that touches another.
+            const claim: number[] = []
+            let ok = true
+            for (let i = 0; i < cells.length && ok; i++) {
+                const [c, r] = cells[i]
+                const [px, py] = toPx(c, r)
+                if (i > 0 && avoid(px, py)) ok = false
+                claim.push(key(c * 2, r * 2))
+                if (i > 0) claim.push(key(c + cells[i - 1][0], r + cells[i - 1][1]))
+            }
+            if (!ok || claim.some((id) => taken.has(id))) continue
+            claim.forEach((id) => taken.add(id))
+            // Keep only the corners.
+            const pts: number[] = []
+            cells.forEach(([c, r], i) => {
+                const prev = cells[i - 1], next = cells[i + 1]
+                if (prev && next && c - prev[0] === next[0] - c && r - prev[1] === next[1] - r) return
+                const [px, py] = toPx(c, r)
+                pts.push(px, py)
+            })
+            const acc = [0]
+            for (let i = 2; i < pts.length; i += 2) acc.push(acc[acc.length - 1] + Math.hypot(pts[i] - pts[i - 2], pts[i + 1] - pts[i - 1]))
+            wires.push({ pts, acc, total: acc[acc.length - 1], coral: rand() < 0.3 })
+        }
+    }
+    return wires
+}
+
 /** A two-hemisphere, gently folded ellipsoid point cloud (unit-ish space). */
 function brainCloud(count: number) {
     const rand = rng(1816)
@@ -250,6 +341,14 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
         const pulses: { path: number; t: number; v: number }[] = []
         let lastPulse = 0
         const fire = new Map<number, number>()
+        // Neon interconnects: the board under everything, with light running along it into the swarm.
+        let gs = 22, gx = 0, gy = 0, gCols = 0, gRows = 0
+        let wires: Wire[] = []
+        const wireLayer = document.createElement('canvas')
+        const wctx = wireLayer.getContext('2d')
+        const currents: { wire: number; s: number; v: number; arrived: boolean }[] = []
+        const viaFlash = new Map<number, number>()
+        let lastCurrent = 0
         let running = false, visible = true, frame = 0, lastSpawn = 0
 
         const layout = () => {
@@ -261,6 +360,65 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
                 scale = Math.min(width * 0.29, height * 0.19)
             }
             markSize = scale * 2.3
+            gs = width >= 1024 ? 22 : 20
+            gCols = Math.ceil(width / gs) + 1
+            gRows = Math.ceil(height / gs) + 1
+            gx = (width - (gCols - 1) * gs) / 2
+            gy = (height - (gRows - 1) * gs) / 2
+            wires = routeWires(
+                gCols,
+                gRows,
+                (c, r) => [gx + c * gs, gy + r * gs],
+                [Math.round((cx - gx) / gs), Math.round((cy - gy) / gs)],
+                [cx, cy],
+                scale * 1.55,
+                (x, y) => behindCopy(x, y, 28),
+                width >= 1024 ? 110 : 40,
+            )
+            currents.length = 0
+            viaFlash.clear()
+            paintWires()
+        }
+        // The idle board is painted once per size; only the light moving along it is drawn per frame.
+        const paintWires = () => {
+            if (!wctx) return
+            wireLayer.width = Math.max(1, Math.round(width * dpr))
+            wireLayer.height = Math.max(1, Math.round(height * dpr))
+            wctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+            wctx.lineJoin = 'miter'
+            wctx.lineCap = 'square'
+            for (const wire of wires) {
+                wctx.strokeStyle = wire.coral ? rgba(CORAL, 0.34) : rgba(CREAM, 0.15)
+                wctx.lineWidth = 1.2
+                wctx.beginPath()
+                wctx.moveTo(wire.pts[0], wire.pts[1])
+                for (let i = 2; i < wire.pts.length; i += 2) wctx.lineTo(wire.pts[i], wire.pts[i + 1])
+                wctx.stroke()
+                const ex = wire.pts[wire.pts.length - 2], ey = wire.pts[wire.pts.length - 1]
+                wctx.strokeStyle = wire.coral ? rgba(CORAL, 0.7) : rgba(CREAM, 0.4)
+                wctx.beginPath()
+                wctx.arc(ex, ey, 3.2, 0, Math.PI * 2)
+                wctx.stroke()
+            }
+            // Let the board fade out under the navigation bar.
+            const fade = wctx.createLinearGradient(0, 0, 0, 96)
+            fade.addColorStop(0, 'rgba(0,0,0,0.9)')
+            fade.addColorStop(1, 'rgba(0,0,0,0)')
+            wctx.globalCompositeOperation = 'destination-out'
+            wctx.fillStyle = fade
+            wctx.fillRect(0, 0, width, 96)
+            wctx.globalCompositeOperation = 'source-over'
+        }
+        const wireAt = (wire: Wire, d: number): [number, number] => {
+            const { pts, acc } = wire
+            for (let k = 1; k < acc.length; k++) {
+                if (d <= acc[k]) {
+                    const f = (d - acc[k - 1]) / (acc[k] - acc[k - 1] || 1)
+                    const i = (k - 1) * 2
+                    return [pts[i] + (pts[i + 2] - pts[i]) * f, pts[i + 1] + (pts[i + 3] - pts[i + 1]) * f]
+                }
+            }
+            return [pts[pts.length - 2], pts[pts.length - 1]]
         }
 
         const build = (mark: MarkSample | null) => {
@@ -357,8 +515,8 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
             fire.set(from, 1)
             lastSpawn = now
         }
-        const behindCopy = (x: number, y: number) =>
-            width >= 1024 ? x < width * 0.47 && y > height * 0.22 && y < height * 0.78 : y < height * 0.5
+        const behindCopy = (x: number, y: number, pad = 0) =>
+            width >= 1024 ? x < width * 0.47 + pad && y > height * 0.22 - pad && y < height * 0.78 + pad : y < height * 0.5 + pad
         const tracePoint = (path: number[][], t: number) => {
             // t runs 1 -> 0: from the via inward to the pin.
             let total = 0
@@ -445,11 +603,7 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
             if (eased.x < -9000) { eased.x = pointer.x; eased.y = pointer.y }
             eased.x += (pointer.x - eased.x) * 0.1
             eased.y += (pointer.y - eased.y) * 0.1
-            const spacing = width >= 1024 ? 22 : 20
-            const cols = Math.ceil(width / spacing) + 1
-            const rows = Math.ceil(height / spacing) + 1
-            const offX = (width - (cols - 1) * spacing) / 2
-            const offY = (height - (rows - 1) * spacing) / 2
+            const spacing = gs, cols = gCols, rows = gRows, offX = gx, offY = gy
             const wave = reduce ? 0 : now / 2400
             for (let row = 0; row < rows; row++) {
                 for (let col = 0; col < cols; col++) {
@@ -486,6 +640,73 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
                     }
                     ctx.fillStyle = rgba(tint, behindCopy(x, y) ? alpha * 0.35 : alpha)
                     ctx.fillRect(x - size / 2, y - size / 2, size, size)
+                }
+            }
+
+            // The board, then neon current running in from the edges; each arrival makes the brain fire.
+            if (wires.length) {
+                ctx.drawImage(wireLayer, 0, 0, width, height)
+                if (!reduce) {
+                    const every = chipness > 0.6 ? 70 : width >= 1024 ? 150 : 300
+                    if (now - lastCurrent > every && currents.length < (width >= 1024 ? 26 : 10)) {
+                        currents.push({ wire: Math.floor(Math.random() * wires.length), s: 0, v: 0.32 + Math.random() * 0.34, arrived: false })
+                        lastCurrent = now
+                    }
+                    ctx.save()
+                    ctx.globalCompositeOperation = 'lighter'
+                    ctx.lineCap = 'round'
+                    const tail = width >= 1024 ? 170 : 120
+                    for (let k = currents.length - 1; k >= 0; k--) {
+                        const cur = currents[k]
+                        const wire = wires[cur.wire]
+                        if (!wire) { currents.splice(k, 1); continue }
+                        cur.s += cur.v * dt
+                        if (!cur.arrived && cur.s >= wire.total) {
+                            cur.arrived = true
+                            viaFlash.set(cur.wire, 1)
+                            if (brainness > 0.9 && neurons.length) spawn(Math.floor(Math.random() * neurons.length), now)
+                        }
+                        if (cur.s - tail >= wire.total) { currents.splice(k, 1); continue }
+                        const col = wire.coral ? CORAL : CREAM
+                        const head = Math.min(cur.s, wire.total)
+                        const from = Math.max(0, cur.s - tail)
+                        const steps = 9
+                        // Three strokes per step (halo, core, filament) read as a lit tube without any blur.
+                        for (const [lw, la] of [[9, 0.08], [3.5, 0.28], [1.4, 1]] as const) {
+                            ctx.lineWidth = lw
+                            let [px, py] = wireAt(wire, from)
+                            for (let st = 1; st <= steps; st++) {
+                                const d = from + ((head - from) * st) / steps
+                                const [qx, qy] = wireAt(wire, d)
+                                const f = (1 - (cur.s - d) / tail) * (0.1 + 0.9 * clamp01((qy - 40) / 60))
+                                ctx.strokeStyle = rgba(col, la * f * f)
+                                ctx.beginPath()
+                                ctx.moveTo(px, py)
+                                ctx.lineTo(qx, qy)
+                                ctx.stroke()
+                                px = qx
+                                py = qy
+                            }
+                        }
+                    }
+                    for (const [w, v] of viaFlash) {
+                        const wire = wires[w]
+                        const ex = wire.pts[wire.pts.length - 2], ey = wire.pts[wire.pts.length - 1]
+                        const col = wire.coral ? CORAL : CREAM
+                        ctx.fillStyle = rgba(col, v * 0.9)
+                        ctx.beginPath()
+                        ctx.arc(ex, ey, 3.2, 0, Math.PI * 2)
+                        ctx.fill()
+                        ctx.strokeStyle = rgba(col, v * 0.35)
+                        ctx.lineWidth = 1
+                        ctx.beginPath()
+                        ctx.arc(ex, ey, 3.2 + (1 - v) * 12, 0, Math.PI * 2)
+                        ctx.stroke()
+                        const next = v - dt * 0.0016
+                        if (next <= 0) viaFlash.delete(w)
+                        else viaFlash.set(w, next)
+                    }
+                    ctx.restore()
                 }
             }
 
