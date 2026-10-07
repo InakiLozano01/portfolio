@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb'
 import Project, { IProject } from '@/models/Project'
 import { Types } from 'mongoose'
 import { slugify } from '@/lib/utils'
+import { externalizeProjectImages } from '@/lib/project-content-images'
 
 interface Skill {
     _id: Types.ObjectId;
@@ -31,7 +32,8 @@ export const getProjectCards = async () => {
     return JSON.parse(JSON.stringify(projects))
 }
 
-export const getProjectBySlug = async (slug: string) => {
+// Metadata and page content share one lookup during each server render.
+export const getProjectBySlug = cache(async (slug: string) => {
     await connectToDatabase()
 
     const normalizedSlug = slug?.toString().trim().toLowerCase()
@@ -75,6 +77,11 @@ export const getProjectBySlug = async (slug: string) => {
         return null
     }
 
+    for (const field of ['description', 'description_en', 'description_es'] as const) {
+        const html = project[field]
+        if (typeof html === 'string') project[field] = await externalizeProjectImages(html)
+    }
+
     return {
         ...project,
         _id: project._id.toString(),
@@ -83,7 +90,7 @@ export const getProjectBySlug = async (slug: string) => {
             _id: tech._id.toString()
         }))
     }
-}
+})
 
 export const getAllProjects = cache(async () => {
     await connectToDatabase()

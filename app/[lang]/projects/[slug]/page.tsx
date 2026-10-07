@@ -129,6 +129,11 @@ export async function generateMetadata({
 
 export const revalidate = 300
 
+// Cache public case studies on first request; the build has no database access.
+export function generateStaticParams() {
+    return []
+}
+
 interface ProjectPageProps {
     params: Promise<{
         slug: string
@@ -288,9 +293,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                     <div className="relative -mt-24 overflow-hidden rounded-2xl ring-1 ring-line/10">
                         <Image
                             src={project.thumbnail}
+                            unoptimized={project.thumbnail.startsWith('/images/projects/') && /\.webp$/i.test(project.thumbnail)}
                             alt={localized.title}
                             width={1920}
                             height={1080}
+                            sizes="(max-width: 1024px) calc(100vw - 40px), 960px"
                             className="h-auto w-full"
                             priority
                             placeholder="blur"
@@ -339,7 +346,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                                     .replace(/<table>/g, '<table class="w-full border-collapse my-4">')
                                     .replace(/<th>/g, '<th class="border px-3 py-2 text-left">')
                                     .replace(/<td>/g, '<td class="border px-3 py-2">')
-                                    .replace(/<img/g, '<img class="rounded-xl my-6 max-w-full h-auto"')
+                                    .replace(/<img/g, '<img loading="lazy" decoding="async" class="rounded-xl my-6 max-w-full h-auto"')
                                 return isHtml ? html : html.replace(/\n/g, '<br />')
                             })()
                         }}

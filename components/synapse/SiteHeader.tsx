@@ -130,7 +130,7 @@ export default function SiteHeader({
                 {dictionary.skipToContent || 'Skip to content'}
             </a>
             <div
-                className={`transition-[background-color,border-color,backdrop-filter] duration-500 ${scrolled || open ? 'border-b border-line/[0.08] bg-navy/90 backdrop-blur-md' : 'border-b border-transparent bg-transparent'}`}
+                className={`transition-[background-color,border-color,backdrop-filter] duration-500 ${linkOnly ? 'border-b border-line/[0.08] bg-navy' : scrolled || open ? 'border-b border-line/[0.08] bg-navy/90 backdrop-blur-md' : 'border-b border-transparent bg-transparent'}`}
             >
                 <nav
                     className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-6 px-5 sm:px-8"

@@ -52,6 +52,8 @@ function ProjectPanel({ project, lang, t }: { project: ProjectCard; lang: Lang; 
                 {thumb && (
                     <Image
                         src={thumb}
+                        // The CMS already creates a compact 640px WebP for the grid.
+                        unoptimized={Boolean(project.thumbnailSmall)}
                         alt={`${t.thumbnailAlt || 'Thumbnail image for project'} ${title}`}
                         fill
                         sizes="(max-width: 1024px) 100vw, 560px"
@@ -61,11 +63,10 @@ function ProjectPanel({ project, lang, t }: { project: ProjectCard; lang: Lang; 
                     />
                 )}
             </div>
-            <div className="relative flex flex-1 flex-col p-6 sm:p-7">
+            <div className="flex flex-1 flex-col p-6 sm:p-7">
                 <h3 className="text-2xl font-semibold tracking-[-0.025em] text-fg">
                     <Link
                         href={`/${lang}/projects/${slug}`}
-                        prefetch={false}
                         className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-2xl focus-visible:after:ring-2 focus-visible:after:ring-coral"
                     >
                         {title}
