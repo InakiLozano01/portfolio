@@ -334,6 +334,20 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
         const eased = { x: -9999, y: -9999 }
         const drag = { on: false, id: -1, lastX: 0, lastY: 0, moved: 0, target: -1 }
         let hovered = -1
+        let labelHits: { idx: number; x: number; y: number; w: number; h: number }[] = []
+        const hitTarget = (x: number, y: number) => {
+            const label = labelHits.find(box => x >= box.x && x <= box.x + box.w && y >= box.y && y <= box.y + box.h)
+            if (label) return label.idx
+            let hit = -1, distance = 28
+            if (brainness < 0.6) return hit
+            anchors.forEach((k, idx) => {
+                const i = neurons[k]
+                if (sz[i] < 0.05) return
+                const d = Math.hypot(sx[i] - x, sy[i] - y)
+                if (d < distance) { distance = d; hit = idx }
+            })
+            return hit
+        }
         let lastInteraction = -Infinity
         const beats: number[] = []
         let lastBeat = 0
@@ -548,15 +562,16 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
             const interacting = drag.on || now - lastInteraction < 16000
 
             // Director: mark -> brain -> (16s untouched) -> chip -> mark -> brain ...
-            const raw = clamp01((now - scene.start) / scene.dur)
-            const p = scene.from === 'scatter' ? 1 : easeInOut(raw)
-            if (raw >= 1 && !scene.settledAt) scene.settledAt = now
+            if (now - scene.start >= scene.dur && !scene.settledAt) scene.settledAt = now
             if (scene.settledAt && !reduce) {
                 const held = now - scene.settledAt
                 if (scene.to === 'mark' && held > (scene.from === 'scatter' ? 650 + 1500 : 1300)) go('brain', 1700, now)
                 else if (scene.to === 'brain' && !interacting && held > 16000) go('chip', 1600, now)
                 else if (scene.to === 'chip' && held > 6200 && !interacting) go('mark', 1300, now)
             }
+            // go() resets the clock. Blend using the NEW scene's progress in this same frame.
+            const raw = clamp01((now - scene.start) / scene.dur)
+            const p = scene.from === 'scatter' ? 1 : easeInOut(raw)
             const fromWeight = (s: Scene) => (s === 'brain' ? scene.fromBrain : s === 'chip' ? scene.fromChip : scene.from === s ? 1 : 0)
             const weight = (s: Scene) => fromWeight(s) * (1 - p) + (scene.to === s ? p : 0)
             brainness = weight('brain')
@@ -568,7 +583,7 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
                 tiltX += velX * dt
                 velY *= 0.95
                 velX *= 0.95
-                if (!reduce) rotY += dt * 0.00018
+                if (!reduce && hovered < 0) rotY += dt * 0.00018
                 tiltX += (-0.18 - tiltX) * 0.004
             }
             tiltX = Math.max(-1.1, Math.min(1.1, tiltX))
@@ -888,7 +903,8 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
                 }
             } else if (chipness < 0.1) pulses.length = 0
 
-            hovered = -1
+            hovered = pointer.active && !drag.on ? hitTarget(pointer.x, pointer.y) : -1
+            labelHits = []
             if (brainness > 0.6) {
                 for (let s = signals.length - 1; s >= 0; s--) {
                     const sig = signals[s]
@@ -924,18 +940,6 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
                 if (!reduce && now - lastSpawn > 140) spawn(Math.floor(Math.random() * neurons.length), now)
 
                 // Clickable targets: sections and projects riding on front-facing neurons.
-                let best = 22
-                if (pointer.active && !drag.on) {
-                    anchors.forEach((k, idx) => {
-                        const i = neurons[k]
-                        if (sz[i] < 0.05) return
-                        const d = Math.hypot(sx[i] - pointer.x, sy[i] - pointer.y)
-                        if (d < best) {
-                            best = d
-                            hovered = idx
-                        }
-                    })
-                }
                 // Labels are placed in priority order (hover, sections, then nearest projects); a label that
                 // would collide with one already placed is skipped and its node keeps only its dot.
                 const placed: { x: number; y: number; w: number; h: number }[] = []
@@ -953,7 +957,7 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
                     if (a <= 0.02) return
                     const item = targets[idx]
                     const section = item.kind === 'section'
-                    const dot = isHover ? 9 : section ? 7 : 5
+                    const dot = isHover ? 12 : section ? 9 : 7
                     ctx.fillStyle = rgba(section ? CREAM : CORAL, a)
                     ctx.fillRect(sx[i] - dot / 2, sy[i] - dot / 2, dot, dot)
                     if (isHover) {
@@ -961,15 +965,16 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
                         ctx.lineWidth = 1.5
                         ctx.strokeRect(sx[i] - 9, sy[i] - 9, 18, 18)
                     }
-                    if (width < 640 && !isHover) return
-                    ctx.font = section ? `600 ${isHover ? 14 : 12}px ${sans}` : `500 ${isHover ? 12 : 11}px ${mono}`
-                    const text = isHover ? `${item.label}  →` : item.label
+                    ctx.font = section ? `600 16px ${sans}` : `500 14px ${mono}`
+                    const text = item.label
                     const w = ctx.measureText(text).width
                     const side = sx[i] > cx && sx[i] + 26 + w < width - 12 ? 1 : -1
                     const lx = Math.min(width - w - 8, Math.max(8, side > 0 ? sx[i] + 22 : sx[i] - 22 - w))
-                    const box = { x: lx - 8, y: sy[i] - 36, w: w + 16, h: 26 }
+                    const box = { x: lx - 10, y: sy[i] - 48, w: w + 20, h: 44 }
                     if (!isHover && placed.some((r) => box.x < r.x + r.w && box.x + box.w > r.x && box.y < r.y + r.h && box.y + box.h > r.y)) return
+                    if (behindCopy(box.x, box.y) || behindCopy(box.x + box.w, box.y + box.h)) return
                     placed.push(box)
+                    if (a >= 0.4) labelHits.push({ idx, ...box })
                     ctx.strokeStyle = rgba(CREAM, a * 0.55)
                     ctx.lineWidth = 1
                     ctx.beginPath()
@@ -978,9 +983,13 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
                     ctx.stroke()
                     if (isHover) {
                         ctx.fillStyle = rgba(CREAM, 1)
-                        ctx.fillRect(lx - 7, sy[i] - 35, w + 14, 24)
+                        ctx.fillRect(box.x, box.y, box.w, box.h)
                         ctx.fillStyle = rgba(NAVY, 1)
-                    } else ctx.fillStyle = rgba(CREAM, a)
+                    } else {
+                        ctx.fillStyle = rgba(NAVY, a * 0.85)
+                        ctx.fillRect(box.x, box.y, box.w, box.h)
+                        ctx.fillStyle = rgba(CREAM, a)
+                    }
                     ctx.fillText(text, lx, sy[i] - 18)
                 })
             }
@@ -1008,7 +1017,7 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
 
         const local = (event: PointerEvent) => {
             const rect = canvas.getBoundingClientRect()
-            return { x: event.clientX - rect.left, y: event.clientY - rect.top, h: rect.height }
+            return { x: (event.clientX - rect.left) * width / rect.width, y: (event.clientY - rect.top) * height / rect.height, h: height }
         }
         const onPointerMove = (event: PointerEvent) => {
             const pt = local(event)
@@ -1034,6 +1043,7 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
         }
         const onPointerDown = (event: PointerEvent) => {
             const pt = local(event)
+            hovered = hitTarget(pt.x, pt.y)
             const onShape = Math.hypot(pt.x - cx, pt.y - cy) < scale * 1.5
             // Tapping the chip or the mark brings the brain back.
             if (onShape && scene.to !== 'brain' && scene.from !== 'scatter') {
@@ -1063,17 +1073,7 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
             if (!wasClick) return
             // A tap opens the node under the cursor when pressed, else the nearest front-facing one.
             const pt = local(event)
-            let pick = drag.target
-            let best = pick >= 0 ? -1 : 28
-            anchors.forEach((k, idx) => {
-                const i = neurons[k]
-                if (sz[i] < 0.05) return
-                const d = Math.hypot(sx[i] - pt.x, sy[i] - pt.y)
-                if (d < best) {
-                    best = d
-                    pick = idx
-                }
-            })
+            const pick = drag.target >= 0 ? drag.target : hitTarget(pt.x, pt.y)
             if (pick < 0) return
             const href = targets[pick].href
             if (href.startsWith('#')) {
@@ -1088,6 +1088,7 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
             pointer.active = false
             pointer.inside = false
         }
+        const onPointerCancel = () => { drag.on = false; drag.target = -1 }
         const onVisibility = () => (document.hidden ? stop() : start())
 
         let cancelled = false
@@ -1102,7 +1103,7 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
         window.addEventListener('pointermove', onPointerMove, { passive: true })
         canvas.addEventListener('pointerdown', onPointerDown)
         window.addEventListener('pointerup', onPointerUp)
-        window.addEventListener('pointercancel', onPointerUp)
+        window.addEventListener('pointercancel', onPointerCancel)
         document.addEventListener('pointerleave', onLeave)
         document.addEventListener('visibilitychange', onVisibility)
         resize()
@@ -1124,7 +1125,7 @@ export default function NeuralSwarm({ targets = [], markSrc = '/il-logo-mark.png
             window.removeEventListener('pointermove', onPointerMove)
             canvas.removeEventListener('pointerdown', onPointerDown)
             window.removeEventListener('pointerup', onPointerUp)
-            window.removeEventListener('pointercancel', onPointerUp)
+            window.removeEventListener('pointercancel', onPointerCancel)
             document.removeEventListener('pointerleave', onLeave)
             document.removeEventListener('visibilitychange', onVisibility)
         }

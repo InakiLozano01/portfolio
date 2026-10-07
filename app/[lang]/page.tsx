@@ -9,6 +9,12 @@ import ClientPage from './client-page'
 
 export const revalidate = 300
 
+// Generate each locale on its first runtime request, then reuse the rendered page.
+// Build containers have no database; pre-rendering there would cache empty content.
+export function generateStaticParams() {
+    return []
+}
+
 async function getInitialSections() {
     if (process.env.SKIP_DB_DURING_BUILD === 'true') return []
 
