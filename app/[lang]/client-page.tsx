@@ -135,6 +135,30 @@ export default function ClientPage({ lang, dictionary, initialSections, initialP
 
     useEffect(() => {
         if (!sections.length) return
+        // One observer gates every decorative loop; no per-frame React updates.
+        const motionObserver = new IntersectionObserver(entries => {
+            for (const entry of entries) {
+                (entry.target as HTMLElement).dataset.motion = entry.isIntersecting ? 'active' : 'paused'
+            }
+        })
+        const frame = document.querySelector<HTMLElement>('.synapse')
+        const visibility = () => {
+            if (frame) frame.dataset.pageHidden = String(document.hidden)
+        }
+        visibility()
+        document.addEventListener('visibilitychange', visibility)
+        for (const section of sections) {
+            const element = document.getElementById(section.id)
+            if (element) motionObserver.observe(element)
+        }
+        return () => {
+            motionObserver.disconnect()
+            document.removeEventListener('visibilitychange', visibility)
+        }
+    }, [sections])
+
+    useEffect(() => {
+        if (!sections.length) return
         const observer = new IntersectionObserver(entries => {
             const visible = entries.filter(entry => entry.isIntersecting)
                 .sort((a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top))

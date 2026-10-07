@@ -145,7 +145,7 @@ export default function ProjectsSection({ lang = 'en', initialProjects = [], dic
     if (!projects.length) return null
     const header = (
         <div className="mx-auto w-full max-w-[1400px] px-5 sm:px-8">
-            <SectionHeading title={t.heading || 'Projects'} lead={t.principalProject} />
+            <SectionHeading title={t.heading || 'Projects'} lead={t.principalProject} circuit="code" />
             {t.principalProject && (
                 <a
                     href="https://ethos.ar"

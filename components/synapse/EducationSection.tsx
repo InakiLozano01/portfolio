@@ -21,7 +21,7 @@ export default function EducationSection({ lang = 'en', initialContent = null, d
 
     return (
         <Trace joinTop={traceTop} joinBottom={traceBottom}>
-            <SectionHeading title={t.title || 'Education'} />
+            <SectionHeading title={t.title || 'Education'} circuit="logic" />
             <ol className="mt-16 space-y-14">
                 {education.map((edu, index) => {
                     const description = clean(pick(lang, edu, 'description'))

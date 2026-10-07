@@ -124,7 +124,7 @@ export default function ContactSection({ lang = 'en', initialContent = null, dic
         <div className="relative">
             <div className="grid gap-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-24">
                 <div>
-                    <SectionHeading title={t.title || 'Get in Touch'} />
+                    <SectionHeading title={t.title || 'Get in Touch'} circuit="network" />
                     {email && (
                         <Reveal className="mt-12">
                             <p className="text-sm text-fg-dim">{t.orWrite || 'Or write directly'}</p>

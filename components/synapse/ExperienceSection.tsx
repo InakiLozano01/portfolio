@@ -21,7 +21,7 @@ export default function ExperienceSection({ lang = 'en', initialContent = null, 
 
     return (
         <Trace joinTop={traceTop} joinBottom={traceBottom}>
-            <SectionHeading title={t.title || 'Experience'} />
+            <SectionHeading title={t.title || 'Experience'} circuit="pipeline" />
             <ol className="mt-16 space-y-16 md:space-y-20">
                 {experiences.map((exp, index) => {
                     const description = clean(pick(lang, exp, 'description'))

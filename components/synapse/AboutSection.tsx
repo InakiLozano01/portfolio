@@ -51,7 +51,7 @@ export default function AboutSection({ lang = 'en', initialContent = null, dicti
             </motion.div>
 
             <div>
-                <SectionHeading title={t.aboutMe || 'About Me'} />
+                <SectionHeading title={t.aboutMe || 'About Me'} circuit="neural" />
                 <div className="mt-10 space-y-6 text-lg leading-[1.75] text-fg-soft">
                     {paragraphs.map((paragraph, i) => (
                         <Reveal key={i} delay={i * 0.05}>

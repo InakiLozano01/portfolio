@@ -173,7 +173,7 @@ export default function StackSection({ lang = 'en', initialContent = null, initi
     const lead = clean(pick(lang, initialContent, 'description')) || t.descriptionFallback
     return (
         <div>
-            <SectionHeading title={heading} lead={lead} />
+            <SectionHeading title={heading} lead={lead} circuit="chip" />
 
             <div className="mt-10 hidden items-center gap-x-10 gap-y-4 sm:grid lg:grid-cols-2 xl:grid-cols-3">
                 {groups.map((group, index) => (

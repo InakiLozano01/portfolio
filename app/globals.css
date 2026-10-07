@@ -439,7 +439,74 @@ html:has(.synapse) {
 	animation: synapse-dash 3s linear infinite;
 }
 
+/* Small circuit studies accompany the real section content. */
+.section-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 24px 40px;
+}
+.section-heading > div { flex-basis: 320px; }
+.section-circuit {
+	width: 280px;
+	height: 132px;
+	max-width: 100%;
+	flex-shrink: 0;
+	color: rgb(var(--fg));
+	pointer-events: none;
+	overflow: visible;
+}
+.circuit-wire, .circuit-node {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.25;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.circuit-wire { stroke-opacity: 0.3; }
+.circuit-node { fill: rgb(var(--field)); stroke-opacity: 0.6; }
+.circuit-core { fill: rgb(var(--signal)); }
+.section-motion.circuit-core { animation: circuit-fire 4.8s ease-in-out infinite; }
+.circuit-packet {
+	fill: none;
+	stroke: rgb(var(--signal));
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-dasharray: 9 91;
+	animation: circuit-flow 4.8s linear infinite;
+}
+.circuit-check, .circuit-code, .circuit-encode {
+	fill: none;
+	stroke: rgb(var(--signal));
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.circuit-check { animation: circuit-fire 3.6s ease-in-out infinite; }
+.circuit-code { animation: circuit-fire 5s ease-in-out infinite; }
+.circuit-encode {
+	stroke-dasharray: 24 76;
+	animation: circuit-flow 6s linear infinite;
+}
+@keyframes circuit-flow { to { stroke-dashoffset: -100; } }
+@keyframes circuit-fire { 0%, 100% { opacity: 0.3; } 40%, 65% { opacity: 1; } }
+.synapse section :is(.section-motion, .synapse-signal, [class*="animate-[synapse-orbit"]) {
+	animation-play-state: paused;
+}
+.synapse section[data-motion="active"] :is(.section-motion, .synapse-signal, [class*="animate-[synapse-orbit"]) {
+	animation-play-state: running;
+}
+.synapse[data-page-hidden="true"] section :is(.section-motion, .synapse-signal, [class*="animate-[synapse-orbit"]) {
+	animation-play-state: paused;
+}
+@media (max-width: 639px) {
+	.section-heading { gap: 24px; }
+	.section-circuit { width: 224px; height: 106px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
+	.synapse .section-circuit * { animation: none !important; }
 	.synapse *, .synapse *::before, .synapse *::after {
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;

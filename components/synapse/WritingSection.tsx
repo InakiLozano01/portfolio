@@ -34,7 +34,7 @@ export default function WritingSection({ lang = 'en', initialContent = null, ini
 
     return (
         <div>
-            <SectionHeading title={heading} lead={lead} />
+            <SectionHeading title={heading} lead={lead} circuit="writing" />
 
             {initialBlogs.length > 6 && (
                 <label className="relative mt-10 block max-w-md">

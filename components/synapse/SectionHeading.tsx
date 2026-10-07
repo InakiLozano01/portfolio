@@ -2,18 +2,21 @@
 
 import { motion } from 'framer-motion'
 import { EASE_OUT } from './content'
+import SectionCircuit, { type CircuitKind } from './SectionCircuit'
 
 interface SectionHeadingProps {
     title: string
     lead?: string
     id?: string
     className?: string
+    circuit?: CircuitKind
 }
 
 /** Section title with a coral signal node that fires as the heading arrives. */
-export default function SectionHeading({ title, lead, id, className = '' }: SectionHeadingProps) {
+export default function SectionHeading({ title, lead, id, className = '', circuit }: SectionHeadingProps) {
     return (
-        <div className={`max-w-3xl ${className}`}>
+        <div className={`section-heading ${className}`}>
+            <div className="min-w-0 max-w-3xl flex-1">
             <motion.h2
                 id={id}
                 className="flex items-baseline gap-4 text-4xl font-semibold tracking-[-0.035em] text-fg text-balance sm:text-5xl lg:text-6xl"
@@ -38,6 +41,8 @@ export default function SectionHeading({ title, lead, id, className = '' }: Sect
                     {lead}
                 </motion.p>
             )}
+            </div>
+            {circuit && <SectionCircuit kind={circuit} />}
         </div>
     )
 }
