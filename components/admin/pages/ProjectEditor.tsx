@@ -75,7 +75,6 @@ export default function ProjectEditor({ id }: { id?: string }) {
   const [project, setProject] = useState<Project>(BLANK)
   const [base, setBase] = useState<Project>(BLANK)
   const saved = snapshot(base)
-  const current = useRef<Project>(BLANK)
   const readyAt = useRef(0)
   const [loading, setLoading] = useState(!!id)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -86,13 +85,12 @@ export default function ProjectEditor({ id }: { id?: string }) {
   const [techQuery, setTechQuery] = useState('')
   const [slugTouched, setSlugTouched] = useState(false)
 
-  current.current = project
   const dirty = snapshot(project) !== saved
   // TinyMCE re-serialises the HTML it is given right after init; that is not an edit.
-  const editorChange = (value: string) => {
+  const handleEditorChange = (value: string) => {
     const key = `description_${lang}` as const
-    if (Date.now() - readyAt.current < 1200) setBase((b) => (b[key] === current.current[key] ? { ...b, [key]: value } : b))
-    set(key, value)
+    if (Date.now() - readyAt.current < 1200) setBase((b) => (b[key] === project[key] ? { ...b, [key]: value } : b))
+    setProject((previous) => ({ ...previous, [key]: value }))
   }
   const draft = useLocalDraft<Project>(`console:project:${id || 'new'}`, project, dirty)
   useUnsavedGuard(dirty)
@@ -264,7 +262,7 @@ export default function ProjectEditor({ id }: { id?: string }) {
             </Field>
             <div>
               <p className="mb-1.5 text-[13px] font-medium text-fg-soft">Case study</p>
-              <RichText key={lang} ref={editorRef} id={`project-description-${lang}`} label={lang === 'en' ? 'Case study (English)' : 'Case study (Spanish)'} height={480} value={project[`description_${lang}`]} onReady={() => { readyAt.current = Date.now() }} onChange={editorChange} />
+              <RichText key={lang} ref={editorRef} id={`project-description-${lang}`} label={lang === 'en' ? 'Case study (English)' : 'Case study (Spanish)'} height={480} value={project[`description_${lang}`]} onReady={() => { readyAt.current = Date.now() }} onChange={handleEditorChange} />
             </div>
           </div>
 

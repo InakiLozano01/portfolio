@@ -74,7 +74,6 @@ export default function PostEditor({ id }: { id?: string }) {
   const [post, setPost] = useState<Post>(BLANK)
   const [base, setBase] = useState<Post>(BLANK)
   const saved = snapshot(base)
-  const current = useRef<Post>(BLANK)
   const readyAt = useRef(0)
   const [wasPublished, setWasPublished] = useState(false)
   const [loading, setLoading] = useState(!!id)
@@ -87,13 +86,12 @@ export default function PostEditor({ id }: { id?: string }) {
   const [newsletterOpen, setNewsletterOpen] = useState(false)
   const uploadRefs = { en: useRef<HTMLInputElement | null>(null), es: useRef<HTMLInputElement | null>(null) }
 
-  current.current = post
   const dirty = snapshot(post) !== saved
   // TinyMCE re-serialises the HTML it is given right after init; that is not an edit.
-  const editorChange = (value: string) => {
+  const handleEditorChange = (value: string) => {
     const key = `content_${lang}` as const
-    if (Date.now() - readyAt.current < 1200) setBase((b) => (b[key] === current.current[key] ? { ...b, [key]: value } : b))
-    set(key, value)
+    if (Date.now() - readyAt.current < 1200) setBase((b) => (b[key] === post[key] ? { ...b, [key]: value } : b))
+    setPost((previous) => ({ ...previous, [key]: value }))
   }
   const draft = useLocalDraft<Post>(`console:post:${id || 'new'}`, post, dirty)
   useUnsavedGuard(dirty)
@@ -296,7 +294,7 @@ export default function PostEditor({ id }: { id?: string }) {
                 label={lang === 'en' ? 'Post body (English)' : 'Post body (Spanish)'}
                 height={620}
                 value={post[`content_${lang}`]}
-                onReady={() => { readyAt.current = Date.now() }} onChange={editorChange}
+                onReady={() => { readyAt.current = Date.now() }} onChange={handleEditorChange}
               />
             </div>
             <details className="group rounded-2xl border border-line/10 bg-surface" open={!!(post[`footer_${lang}`] || post[`bibliography_${lang}`])}>
