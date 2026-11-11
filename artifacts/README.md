@@ -1,0 +1,83 @@
+# Artifacts server
+
+Shareable, never-indexed HTML artifacts at `https://artifacts.inakilozano.com/<slug>`. Every artifact can have guest editors whose edits persist on the server.
+
+- **App origin** `artifacts.inakilozano.com`: agent API, guest login, and the viewer "shell" page.
+- **Content origin** `artifacts-content.inakilozano.com`: serves the artifact's own files inside a sandboxed iframe.
+
+The server is a single Node process with no npm dependencies (`node:sqlite`, `crypto.argon2`), started with `artifacts/compose.yml` behind the host nginx.
+
+## Publishing (agents)
+
+Auth: `Authorization: Bearer <token>`. The token is stored in the agent keys hub as service **`artifacts`** and is never printed. Call through the hub:
+
+```sh
+# from myvps
+echo '{"title":"CRM etapas Andrés","html":"<!doctype html>..."}' | agent-keys-hub artifacts POST /api/v1/artifacts
+agent-keys-hub artifacts GET /api/v1/artifacts
+```
+
+The MCP tools work too: `hub_key_operation service=artifacts operation=create-artifact|list-artifacts`.
+
+| Method | Path (`/api/v1/...`) | Body / notes |
+|---|---|---|
+| GET | `artifacts` | List artifacts. |
+| POST | `artifacts` | `{title, html, slug?, visibility?: "public"\|"private", note?, files?: [{path, content \| base64, contentType?}]}`. The slug comes from the title (`crm-etapas-andres`, then `-2` if taken) unless you pass one. |
+| GET | `artifacts/:ref` | `:ref` is the id or the slug. Returns the versions, the current files, the credential usernames and the current `stateRev`. |
+| PATCH | `artifacts/:ref` | `{title?, slug?, visibility?}`. Renaming the slug breaks old links: there is no redirect. |
+| DELETE | `artifacts/:ref` | Deletes everything: versions, files, state, credentials. |
+| POST | `artifacts/:ref/versions` | `{html?, files?, removeFiles?: [path], note?}`. Starts from the previous version's files. The slug serves the latest version. |
+| POST | `artifacts/:ref/rollback` | `{version}` creates a new version that copies an old one. |
+| GET | `artifacts/:ref/files/<path>?version=N` | Download a file, e.g. the current `index.html` before you edit it. |
+| PUT | `artifacts/:ref/files/<path>` | Raw body (≤ 15 MB) with a `Content-Type` header. Creates a new version. |
+| DELETE | `artifacts/:ref/files/<path>` | Creates a new version without that file. |
+| POST | `artifacts/:ref/credentials` | `{username, password?, replace?}`. Leave out `password` and one is generated and **returned once**. `replace: true` resets the password and logs out that user's sessions. |
+| DELETE | `artifacts/:ref/credentials/:username` | Revokes the credential, its sessions, and every content link already issued. |
+| GET / PUT | `artifacts/:ref/state` | Read or seed the editable state. PUT takes `{state, baseRev?}`. GET accepts `?rev=N`. |
+| GET | `artifacts/:ref/state/history?limit=` | `[{rev, savedBy, savedAt, bytes}]`. The newest 500 revisions are kept. |
+| GET / POST / DELETE | `tokens`, `tokens/:id` | List, create (`{name}`, the token is returned once) or revoke API tokens. |
+
+Limits: request bodies up to 40 MB, 15 MB per file, 100 MB and 300 files per version, 2 MB per state document.
+
+Asset paths must be **relative** (`img/logo.png`, never `/img/logo.png`). The artifact is served under a per-version capability path.
+
+## Visibility and editing
+
+- `public`: anyone with the link can view. Only credential holders can edit.
+- `private`: anyone without a session sees a login form and nothing else, not even the title. Content links already issued stop working as soon as the artifact turns private.
+- Credentials are scoped to one artifact. Logging in sets an `HttpOnly; Secure; SameSite=Strict` `__Host-` cookie that lasts 30 days. Writes also require a per-session CSRF token and the app `Origin`. After 10 failed logins per IP, or per artifact+username, in 15 minutes, logins return 429; nginx `auth_limit` also applies.
+
+## Client contract (inside the artifact)
+
+Every HTML file served gets a script injected that defines `window.artifact`. The artifact never sees cookies or tokens. Calls go through `postMessage` to the shell, and the shell talks to the API.
+
+```js
+const info = await artifact.ready;          // {id, slug, title, version, visibility, hasCredentials, user, canEdit}
+const { state, rev, savedBy, savedAt } = await artifact.getState();   // state is null until the first save
+const saved = await artifact.saveState(newState, { baseRev: rev });  // opens the login dialog if needed
+// errors carry .code: 'unauthorized' | 'conflict' (err.currentRev) | 'too_large' | 'cancelled' | 'not_framed'
+await artifact.history();                   // editors only: [{rev, savedBy, savedAt, bytes}]
+await artifact.getState({ rev: 3 });        // editors only: an older revision
+await artifact.login(); await artifact.logout();
+artifact.onSession(info => { /* re-render on login/logout */ });
+```
+
+`examples/crm-stages.html` is a complete editable example (stages, tasks, triggers).
+
+## Security model
+
+Artifact HTML runs on a separate origin, inside `<iframe sandbox="allow-scripts allow-forms allow-popups ...">` without `allow-same-origin`. The content origin also sends `Content-Security-Policy: sandbox ...`, so the sandbox holds even when the file is opened directly. Artifact code therefore runs in an opaque origin. It cannot read app cookies, the session, the CSRF token, other artifacts or storage, and it cannot call the API: there is no CORS, and the guest API requires a custom header that forces a preflight the server never answers. The shell answers `postMessage` only from its own iframe, and only for its own artifact. Content URLs carry an HMAC capability bound to artifact, version and epoch, valid 12 h. Passwords are stored with argon2id. API tokens are 256-bit random values stored as SHA-256 hashes.
+
+Pages are never indexed: `robots.txt` disallows everything, every response carries `X-Robots-Tag: noindex, nofollow, noarchive` (from both the app and nginx), every served page gets a robots `<meta>` tag, and there is no sitemap.
+
+## Operations
+
+```sh
+docker compose -f artifacts/compose.yml up -d --build                           # deploy (port 127.0.0.1:3480)
+docker compose -f artifacts/compose.yml exec -T artifacts node server.mjs token create <name>   # prints once; pipe it into a secret store
+docker compose -f artifacts/compose.yml exec artifacts node server.mjs token list | token revoke <id>
+artifacts/backup.sh                                                             # snapshot + blobs -> ~/backups/artifacts (cron 02:50, keeps 14)
+node --test artifacts/selftest.mjs                                              # end-to-end test against a throwaway server
+```
+
+The data lives in `/home/ubuntu/vps/artifacts-data` (bind mount): `artifacts.db` plus content-addressed `blobs/`. To restore, stop the container, extract a backup tarball into that directory, and start it again.

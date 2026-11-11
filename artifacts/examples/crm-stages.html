@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Etapas del CRM</title>
+<style>
+  :root { --ink:#16181d; --muted:#667085; --line:#e4e7ec; --bg:#f7f8fa; --accent:#2f5bea; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink); background:var(--bg); }
+  header { position:sticky; top:0; z-index:1; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+           padding:14px 24px; background:#fff; border-bottom:1px solid var(--line); }
+  h1 { font-size:18px; margin:0; }
+  #status { color:var(--muted); font-size:13px; }
+  main { max-width:960px; margin:0 auto; padding:24px; display:grid; gap:16px; }
+  .stage { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  .stage-head { display:flex; gap:10px; align-items:center; }
+  .num { flex:none; width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; display:grid; place-items:center; font-weight:600; font-size:13px; }
+  input, textarea { font:inherit; color:inherit; width:100%; border:1px solid transparent; border-radius:6px; padding:4px 6px; background:transparent; }
+  input:hover, textarea:hover { border-color:var(--line); }
+  input:focus, textarea:focus { outline:none; border-color:var(--accent); background:#fff; }
+  input:disabled, textarea:disabled { border-color:transparent; }
+  .stage-name { font-weight:600; font-size:16px; }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:10px; }
+  @media (max-width:640px) { .cols { grid-template-columns:1fr; } }
+  h3 { font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:6px 0; }
+  ul { list-style:none; margin:0; padding:0; display:grid; gap:4px; }
+  li { display:flex; gap:6px; align-items:center; }
+  button { font:inherit; font-size:13px; border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px 12px; cursor:pointer; }
+  button.primary { background:var(--ink); color:#fff; border-color:var(--ink); }
+  button.ghost { border:0; background:none; color:var(--muted); padding:4px 6px; }
+  button:disabled { opacity:.5; cursor:default; }
+  .ro .edit-only { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1 id="title">Etapas del CRM</h1><div id="status">Cargando…</div></div>
+  <div>
+    <button id="login" type="button">Ingresar para editar</button>
+    <button id="add" class="edit-only" type="button">+ Etapa</button>
+    <button id="save" class="primary edit-only" type="button" disabled>Guardar</button>
+  </div>
+</header>
+<main id="stages"></main>
+<script>
+const DEFAULT = { stages: [
+  { name: 'Lead nuevo', tasks: ['Registrar origen del contacto'], triggers: ['Formulario web recibido'] },
+  { name: 'Calificación', tasks: ['Llamada de descubrimiento'], triggers: ['Lead asignado a un vendedor'] },
+  { name: 'Propuesta', tasks: ['Enviar propuesta'], triggers: ['Necesidad confirmada'] },
+] };
+let data = DEFAULT, rev = 0, canEdit = false, dirty = false;
+const $ = (id) => document.getElementById(id);
+const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); n.append(...kids); return n; };
+
+function list(label, items) {
+  const ul = el('ul');
+  items.forEach((text, i) => ul.append(el('li', {},
+    el('input', { value: text, disabled: !canEdit, ariaLabel: label, oninput: (e) => { items[i] = e.target.value; touch(); } }),
+    el('button', { className: 'ghost edit-only', type: 'button', textContent: '✕', ariaLabel: 'Quitar', onclick: () => { items.splice(i, 1); touch(true); } }))));
+  return el('div', {}, el('h3', { textContent: label }), ul,
+    el('button', { className: 'ghost edit-only', type: 'button', textContent: '+ agregar', onclick: () => { items.push(''); touch(true); } }));
+}
+function render() {
+  document.body.classList.toggle('ro', !canEdit);
+  $('stages').replaceChildren(...data.stages.map((s, i) => el('section', { className: 'stage' },
+    el('div', { className: 'stage-head' },
+      el('span', { className: 'num', textContent: i + 1 }),
+      el('input', { className: 'stage-name', value: s.name, disabled: !canEdit, ariaLabel: 'Nombre de la etapa', oninput: (e) => { s.name = e.target.value; touch(); } }),
+      el('button', { className: 'ghost edit-only', type: 'button', textContent: '↑', ariaLabel: 'Subir', disabled: i === 0, onclick: () => { data.stages.splice(i - 1, 0, ...data.stages.splice(i, 1)); touch(true); } }),
+      el('button', { className: 'ghost edit-only', type: 'button', textContent: 'Eliminar', onclick: () => { data.stages.splice(i, 1); touch(true); } })),
+    el('div', { className: 'cols' }, list('Tareas', s.tasks), list('Disparadores', s.triggers)))));
+}
+function touch(rerender) { dirty = true; $('save').disabled = false; if (rerender) render(); }
+function status(text) { $('status').textContent = text; }
+function savedLine(r) { return r.rev ? `Versión ${r.rev} · guardado por ${r.savedBy} · ${new Date(r.savedAt).toLocaleString('es-AR')}` : 'Sin cambios guardados todavía'; }
+function session(info) {
+  canEdit = info.canEdit;
+  $('login').textContent = canEdit ? `${info.user} · Salir` : 'Ingresar para editar';
+  $('login').hidden = !info.hasCredentials;
+  render();
+}
+
+$('login').onclick = () => (canEdit ? artifact.logout() : artifact.login()).then(session).catch(() => {});
+$('add').onclick = () => { data.stages.push({ name: 'Nueva etapa', tasks: [], triggers: [] }); touch(true); };
+$('save').onclick = async () => {
+  $('save').disabled = true;
+  try {
+    const r = await artifact.saveState(data, { baseRev: rev });
+    rev = r.rev; dirty = false; status(savedLine(r));
+  } catch (e) {
+    $('save').disabled = false;
+    if (e.code === 'conflict') status('Alguien guardó cambios mientras editabas. Recargá la página para ver la última versión.');
+    else if (e.code !== 'cancelled') status('No se pudo guardar: ' + e.message);
+  }
+};
+addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
+
+artifact.onSession(session);
+artifact.ready.then(async (info) => {
+  $('title').textContent = info.title;
+  session(info);
+  const r = await artifact.getState();
+  if (r.state) { data = r.state; rev = r.rev; }
+  status(savedLine(r));
+  render();
+}).catch((e) => status('Error: ' + e.message));
+</script>
+</body>
+</html>
