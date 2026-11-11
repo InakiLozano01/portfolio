@@ -9,15 +9,16 @@ The server is a single Node process with no npm dependencies (`node:sqlite`, `cr
 
 ## Publishing (agents)
 
-Auth: `Authorization: Bearer <token>`. The token is stored in the agent keys hub as service **`artifacts`** and is never printed. Call through the hub:
+Auth: the Bearer token is held by the keys hub as service **`artifacts-inaki`**. Do not print it. From a host authorized to SSH to myvps, use the broker for paths under `/api/v1/`:
 
 ```sh
-# from myvps
-echo '{"title":"CRM etapas Andrés","html":"<!doctype html>..."}' | agent-keys-hub artifacts POST /api/v1/artifacts
-agent-keys-hub artifacts GET /api/v1/artifacts
+printf '%s' '{"title":"Example","html":"<!doctype html>..."}' | python3 /home/ubuntu/vps/agent-hub/packages/keys-hub/cli.py artifacts-inaki POST /api/v1/artifacts
+python3 /home/ubuntu/vps/agent-hub/packages/keys-hub/cli.py artifacts-inaki GET /api/v1/artifacts
 ```
 
-The MCP tools work too: `hub_key_operation service=artifacts operation=create-artifact|list-artifacts`.
+The broker returns JSON containing `status`, `etag`, and `body`. Its CLI accepts request bodies up to 1 MiB and does not expose a custom Content-Type; use JSON `files` for uploads through this client. The server limits below may be higher. The older `agent-keys-hub` installation may receive Cloudflare 403.
+
+The agent MCP supports `hub_key_operation service=artifacts-inaki operation=create-artifact|list-artifacts`, currently returning status only. Arbitrary artifact-specific paths are not exposed by that MCP; use the broker with authorized myvps access. Choose a slug when creating through MCP and verify the public URL.
 
 | Method | Path (`/api/v1/...`) | Body / notes |
 |---|---|---|

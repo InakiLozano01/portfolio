@@ -11,10 +11,10 @@ Full reference: `artifacts/README.md` in the portfolio repo (InakiLozano01/portf
 
 ## Auth
 
-The token lives in the keys hub as service `artifacts` (Bearer, prefix `/api/v1/`). Never ask for it and never print it.
+The token lives in the keys hub as service `artifacts-inaki` (Bearer, prefix `/api/v1/`). Never ask for it and never print it.
 
-- MCP: `hub_key_operation service=artifacts operation=create-artifact body={title, html, visibility?, slug?, files?}` and `operation=list-artifacts`.
-- From myvps, any path: `echo '<json>' | agent-keys-hub artifacts METHOD /api/v1/...`
+- MCP: `hub_key_operation service=artifacts-inaki operation=create-artifact body={title, html, visibility?, slug?, files?}` and `operation=list-artifacts`. The hub currently returns the upstream status only, not the created URL or list data. Choose a slug when creating and verify its URL.
+- For response data or artifact-specific paths, use the broker on myvps: `python3 /home/ubuntu/vps/agent-hub/packages/keys-hub/cli.py artifacts-inaki METHOD /api/v1/...`. Pass JSON bodies on stdin; the JSON response contains `status`, `etag`, and `body`. The CLI accepts at most 1 MiB of request body and does not expose a custom Content-Type; use JSON `files` rather than the raw file upload endpoint. The older `agent-keys-hub` installation may receive Cloudflare 403. SSH access to myvps is required; a hub grant alone does not provide arbitrary-path access.
 
 ## Recipes
 
