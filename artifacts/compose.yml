@@ -1,0 +1,34 @@
+# artifacts.inakilozano.com (app/API) + artifacts-content.inakilozano.com (sandboxed content), one process.
+# Deploy: docker compose -f artifacts/compose.yml up -d --build   (from the repo root)
+# Data lives in ARTIFACTS_DATA_DIR (bind mount) so it survives rebuilds; see artifacts/backup.sh.
+services:
+  artifacts:
+    labels:
+      - "autoheal=true"   # see /home/ubuntu/vps/server-admin/autoheal/
+    build: .
+    image: portfolio-artifacts:local
+    restart: unless-stopped
+    init: true
+    user: "${ARTIFACTS_UID:-1001}:${ARTIFACTS_GID:-1001}"
+    read_only: true
+    tmpfs: [/tmp]
+    ports:
+      - "127.0.0.1:${ARTIFACTS_PORT:-3480}:3000"
+    environment:
+      APP_ORIGIN: https://artifacts.inakilozano.com
+      CONTENT_ORIGIN: https://artifacts-content.inakilozano.com
+    volumes:
+      - ${ARTIFACTS_DATA_DIR:-/home/ubuntu/vps/artifacts-data}:/data:rw
+    cpus: "0.5"
+    mem_limit: 256m
+    memswap_limit: 256m
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
