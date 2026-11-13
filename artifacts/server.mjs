@@ -3,6 +3,8 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
+import { pipeline } from 'node:stream/promises';
 import { DatabaseSync } from 'node:sqlite';
 import * as L from './lib.mjs';
 import { clientJs, SHELL_JS, SHELL_CSS } from './client.mjs';
@@ -16,6 +18,25 @@ const CFG = {
 const APP_HOST = new URL(CFG.appOrigin).host;
 const CONTENT_HOST = new URL(CFG.contentOrigin).host;
 const LIMITS = { body: 40 << 20, file: 15 << 20, version: 100 << 20, files: 300, state: 2 << 20, stateRevs: 500 };
+function envInt(name, fallback, min = 1) {
+  const raw = process.env[name];
+  if (raw == null || raw === '') return fallback;
+  const n = Number(raw);
+  if (!Number.isSafeInteger(n) || n < min) { console.error(`${name} must be an integer >= ${min}, got ${JSON.stringify(raw)}`); process.exit(2); }
+  return n;
+}
+const TEST_MODE = process.env.NODE_ENV === 'test' || process.env.ARTIFACTS_TEST_MODE === '1';
+const UPLOAD = {
+  maxBytes: envInt('ARTIFACTS_MAX_UPLOAD_BYTES', 2 ** 30),
+  partBytes: TEST_MODE ? envInt('ARTIFACTS_UPLOAD_PART_BYTES', 8 << 20) : 8 << 20,
+  versionBytes: envInt('ARTIFACTS_MAX_UPLOAD_VERSION_BYTES', 2 ** 31),
+  freeMargin: envInt('ARTIFACTS_MIN_FREE_BYTES', 2 ** 30, 0),
+  sessions: 8, openBytes: 4 * 2 ** 30, ttl: 864e5,
+};
+const UPLOAD_TYPES = new Set(['application/pdf', 'text/html; charset=utf-8', 'image/png', 'image/jpeg', 'image/webp', 'image/gif',
+  'application/json', 'text/csv', 'text/plain', 'application/zip', 'application/octet-stream']);
+const MAGIC = Object.fromEntries(Object.entries({ 'application/pdf': '%PDF-', 'image/png': '\x89PNG\r\n\x1a\n', 'image/jpeg': '\xff\xd8\xff',
+  'application/zip': 'PK\x03\x04' }).map(([t, m]) => [t, Buffer.from(m, 'latin1')]));
 const SESSION_MS = 30 * 864e5;
 const CONTENT_TTL = 12 * 3600;
 const ROBOTS = 'noindex, nofollow, noarchive';
@@ -42,7 +63,19 @@ CREATE TABLE IF NOT EXISTS credentials(id INTEGER PRIMARY KEY, artifact_id INTEG
 CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY, artifact_id INTEGER NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
   credential_id INTEGER NOT NULL REFERENCES credentials(id) ON DELETE CASCADE, csrf TEXT NOT NULL, expires_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS states(id INTEGER PRIMARY KEY, artifact_id INTEGER NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
-  rev INTEGER NOT NULL, json TEXT NOT NULL, saved_by TEXT NOT NULL, saved_at TEXT NOT NULL, UNIQUE(artifact_id, rev));`);
+  rev INTEGER NOT NULL, json TEXT NOT NULL, saved_by TEXT NOT NULL, saved_at TEXT NOT NULL, UNIQUE(artifact_id, rev));
+CREATE TABLE IF NOT EXISTS uploads(id INTEGER PRIMARY KEY AUTOINCREMENT, -- ids are never reused, so a stale client cannot hit a newer session
+  artifact_id INTEGER NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
+  path TEXT NOT NULL, size INTEGER NOT NULL, sha256 TEXT NOT NULL, content_type TEXT NOT NULL, part_size INTEGER NOT NULL, parts INTEGER NOT NULL,
+  state TEXT NOT NULL DEFAULT 'open' CHECK(state IN ('open','completed')), version INTEGER,
+  created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, created_by_token INTEGER NOT NULL, CHECK((state = 'completed') = (version IS NOT NULL)));
+CREATE TABLE IF NOT EXISTS upload_parts(upload_id INTEGER NOT NULL REFERENCES uploads(id) ON DELETE CASCADE, n INTEGER NOT NULL,
+  sha256 TEXT NOT NULL, size INTEGER NOT NULL, PRIMARY KEY(upload_id, n));`);
+if (!db.prepare('PRAGMA table_info(api_tokens)').all().some((c) => c.name === 'private_only'))
+  db.exec('ALTER TABLE api_tokens ADD COLUMN private_only INTEGER NOT NULL DEFAULT 0');
+// NULL for artifacts created before ownership was tracked: private-only tokens cannot touch those.
+if (!db.prepare('PRAGMA table_info(artifacts)').all().some((c) => c.name === 'created_by_token'))
+  db.exec('ALTER TABLE artifacts ADD COLUMN created_by_token INTEGER');
 
 const stmts = new Map();
 const q = (sql) => stmts.get(sql) ?? stmts.set(sql, db.prepare(sql)).get(sql);
@@ -66,6 +99,12 @@ function putBlob(buf) {
     fs.renameSync(tmp, p);
   }
   return sha;
+}
+function moveIntoBlobs(tmp, sha) {
+  const p = blobPath(sha);
+  if (fs.existsSync(p)) return fs.rmSync(tmp);
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.renameSync(tmp, p);
 }
 function gcBlobs() {
   const live = new Set(q('SELECT DISTINCT blob FROM files').all().map((r) => r.blob));
@@ -166,8 +205,18 @@ function fileEntry(p, f, contentType) {
 }
 
 // New immutable version = files of `fromVersionId` (or nothing) + `files` - `remove`.
-function writeVersion(a, { fromVersionId, files = [], remove = [], note = null, by }) {
-  const blobs = files.map((f) => ({ ...f, sha: putBlob(f.buf) }));
+// `files` items carry either `buf`, or `sha` + `size` of a blob already in the store. `inTx(version)` commits with the version.
+// LIMITS.version caps the bytes one request adds; the whole version may reach UPLOAD.versionBytes (uploads add more than 100 MB).
+function writeVersion(a, { fromVersionId, files = [], remove = [], note = null, by, inTx }) {
+  const added = files.reduce((n, f) => n + (f.buf?.length ?? 0), 0);
+  if (added > LIMITS.version) throw new HttpError(413, 'too_large', `request adds more than ${LIMITS.version} bytes`);
+  const blobs = files.map((f) => (f.sha ? f : { ...f, sha: putBlob(f.buf), size: f.buf.length }));
+  try { return commitVersion(a, { fromVersionId, blobs, remove, note, by, inTx }); } catch (e) {
+    for (const b of blobs) if (!q('SELECT 1 FROM files WHERE blob=? LIMIT 1').get(b.sha)) fs.rmSync(blobPath(b.sha), { force: true });
+    throw e;
+  }
+}
+function commitVersion(a, { fromVersionId, blobs, remove, note, by, inTx }) {
   return tx(() => {
     const cur = q('SELECT current_version FROM artifacts WHERE id=?').get(a.id).current_version;
     const next = cur + 1;
@@ -175,14 +224,15 @@ function writeVersion(a, { fromVersionId, files = [], remove = [], note = null, 
     if (fromVersionId) q('INSERT INTO files(version_id,path,blob,size,content_type) SELECT ?,path,blob,size,content_type FROM files WHERE version_id=?').run(vid, fromVersionId);
     for (const b of blobs) {
       q(`INSERT INTO files(version_id,path,blob,size,content_type) VALUES(?,?,?,?,?)
-         ON CONFLICT(version_id,path) DO UPDATE SET blob=excluded.blob,size=excluded.size,content_type=excluded.content_type`).run(vid, b.path, b.sha, b.buf.length, b.type);
+         ON CONFLICT(version_id,path) DO UPDATE SET blob=excluded.blob,size=excluded.size,content_type=excluded.content_type`).run(vid, b.path, b.sha, b.size, b.type);
     }
     for (const p of remove) q('DELETE FROM files WHERE version_id=? AND path=?').run(vid, p);
     const t = q('SELECT COUNT(*) n, COALESCE(SUM(size),0) bytes, SUM(path=\'index.html\') idx FROM files WHERE version_id=?').get(vid);
     if (!t.idx) throw bad('a version must contain index.html');
-    if (t.bytes > LIMITS.version) throw new HttpError(413, 'too_large', `version exceeds ${LIMITS.version} bytes`);
+    if (t.bytes > UPLOAD.versionBytes) throw new HttpError(413, 'too_large', `version exceeds ${UPLOAD.versionBytes} bytes`);
     if (t.n > LIMITS.files) throw bad(`version exceeds ${LIMITS.files} files`);
     q('UPDATE artifacts SET current_version=?, updated_at=? WHERE id=?').run(next, now(), a.id);
+    inTx?.(next);
     return next;
   });
 }
@@ -245,18 +295,27 @@ setInterval(() => {
 // ---------- agent API ----------
 function agent(req) {
   const m = /^Bearer\s+(\S+)$/i.exec(req.headers.authorization || '');
-  const t = m && q('SELECT id,name FROM api_tokens WHERE token_hash=? AND revoked_at IS NULL').get(L.sha256(m[1]));
+  const t = m && q('SELECT id,name,private_only FROM api_tokens WHERE token_hash=? AND revoked_at IS NULL').get(L.sha256(m[1]));
   if (!t) throw new HttpError(401, 'unauthorized', 'Missing or invalid bearer token', { auth: true });
   q('UPDATE api_tokens SET last_used_at=? WHERE id=?').run(now(), t.id);
-  return `agent:${t.name}`;
+  return { id: t.id, by: `agent:${t.name}`, privateOnly: !!t.private_only };
+}
+const forbidden = (message) => new HttpError(403, 'forbidden', message);
+// A private-only token (the CRM) may act only on private artifacts it created itself.
+function assertAccess(tok, a) {
+  if (tok.privateOnly && (a.created_by_token !== tok.id || a.visibility !== 'private')) throw forbidden('This token can only use private artifacts it created');
 }
 
 async function agentApi(req, res, parts, url) {
-  const by = agent(req);
+  const tok = agent(req);
+  const { by } = tok;
   const M = req.method;
   const [r0, ref, r2, ...rest] = parts; // artifacts/:ref/<r2>/<rest>
+  if (r0 === 'uploads') return uploadsApi(req, res, tok, ref, r2, rest);
   if (r0 === 'tokens') {
-    if (M === 'GET' && !ref) return send(res, 200, q('SELECT id,name,created_at createdAt,last_used_at lastUsedAt,revoked_at revokedAt FROM api_tokens ORDER BY id').all());
+    // A private-only token must not mint itself an unrestricted one.
+    if (tok.privateOnly) throw forbidden('This token cannot manage tokens');
+    if (M === 'GET' && !ref) return send(res, 200, q('SELECT id,name,private_only privateOnly,created_at createdAt,last_used_at lastUsedAt,revoked_at revokedAt FROM api_tokens ORDER BY id').all());
     if (M === 'POST' && !ref) {
       const { name } = await readJson(req, 4096);
       if (typeof name !== 'string' || !/^[\w.-]{1,64}$/.test(name)) throw bad('name must match [A-Za-z0-9_.-]{1,64}');
@@ -272,15 +331,21 @@ async function agentApi(req, res, parts, url) {
   if (r0 !== 'artifacts') throw new HttpError(404, 'not_found', 'Unknown endpoint');
 
   if (!ref) {
-    if (M === 'GET') return send(res, 200, q('SELECT * FROM artifacts ORDER BY updated_at DESC').all().map(summary));
+    if (M === 'GET') {
+      const rows = tok.privateOnly
+        ? q("SELECT * FROM artifacts WHERE created_by_token=? AND visibility='private' ORDER BY updated_at DESC").all(tok.id)
+        : q('SELECT * FROM artifacts ORDER BY updated_at DESC').all();
+      return send(res, 200, rows.map(summary));
+    }
     if (M === 'POST') {
       const body = await readJson(req, LIMITS.body);
       const title = checkTitle(body.title);
       const slug = body.slug != null ? checkSlug(body.slug) : uniqueSlug(L.slugify(title));
-      const visibility = body.visibility != null ? checkVisibility(body.visibility) : 'public';
+      const visibility = body.visibility != null ? checkVisibility(body.visibility) : tok.privateOnly ? 'private' : 'public';
+      if (tok.privateOnly && visibility !== 'private') throw forbidden('This token can only create private artifacts');
       const files = parseFiles(body);
       const t = now();
-      const id = Number(q('INSERT INTO artifacts(slug,title,visibility,created_at,updated_at) VALUES(?,?,?,?,?)').run(slug, title, visibility, t, t).lastInsertRowid);
+      const id = Number(q('INSERT INTO artifacts(slug,title,visibility,created_at,updated_at,created_by_token) VALUES(?,?,?,?,?,?)').run(slug, title, visibility, t, t, tok.id).lastInsertRowid);
       const a = q('SELECT * FROM artifacts WHERE id=?').get(id);
       try { writeVersion(a, { files, note: body.note ?? 'initial', by }); } catch (e) { q('DELETE FROM artifacts WHERE id=?').run(id); throw e; }
       return send(res, 201, detail(findArtifact(String(id))));
@@ -289,6 +354,8 @@ async function agentApi(req, res, parts, url) {
 
   const a = findArtifact(ref);
   const sub = r2 ?? '';
+  assertAccess(tok, a);
+  if (tok.privateOnly && ((sub === '' && M === 'DELETE') || sub === 'credentials')) throw forbidden('This token cannot delete artifacts or manage credentials');
   if (sub === '') {
     if (M === 'GET') return send(res, 200, detail(a));
     if (M === 'PATCH') {
@@ -296,6 +363,7 @@ async function agentApi(req, res, parts, url) {
       const title = body.title != null ? checkTitle(body.title) : a.title;
       const slug = body.slug != null ? checkSlug(body.slug, a.id) : a.slug;
       const visibility = body.visibility != null ? checkVisibility(body.visibility) : a.visibility;
+      if (tok.privateOnly && body.visibility === 'public') throw forbidden('This token cannot make an artifact public');
       q('UPDATE artifacts SET title=?,slug=?,visibility=?,updated_at=? WHERE id=?').run(title, slug, visibility, now(), a.id);
       if (visibility === 'private' && a.visibility !== 'private') bumpEpoch(a);
       return send(res, 200, detail(findArtifact(String(a.id))));
@@ -371,6 +439,166 @@ async function agentApi(req, res, parts, url) {
     if (!rest.length && M === 'GET') return send(res, 200, latestState(a, Number(url.searchParams.get('rev')) || 0));
     if (!rest.length && M === 'PUT') return send(res, 200, saveState(a, await readJson(req, LIMITS.state + 4096), by));
   }
+  throw new HttpError(404, 'not_found', 'Unknown endpoint');
+}
+
+// ---------- upload sessions (resumable, one part in memory at a time) ----------
+const UPLOADS = path.join(CFG.dataDir, 'uploads');
+fs.mkdirSync(UPLOADS, { recursive: true });
+const uploadDir = (id) => path.join(UPLOADS, String(id));
+const partFile = (id, n) => path.join(uploadDir(id), `${n}.part`);
+const HEX64 = /^[0-9a-f]{64}$/;
+const hex64 = (v) => (typeof v === 'string' && HEX64.test(v.toLowerCase()) ? v.toLowerCase() : null);
+
+function gcUploads() {
+  q('DELETE FROM uploads WHERE expires_at<?').run(Date.now());
+  for (const { id } of q("SELECT id FROM uploads WHERE state='open'").all()) if (!fs.existsSync(uploadDir(id))) q('DELETE FROM uploads WHERE id=?').run(id);
+  const live = new Set(q("SELECT id FROM uploads WHERE state='open'").all().map((r) => String(r.id)));
+  for (const d of fs.readdirSync(UPLOADS)) if (!live.has(d)) fs.rmSync(path.join(UPLOADS, d), { recursive: true, force: true });
+}
+function loadUpload(ref, tok) {
+  const u = /^\d+$/.test(ref || '') && q('SELECT * FROM uploads WHERE id=? AND expires_at>?').get(Number(ref), Date.now());
+  if (!u || (tok.privateOnly && u.created_by_token !== tok.id)) throw new HttpError(404, 'not_found', 'Upload not found');
+  return u;
+}
+function received(u) {
+  const got = new Set(q('SELECT n FROM upload_parts WHERE upload_id=?').all(u.id).map((r) => r.n));
+  const missing = [];
+  for (let n = 0; n < u.parts && missing.length < 100; n++) if (!got.has(n)) missing.push(n);
+  return { receivedCount: got.size, missing };
+}
+const completedBody = (u) => ({ id: u.id, artifact: u.artifact_id, version: u.version, size: u.size, verified: true });
+const notOpen = () => new HttpError(409, 'conflict', 'Upload is already completed');
+
+async function createUpload(req, res, tok) {
+  const b = await readJson(req, 4096);
+  if (!Number.isInteger(b.artifact)) throw bad('artifact must be an integer id');
+  const a = q('SELECT * FROM artifacts WHERE id=?').get(b.artifact);
+  if (!a) throw new HttpError(404, 'not_found', 'Artifact not found');
+  assertAccess(tok, a);
+  if (typeof b.path !== 'string' || b.path.length > 200 || !L.ASSET_PATH_RE.test(b.path)) throw bad(`invalid file path ${JSON.stringify(b.path)}`);
+  if (!Number.isInteger(b.size) || b.size < 1) throw bad('size must be a positive integer');
+  if (b.size > UPLOAD.maxBytes) throw new HttpError(413, 'too_large', `size exceeds ${UPLOAD.maxBytes} bytes`);
+  const sha = hex64(b.sha256);
+  if (!sha) throw bad('sha256 must be 64 hex chars');
+  const type = b.contentType === 'text/html' ? 'text/html; charset=utf-8' : b.contentType;
+  if (!UPLOAD_TYPES.has(type)) throw bad(`contentType must be one of: ${[...UPLOAD_TYPES, 'text/html'].join(', ')}`);
+  // serveContent reads HTML into memory to inject the bridge script.
+  if (type.startsWith('text/html') && b.size > LIMITS.file) throw new HttpError(413, 'html_too_large', `text/html uploads are limited to ${LIMITS.file} bytes`);
+  // Parts, the assembled copy and the blob briefly coexist; keep a margin for everything else on the disk.
+  const { bavail, bsize } = fs.statfsSync(CFG.dataDir);
+  if (bavail * bsize < 2 * b.size + UPLOAD.freeMargin) throw new HttpError(507, 'insufficient_storage', 'Not enough free disk space for this upload');
+  gcUploads();
+  const open = q("SELECT COUNT(*) n, COALESCE(SUM(size),0) bytes FROM uploads WHERE state='open'").get();
+  if (open.n >= UPLOAD.sessions || open.bytes + b.size > UPLOAD.openBytes)
+    throw new HttpError(429, 'upload_limit', `At most ${UPLOAD.sessions} open uploads totalling ${UPLOAD.openBytes} bytes; complete or abort one`);
+  const t = Date.now();
+  const parts = Math.ceil(b.size / UPLOAD.partBytes);
+  const id = Number(q(`INSERT INTO uploads(artifact_id,path,size,sha256,content_type,part_size,parts,created_at,expires_at,created_by_token)
+    VALUES(?,?,?,?,?,?,?,?,?,?)`).run(a.id, b.path, b.size, sha, type, UPLOAD.partBytes, parts, t, t + UPLOAD.ttl, tok.id).lastInsertRowid);
+  fs.mkdirSync(uploadDir(id), { recursive: true });
+  return send(res, 201, { id, artifact: a.id, size: b.size, partSize: UPLOAD.partBytes, parts, expiresAt: t + UPLOAD.ttl });
+}
+
+async function putPart(req, res, u, ref) {
+  const n = /^\d+$/.test(ref) ? Number(ref) : -1;
+  if (n < 0 || n >= u.parts) throw bad(`part must be in [0, ${u.parts})`);
+  const digest = hex64(req.headers['x-content-sha256']);
+  if (!digest) throw bad('X-Content-Sha256 header must be 64 hex chars');
+  if (u.state !== 'open') throw notOpen();
+  const len = Math.min(u.part_size, u.size - n * u.part_size);
+  const wrongLength = bad(`part ${n} must be exactly ${len} bytes`);
+  if (req.headers['content-length'] != null && Number(req.headers['content-length']) !== len) throw wrongLength;
+  const buf = await readBody(req, len).catch((e) => { throw e.status === 413 ? wrongLength : e; });
+  if (buf.length !== len) throw wrongLength;
+  if (L.sha256(buf) !== digest) throw new HttpError(400, 'integrity', 'Part bytes do not match X-Content-Sha256');
+  // Synchronous from here on, so no other request can interleave between the checks and the write.
+  const cur = q('SELECT state FROM uploads WHERE id=?').get(u.id);
+  if (!cur) throw new HttpError(404, 'not_found', 'Upload not found');
+  if (cur.state !== 'open') throw notOpen();
+  const have = q('SELECT sha256 FROM upload_parts WHERE upload_id=? AND n=?').get(u.id, n);
+  if (have && have.sha256 !== digest) throw new HttpError(409, 'conflict', `Part ${n} is already stored with a different digest`);
+  if (!have) {
+    const tmp = `${partFile(u.id, n)}.tmp`;
+    const fd = fs.openSync(tmp, 'w');
+    try { fs.writeFileSync(fd, buf); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+    fs.renameSync(tmp, partFile(u.id, n));
+    q('INSERT INTO upload_parts(upload_id,n,sha256,size) VALUES(?,?,?,?)').run(u.id, n, digest, len);
+  }
+  return send(res, 200, { id: u.id, part: n, receivedCount: received(u).receivedCount, parts: u.parts });
+}
+
+async function completeUpload(req, res, u, tok) {
+  const { note } = await readJson(req, 4096);
+  if (note != null && (typeof note !== 'string' || note.length > 500)) throw bad('note must be a string of at most 500 chars');
+  if (u.state === 'completed') return send(res, 200, completedBody(u));
+  const { receivedCount, missing } = received(u);
+  if (receivedCount < u.parts) throw new HttpError(409, 'incomplete', `${u.parts - receivedCount} parts missing`, { missing });
+  // Same filesystem as blobs/, so the final rename is atomic.
+  const tmp = path.join(uploadDir(u.id), `assembled.${L.randomToken(6)}.tmp`);
+  const hash = crypto.createHash('sha256');
+  let head = Buffer.alloc(0);
+  let size = 0;
+  try {
+    await pipeline(async function* () {
+      for (let n = 0; n < u.parts; n++) {
+        for await (const c of fs.createReadStream(partFile(u.id, n))) {
+          hash.update(c);
+          size += c.length;
+          if (head.length < 8) head = Buffer.concat([head, c.subarray(0, 8)]);
+          yield c;
+        }
+      }
+    }, fs.createWriteStream(tmp, { flush: true }));
+  } catch (e) {
+    fs.rmSync(tmp, { force: true });
+    const cur = q('SELECT * FROM uploads WHERE id=?').get(u.id);
+    if (cur?.state === 'completed') return send(res, 200, completedBody(cur)); // a concurrent complete won and removed the parts
+    if (e.code === 'ENOENT') throw new HttpError(409, 'conflict', 'Upload parts are gone (aborted?); open a new upload');
+    throw e;
+  }
+  const cur = q('SELECT * FROM uploads WHERE id=?').get(u.id);
+  const fail = (err) => { fs.rmSync(tmp, { force: true }); throw err; };
+  if (!cur) fail(new HttpError(404, 'not_found', 'Upload not found'));
+  if (cur.state === 'completed') { fs.rmSync(tmp, { force: true }); return send(res, 200, completedBody(cur)); }
+  if (size !== u.size || hash.digest('hex') !== u.sha256) {
+    // Every part matched its own digest, so which bytes are wrong is unknown: drop all parts and let the client resend.
+    q('DELETE FROM upload_parts WHERE upload_id=?').run(u.id);
+    fs.rmSync(uploadDir(u.id), { recursive: true, force: true });
+    fs.mkdirSync(uploadDir(u.id), { recursive: true });
+    throw new HttpError(422, 'integrity', 'Assembled file does not match the declared sha256; resend all parts');
+  }
+  const magic = MAGIC[u.content_type];
+  if (magic && !head.subarray(0, magic.length).equals(magic)) fail(new HttpError(422, 'content_type_mismatch', `File content is not ${u.content_type}`));
+  // Visibility or the artifact itself may have changed while the parts were assembled.
+  const a = q('SELECT * FROM artifacts WHERE id=?').get(u.artifact_id);
+  if (!a) fail(new HttpError(404, 'not_found', 'Artifact not found'));
+  try { assertAccess(tok, a); } catch (e) { fail(e); }
+  moveIntoBlobs(tmp, u.sha256);
+  const version = writeVersion(a, {
+    fromVersionId: versionRow(a)?.id, files: [{ path: u.path, sha: u.sha256, size: u.size, type: u.content_type }],
+    note: note ?? `upload ${u.path}`, by: tok.by,
+    inTx: (v) => q("UPDATE uploads SET state='completed', version=? WHERE id=?").run(v, u.id),
+  });
+  fs.rmSync(uploadDir(u.id), { recursive: true, force: true });
+  return send(res, 200, completedBody({ ...u, version }));
+}
+
+async function uploadsApi(req, res, tok, ref, sub, rest) {
+  const M = req.method;
+  if (!ref && M === 'POST') return createUpload(req, res, tok);
+  const u = loadUpload(ref, tok);
+  if (!sub && M === 'GET') {
+    return send(res, 200, { id: u.id, artifact: u.artifact_id, size: u.size, partSize: u.part_size, parts: u.parts, ...received(u),
+      state: u.state, expiresAt: u.expires_at, ...(u.version != null ? { version: u.version } : {}) });
+  }
+  if (!sub && M === 'DELETE') {
+    q('DELETE FROM uploads WHERE id=?').run(u.id);
+    fs.rmSync(uploadDir(u.id), { recursive: true, force: true });
+    return send(res, 200, { id: u.id, aborted: true });
+  }
+  if (sub === 'parts' && rest.length === 1 && M === 'PUT') return putPart(req, res, u, rest[0]);
+  if (sub === 'complete' && !rest.length && M === 'POST') return completeUpload(req, res, u, tok);
   throw new HttpError(404, 'not_found', 'Unknown endpoint');
 }
 
@@ -514,12 +742,14 @@ async function handle(req, res) {
 // ---------- CLI ----------
 const [cmd, sub, arg] = process.argv.slice(2);
 if (cmd === 'token' && sub === 'create') {
-  if (!/^[\w.-]{1,64}$/.test(arg || '')) { console.error('usage: token create <name>'); process.exit(2); }
+  const extra = process.argv.slice(5);
+  // A mistyped flag must not silently mint an unrestricted token.
+  if (!/^[\w.][\w.-]{0,63}$/.test(arg || '') || extra.length > 1 || (extra.length && extra[0] !== '--private-only')) { console.error('usage: token create <name> [--private-only]'); process.exit(2); }
   const token = L.randomToken(32);
-  q('INSERT INTO api_tokens(name,token_hash,created_at) VALUES(?,?,?)').run(arg, L.sha256(token), now());
+  q('INSERT INTO api_tokens(name,token_hash,created_at,private_only) VALUES(?,?,?,?)').run(arg, L.sha256(token), now(), extra.length ? 1 : 0);
   process.stdout.write(token); // printed once, meant to be piped straight into a secret store
 } else if (cmd === 'token' && sub === 'list') {
-  console.table(q('SELECT id,name,created_at,last_used_at,revoked_at FROM api_tokens').all());
+  console.table(q('SELECT id,name,private_only,created_at,last_used_at,revoked_at FROM api_tokens').all());
 } else if (cmd === 'token' && sub === 'revoke') {
   console.log(q('UPDATE api_tokens SET revoked_at=? WHERE id=? AND revoked_at IS NULL').run(now(), Number(arg)).changes ? 'revoked' : 'not found');
 } else if (cmd === 'backup') {
@@ -529,9 +759,11 @@ if (cmd === 'token' && sub === 'create') {
   db.prepare('VACUUM INTO ?').run(out);
   console.log(out);
 } else if (cmd) {
-  console.error('usage: server.mjs [token create <name> | token list | token revoke <id> | backup [file]]');
+  console.error('usage: server.mjs [token create <name> [--private-only] | token list | token revoke <id> | backup [file]]');
   process.exit(2);
 } else {
+  gcUploads();
+  setInterval(gcUploads, 3600e3).unref();
   http.createServer((req, res) => {
     handle(req, res).catch((e) => {
       if (!(e instanceof HttpError)) console.error(new Date().toISOString(), req.method, req.url.split('?')[0], e);
@@ -539,7 +771,8 @@ if (cmd === 'token' && sub === 'create') {
       const err = e instanceof HttpError ? e : new HttpError(500, 'internal', 'Internal error');
       const extra = err.extra || {};
       const headers = extra.retryAfter ? { 'Retry-After': String(extra.retryAfter) } : extra.auth ? { 'WWW-Authenticate': 'Bearer' } : {};
-      send(res, err.status, { error: { code: err.code, message: err.message, ...(extra.currentRev != null ? { currentRev: extra.currentRev } : {}) } }, headers);
+      send(res, err.status, { error: { code: err.code, message: err.message, ...(extra.currentRev != null ? { currentRev: extra.currentRev } : {}),
+        ...(extra.missing ? { missing: extra.missing } : {}) } }, headers);
     });
   }).listen(CFG.port, () => console.log(`artifacts on :${CFG.port} app=${CFG.appOrigin} content=${CFG.contentOrigin}`));
 }

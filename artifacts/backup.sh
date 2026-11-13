@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Nightly backup: consistent SQLite snapshot (VACUUM INTO) + content-addressed blobs, as one tarball.
+# In-flight upload parts (uploads/) are skipped on purpose: an interrupted upload is resent, not restored.
 # Usage: artifacts/backup.sh            BACKUP_ROOT defaults to ~/backups/artifacts, keeps 14 newest.
 # Restore: stop the container, extract the tarball, move artifacts.db + blobs/ into ARTIFACTS_DATA_DIR, start.
 set -euo pipefail

@@ -36,9 +36,31 @@ The agent MCP supports `hub_key_operation service=artifacts-inaki operation=crea
 | DELETE | `artifacts/:ref/credentials/:username` | Revokes the credential, its sessions, and every content link already issued. |
 | GET / PUT | `artifacts/:ref/state` | Read or seed the editable state. PUT takes `{state, baseRev?}`. GET accepts `?rev=N`. |
 | GET | `artifacts/:ref/state/history?limit=` | `[{rev, savedBy, savedAt, bytes}]`. The newest 500 revisions are kept. |
-| GET / POST / DELETE | `tokens`, `tokens/:id` | List, create (`{name}`, the token is returned once) or revoke API tokens. |
+| GET / POST / DELETE | `tokens`, `tokens/:id` | List, create (`{name}`, the token is returned once) or revoke API tokens. Private-only tokens get 403. |
+| POST | `uploads` | `{artifact: <id>, path, size, sha256, contentType}`. Opens a resumable upload. Returns `{id, artifact, size, partSize, parts, expiresAt}`. |
+| PUT | `uploads/:id/parts/:n` | Raw bytes of part `n` (`0..parts-1`) with header `X-Content-Sha256: <hex>`. Each part is exactly `partSize` bytes, except the last. |
+| GET | `uploads/:id` | `{..., receivedCount, missing: [n] (first 100), state: "open"\|"completed", version?}`. |
+| POST | `uploads/:id/complete` | `{note?}`. Verifies the whole file and creates a new version with it. Safe to repeat. |
+| DELETE | `uploads/:id` | Aborts the upload and deletes its parts. |
 
-Limits: request bodies up to 40 MB, 15 MB per file, 100 MB and 300 files per version, 2 MB per state document.
+Limits: request bodies up to 40 MB, 15 MB per file, 100 MB added per request, 300 files per version, 2 MB per state document. A whole version may reach `ARTIFACTS_MAX_UPLOAD_VERSION_BYTES` (2 GiB), so an artifact that holds a large upload still accepts small edits and rollbacks.
+
+### Uploads
+
+Upload sessions carry files larger than the 15 MB `PUT` limit, in 8 MiB parts that can be sent in any order and resent after a failure. Only one part is held in memory at a time.
+
+- Re-sending a part with the same digest returns 200. A different digest for a stored part returns 409 `conflict`. A part whose bytes do not match `X-Content-Sha256` returns 400 `integrity`.
+- `complete` returns 409 `incomplete` with `missing` until every part is stored. If the assembled file does not match `sha256`, it returns 422 `integrity`, drops all parts and keeps the session open: send every part again. PDF, PNG, JPEG and ZIP files must start with their magic bytes, or `complete` returns 422 `content_type_mismatch`.
+- `text/html` uploads are limited to 15 MB (413 `html_too_large`), because HTML is read into memory when served.
+- `POST uploads` returns 507 `insufficient_storage` when the data disk has less than twice the declared size plus 1 GiB free (`ARTIFACTS_MIN_FREE_BYTES` sets the margin).
+- `contentType` must be one of `application/pdf`, `text/html` (stored as `text/html; charset=utf-8`), `image/png`, `image/jpeg`, `image/webp`, `image/gif`, `application/json`, `text/csv`, `text/plain`, `application/zip`, `application/octet-stream`.
+- Limits: 1 GiB per file (`ARTIFACTS_MAX_UPLOAD_BYTES`), 2 GiB per version created by an upload (`ARTIFACTS_MAX_UPLOAD_VERSION_BYTES`), 8 open sessions, 4 GiB declared across open sessions (429 `upload_limit`). Sessions expire after 24 h. Expired sessions and their parts are deleted at startup and every hour. `ARTIFACTS_UPLOAD_PART_BYTES` changes the part size only when `NODE_ENV=test` or `ARTIFACTS_TEST_MODE=1`; otherwise parts are 8 MiB. Numeric limit variables must be positive integers, or the server exits at startup.
+- `complete` returns 409 `conflict` when the parts disappeared underneath it, for example after a concurrent abort.
+- Session ids are integers and are never reused. Parts live in `uploads/<id>/` under the data directory until `complete` succeeds.
+
+### Private-only tokens
+
+A token created with `--private-only` creates artifacts as `private` by default and gets 403 `forbidden` when it asks for `public` on `POST artifacts` or `PATCH`. Every artifact records the token that created it. A private-only token gets 403 on any artifact it did not create or that is no longer private, on every `artifacts/:ref` route and on `POST uploads`. `GET artifacts` lists only its own private artifacts. It cannot delete artifacts, manage credentials or manage tokens, and it sees only its own upload sessions (others return 404). `complete` checks again that the artifact is still private and still its own. Artifacts created before ownership was recorded have no owner, so only unrestricted tokens can touch them. Other tokens keep the `public` default and unrestricted access.
 
 Asset paths must be **relative** (`img/logo.png`, never `/img/logo.png`). The artifact is served under a per-version capability path.
 
@@ -75,10 +97,10 @@ Pages are never indexed: `robots.txt` disallows everything, every response carri
 
 ```sh
 docker compose -f artifacts/compose.yml up -d --build                           # deploy (port 127.0.0.1:3480)
-docker compose -f artifacts/compose.yml exec -T artifacts node server.mjs token create <name>   # prints once; pipe it into a secret store
-docker compose -f artifacts/compose.yml exec artifacts node server.mjs token list | token revoke <id>
+docker compose -f artifacts/compose.yml exec -T artifacts node server.mjs token create <name> [--private-only]   # prints once; pipe it into a secret store
+docker compose -f artifacts/compose.yml exec artifacts node server.mjs token list | token revoke <id>   # list shows private_only
 artifacts/backup.sh                                                             # snapshot + blobs -> ~/backups/artifacts (cron 02:50, keeps 14)
 node --test artifacts/selftest.mjs                                              # end-to-end test against a throwaway server
 ```
 
-The data lives in `/home/ubuntu/vps/artifacts-data` (bind mount): `artifacts.db` plus content-addressed `blobs/`. To restore, stop the container, extract a backup tarball into that directory, and start it again.
+The data lives in `/home/ubuntu/vps/artifacts-data` (bind mount): `artifacts.db`, content-addressed `blobs/`, and in-flight upload parts in `uploads/`, which backups skip. To restore, stop the container, extract a backup tarball into that directory, and start it again. Each nightly backup is a full tarball of the database and every blob, and 14 are kept, so backup disk use is about 14 times the data size and grows with every large upload.
