@@ -742,9 +742,11 @@ async function handle(req, res) {
 // ---------- CLI ----------
 const [cmd, sub, arg] = process.argv.slice(2);
 if (cmd === 'token' && sub === 'create') {
-  if (!/^[\w.-]{1,64}$/.test(arg || '')) { console.error('usage: token create <name> [--private-only]'); process.exit(2); }
+  const extra = process.argv.slice(5);
+  // A mistyped flag must not silently mint an unrestricted token.
+  if (!/^[\w.][\w.-]{0,63}$/.test(arg || '') || extra.length > 1 || (extra.length && extra[0] !== '--private-only')) { console.error('usage: token create <name> [--private-only]'); process.exit(2); }
   const token = L.randomToken(32);
-  q('INSERT INTO api_tokens(name,token_hash,created_at,private_only) VALUES(?,?,?,?)').run(arg, L.sha256(token), now(), process.argv.includes('--private-only') ? 1 : 0);
+  q('INSERT INTO api_tokens(name,token_hash,created_at,private_only) VALUES(?,?,?,?)').run(arg, L.sha256(token), now(), extra.length ? 1 : 0);
   process.stdout.write(token); // printed once, meant to be piped straight into a secret store
 } else if (cmd === 'token' && sub === 'list') {
   console.table(q('SELECT id,name,private_only,created_at,last_used_at,revoked_at FROM api_tokens').all());
