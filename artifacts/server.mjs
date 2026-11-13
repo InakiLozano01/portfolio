@@ -18,10 +18,19 @@ const CFG = {
 const APP_HOST = new URL(CFG.appOrigin).host;
 const CONTENT_HOST = new URL(CFG.contentOrigin).host;
 const LIMITS = { body: 40 << 20, file: 15 << 20, version: 100 << 20, files: 300, state: 2 << 20, stateRevs: 500 };
+function envInt(name, fallback, min = 1) {
+  const raw = process.env[name];
+  if (raw == null || raw === '') return fallback;
+  const n = Number(raw);
+  if (!Number.isSafeInteger(n) || n < min) { console.error(`${name} must be an integer >= ${min}, got ${JSON.stringify(raw)}`); process.exit(2); }
+  return n;
+}
+const TEST_MODE = process.env.NODE_ENV === 'test' || process.env.ARTIFACTS_TEST_MODE === '1';
 const UPLOAD = {
-  maxBytes: Number(process.env.ARTIFACTS_MAX_UPLOAD_BYTES || 2 ** 30),
-  partBytes: Number(process.env.ARTIFACTS_UPLOAD_PART_BYTES || 8 << 20), // the override is for tests only
-  versionBytes: Number(process.env.ARTIFACTS_MAX_UPLOAD_VERSION_BYTES || 2 ** 31),
+  maxBytes: envInt('ARTIFACTS_MAX_UPLOAD_BYTES', 2 ** 30),
+  partBytes: TEST_MODE ? envInt('ARTIFACTS_UPLOAD_PART_BYTES', 8 << 20) : 8 << 20,
+  versionBytes: envInt('ARTIFACTS_MAX_UPLOAD_VERSION_BYTES', 2 ** 31),
+  freeMargin: envInt('ARTIFACTS_MIN_FREE_BYTES', 2 ** 30, 0),
   sessions: 8, openBytes: 4 * 2 ** 30, ttl: 864e5,
 };
 const UPLOAD_TYPES = new Set(['application/pdf', 'text/html; charset=utf-8', 'image/png', 'image/jpeg', 'image/webp', 'image/gif',
@@ -64,6 +73,9 @@ CREATE TABLE IF NOT EXISTS upload_parts(upload_id INTEGER NOT NULL REFERENCES up
   sha256 TEXT NOT NULL, size INTEGER NOT NULL, PRIMARY KEY(upload_id, n));`);
 if (!db.prepare('PRAGMA table_info(api_tokens)').all().some((c) => c.name === 'private_only'))
   db.exec('ALTER TABLE api_tokens ADD COLUMN private_only INTEGER NOT NULL DEFAULT 0');
+// NULL for artifacts created before ownership was tracked: private-only tokens cannot touch those.
+if (!db.prepare('PRAGMA table_info(artifacts)').all().some((c) => c.name === 'created_by_token'))
+  db.exec('ALTER TABLE artifacts ADD COLUMN created_by_token INTEGER');
 
 const stmts = new Map();
 const q = (sql) => stmts.get(sql) ?? stmts.set(sql, db.prepare(sql)).get(sql);
@@ -194,8 +206,17 @@ function fileEntry(p, f, contentType) {
 
 // New immutable version = files of `fromVersionId` (or nothing) + `files` - `remove`.
 // `files` items carry either `buf`, or `sha` + `size` of a blob already in the store. `inTx(version)` commits with the version.
-function writeVersion(a, { fromVersionId, files = [], remove = [], note = null, by, maxBytes = LIMITS.version, inTx }) {
+// LIMITS.version caps the bytes one request adds; the whole version may reach UPLOAD.versionBytes (uploads add more than 100 MB).
+function writeVersion(a, { fromVersionId, files = [], remove = [], note = null, by, inTx }) {
+  const added = files.reduce((n, f) => n + (f.buf?.length ?? 0), 0);
+  if (added > LIMITS.version) throw new HttpError(413, 'too_large', `request adds more than ${LIMITS.version} bytes`);
   const blobs = files.map((f) => (f.sha ? f : { ...f, sha: putBlob(f.buf), size: f.buf.length }));
+  try { return commitVersion(a, { fromVersionId, blobs, remove, note, by, inTx }); } catch (e) {
+    for (const b of blobs) if (!q('SELECT 1 FROM files WHERE blob=? LIMIT 1').get(b.sha)) fs.rmSync(blobPath(b.sha), { force: true });
+    throw e;
+  }
+}
+function commitVersion(a, { fromVersionId, blobs, remove, note, by, inTx }) {
   return tx(() => {
     const cur = q('SELECT current_version FROM artifacts WHERE id=?').get(a.id).current_version;
     const next = cur + 1;
@@ -208,7 +229,7 @@ function writeVersion(a, { fromVersionId, files = [], remove = [], note = null, 
     for (const p of remove) q('DELETE FROM files WHERE version_id=? AND path=?').run(vid, p);
     const t = q('SELECT COUNT(*) n, COALESCE(SUM(size),0) bytes, SUM(path=\'index.html\') idx FROM files WHERE version_id=?').get(vid);
     if (!t.idx) throw bad('a version must contain index.html');
-    if (t.bytes > maxBytes) throw new HttpError(413, 'too_large', `version exceeds ${maxBytes} bytes`);
+    if (t.bytes > UPLOAD.versionBytes) throw new HttpError(413, 'too_large', `version exceeds ${UPLOAD.versionBytes} bytes`);
     if (t.n > LIMITS.files) throw bad(`version exceeds ${LIMITS.files} files`);
     q('UPDATE artifacts SET current_version=?, updated_at=? WHERE id=?').run(next, now(), a.id);
     inTx?.(next);
@@ -280,6 +301,10 @@ function agent(req) {
   return { id: t.id, by: `agent:${t.name}`, privateOnly: !!t.private_only };
 }
 const forbidden = (message) => new HttpError(403, 'forbidden', message);
+// A private-only token (the CRM) may act only on private artifacts it created itself.
+function assertAccess(tok, a) {
+  if (tok.privateOnly && (a.created_by_token !== tok.id || a.visibility !== 'private')) throw forbidden('This token can only use private artifacts it created');
+}
 
 async function agentApi(req, res, parts, url) {
   const tok = agent(req);
@@ -306,7 +331,12 @@ async function agentApi(req, res, parts, url) {
   if (r0 !== 'artifacts') throw new HttpError(404, 'not_found', 'Unknown endpoint');
 
   if (!ref) {
-    if (M === 'GET') return send(res, 200, q('SELECT * FROM artifacts ORDER BY updated_at DESC').all().map(summary));
+    if (M === 'GET') {
+      const rows = tok.privateOnly
+        ? q("SELECT * FROM artifacts WHERE created_by_token=? AND visibility='private' ORDER BY updated_at DESC").all(tok.id)
+        : q('SELECT * FROM artifacts ORDER BY updated_at DESC').all();
+      return send(res, 200, rows.map(summary));
+    }
     if (M === 'POST') {
       const body = await readJson(req, LIMITS.body);
       const title = checkTitle(body.title);
@@ -315,7 +345,7 @@ async function agentApi(req, res, parts, url) {
       if (tok.privateOnly && visibility !== 'private') throw forbidden('This token can only create private artifacts');
       const files = parseFiles(body);
       const t = now();
-      const id = Number(q('INSERT INTO artifacts(slug,title,visibility,created_at,updated_at) VALUES(?,?,?,?,?)').run(slug, title, visibility, t, t).lastInsertRowid);
+      const id = Number(q('INSERT INTO artifacts(slug,title,visibility,created_at,updated_at,created_by_token) VALUES(?,?,?,?,?,?)').run(slug, title, visibility, t, t, tok.id).lastInsertRowid);
       const a = q('SELECT * FROM artifacts WHERE id=?').get(id);
       try { writeVersion(a, { files, note: body.note ?? 'initial', by }); } catch (e) { q('DELETE FROM artifacts WHERE id=?').run(id); throw e; }
       return send(res, 201, detail(findArtifact(String(id))));
@@ -324,6 +354,8 @@ async function agentApi(req, res, parts, url) {
 
   const a = findArtifact(ref);
   const sub = r2 ?? '';
+  assertAccess(tok, a);
+  if (tok.privateOnly && ((sub === '' && M === 'DELETE') || sub === 'credentials')) throw forbidden('This token cannot delete artifacts or manage credentials');
   if (sub === '') {
     if (M === 'GET') return send(res, 200, detail(a));
     if (M === 'PATCH') {
@@ -420,12 +452,13 @@ const hex64 = (v) => (typeof v === 'string' && HEX64.test(v.toLowerCase()) ? v.t
 
 function gcUploads() {
   q('DELETE FROM uploads WHERE expires_at<?').run(Date.now());
+  for (const { id } of q("SELECT id FROM uploads WHERE state='open'").all()) if (!fs.existsSync(uploadDir(id))) q('DELETE FROM uploads WHERE id=?').run(id);
   const live = new Set(q("SELECT id FROM uploads WHERE state='open'").all().map((r) => String(r.id)));
   for (const d of fs.readdirSync(UPLOADS)) if (!live.has(d)) fs.rmSync(path.join(UPLOADS, d), { recursive: true, force: true });
 }
-function loadUpload(ref) {
+function loadUpload(ref, tok) {
   const u = /^\d+$/.test(ref || '') && q('SELECT * FROM uploads WHERE id=? AND expires_at>?').get(Number(ref), Date.now());
-  if (!u) throw new HttpError(404, 'not_found', 'Upload not found');
+  if (!u || (tok.privateOnly && u.created_by_token !== tok.id)) throw new HttpError(404, 'not_found', 'Upload not found');
   return u;
 }
 function received(u) {
@@ -442,7 +475,7 @@ async function createUpload(req, res, tok) {
   if (!Number.isInteger(b.artifact)) throw bad('artifact must be an integer id');
   const a = q('SELECT * FROM artifacts WHERE id=?').get(b.artifact);
   if (!a) throw new HttpError(404, 'not_found', 'Artifact not found');
-  if (tok.privateOnly && a.visibility !== 'private') throw forbidden('This token can only upload into private artifacts');
+  assertAccess(tok, a);
   if (typeof b.path !== 'string' || b.path.length > 200 || !L.ASSET_PATH_RE.test(b.path)) throw bad(`invalid file path ${JSON.stringify(b.path)}`);
   if (!Number.isInteger(b.size) || b.size < 1) throw bad('size must be a positive integer');
   if (b.size > UPLOAD.maxBytes) throw new HttpError(413, 'too_large', `size exceeds ${UPLOAD.maxBytes} bytes`);
@@ -450,6 +483,11 @@ async function createUpload(req, res, tok) {
   if (!sha) throw bad('sha256 must be 64 hex chars');
   const type = b.contentType === 'text/html' ? 'text/html; charset=utf-8' : b.contentType;
   if (!UPLOAD_TYPES.has(type)) throw bad(`contentType must be one of: ${[...UPLOAD_TYPES, 'text/html'].join(', ')}`);
+  // serveContent reads HTML into memory to inject the bridge script.
+  if (type.startsWith('text/html') && b.size > LIMITS.file) throw new HttpError(413, 'html_too_large', `text/html uploads are limited to ${LIMITS.file} bytes`);
+  // Parts, the assembled copy and the blob briefly coexist; keep a margin for everything else on the disk.
+  const { bavail, bsize } = fs.statfsSync(CFG.dataDir);
+  if (bavail * bsize < 2 * b.size + UPLOAD.freeMargin) throw new HttpError(507, 'insufficient_storage', 'Not enough free disk space for this upload');
   gcUploads();
   const open = q("SELECT COUNT(*) n, COALESCE(SUM(size),0) bytes FROM uploads WHERE state='open'").get();
   if (open.n >= UPLOAD.sessions || open.bytes + b.size > UPLOAD.openBytes)
@@ -490,7 +528,7 @@ async function putPart(req, res, u, ref) {
   return send(res, 200, { id: u.id, part: n, receivedCount: received(u).receivedCount, parts: u.parts });
 }
 
-async function completeUpload(req, res, u, by) {
+async function completeUpload(req, res, u, tok) {
   const { note } = await readJson(req, 4096);
   if (note != null && (typeof note !== 'string' || note.length > 500)) throw bad('note must be a string of at most 500 chars');
   if (u.state === 'completed') return send(res, 200, completedBody(u));
@@ -516,6 +554,7 @@ async function completeUpload(req, res, u, by) {
     fs.rmSync(tmp, { force: true });
     const cur = q('SELECT * FROM uploads WHERE id=?').get(u.id);
     if (cur?.state === 'completed') return send(res, 200, completedBody(cur)); // a concurrent complete won and removed the parts
+    if (e.code === 'ENOENT') throw new HttpError(409, 'conflict', 'Upload parts are gone (aborted?); open a new upload');
     throw e;
   }
   const cur = q('SELECT * FROM uploads WHERE id=?').get(u.id);
@@ -531,11 +570,14 @@ async function completeUpload(req, res, u, by) {
   }
   const magic = MAGIC[u.content_type];
   if (magic && !head.subarray(0, magic.length).equals(magic)) fail(new HttpError(422, 'content_type_mismatch', `File content is not ${u.content_type}`));
-  moveIntoBlobs(tmp, u.sha256);
+  // Visibility or the artifact itself may have changed while the parts were assembled.
   const a = q('SELECT * FROM artifacts WHERE id=?').get(u.artifact_id);
+  if (!a) fail(new HttpError(404, 'not_found', 'Artifact not found'));
+  try { assertAccess(tok, a); } catch (e) { fail(e); }
+  moveIntoBlobs(tmp, u.sha256);
   const version = writeVersion(a, {
     fromVersionId: versionRow(a)?.id, files: [{ path: u.path, sha: u.sha256, size: u.size, type: u.content_type }],
-    note: note ?? `upload ${u.path}`, by, maxBytes: UPLOAD.versionBytes,
+    note: note ?? `upload ${u.path}`, by: tok.by,
     inTx: (v) => q("UPDATE uploads SET state='completed', version=? WHERE id=?").run(v, u.id),
   });
   fs.rmSync(uploadDir(u.id), { recursive: true, force: true });
@@ -545,7 +587,7 @@ async function completeUpload(req, res, u, by) {
 async function uploadsApi(req, res, tok, ref, sub, rest) {
   const M = req.method;
   if (!ref && M === 'POST') return createUpload(req, res, tok);
-  const u = loadUpload(ref);
+  const u = loadUpload(ref, tok);
   if (!sub && M === 'GET') {
     return send(res, 200, { id: u.id, artifact: u.artifact_id, size: u.size, partSize: u.part_size, parts: u.parts, ...received(u),
       state: u.state, expiresAt: u.expires_at, ...(u.version != null ? { version: u.version } : {}) });
@@ -556,7 +598,7 @@ async function uploadsApi(req, res, tok, ref, sub, rest) {
     return send(res, 200, { id: u.id, aborted: true });
   }
   if (sub === 'parts' && rest.length === 1 && M === 'PUT') return putPart(req, res, u, rest[0]);
-  if (sub === 'complete' && !rest.length && M === 'POST') return completeUpload(req, res, u, tok.by);
+  if (sub === 'complete' && !rest.length && M === 'POST') return completeUpload(req, res, u, tok);
   throw new HttpError(404, 'not_found', 'Unknown endpoint');
 }
 
