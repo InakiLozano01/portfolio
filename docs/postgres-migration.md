@@ -57,6 +57,20 @@ validation. Never apply retention to recovery archives.
 
 ## Verification and cutover
 
+The artifacts tables are a second, idempotent migration in the same PostgreSQL
+database. Run the base portfolio migration first, then the artifacts migration,
+then the deployment guardrail and database checks before admitting traffic:
+
+```sh
+npm run db:migrate
+npm run db:migrate:artifacts
+node scripts/artifacts-deployment-check.mjs --role app --env-file /private/artifacts/app.env --no-static --check-db
+```
+
+Do not run `db:migrate:artifacts` against the old Mongo deployment or skip the
+database readiness check. The complete release, token rotation, rollback and
+embed-limitation procedure is in `docs/artifacts-release-checklist.md`.
+
 Run `npm run lint`, `npx tsc --noEmit`, `npm test -- --runInBand`,
 `npm run test:postgres`, and the production build with one build worker.
 The PostgreSQL integration suite uses an isolated PostgreSQL engine (PGlite),
