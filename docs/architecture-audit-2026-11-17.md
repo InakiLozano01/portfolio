@@ -1,7 +1,7 @@
 # Portfolio architecture and cleanup audit
 
 Date: 2026-11-17
-Branch: `feat/artifacts-integration`
+Branch: `main`
 Tip: `5b47f2e`
 
 This is the result of the full-send review requested against the portfolio and
