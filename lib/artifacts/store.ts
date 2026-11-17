@@ -34,11 +34,37 @@ export async function checkSlug(slug: unknown, exceptId = 0) {
   return slug
 }
 
-export async function uniqueSlug(base: string) {
-  for (let i = 1; ; i++) {
-    const s = i === 1 ? base : `${base.slice(0, 74)}-${i}`
-    if (!RESERVED_SLUGS.has(s) && !/^\d+$/.test(s) && !(await one('SELECT 1 FROM artifacts.artifacts WHERE slug = $1', [s]))) return s
+export const MAX_AUTO_SLUG_ATTEMPTS = 100
+
+const autoSlugCandidate = (base: string, attempt: number) =>
+  attempt === 0 ? base : `${base.slice(0, 74)}-${attempt + 1}`
+
+const usableAutoSlug = (slug: string) => !RESERVED_SLUGS.has(slug) && !/^\d+$/.test(slug)
+
+const uniqueViolation = (error: unknown) =>
+  !!error && typeof error === 'object' && 'code' in error && (error as { code?: unknown }).code === '23505'
+
+export const slugTaken = (slug: string) => new HttpError(409, 'slug_taken', `Slug "${slug}" is already in use`)
+
+export const slugUnavailable = (base: string) =>
+  new HttpError(409, 'slug_unavailable', `Could not allocate a unique slug for "${base}"`)
+
+/** Inserts an artifact, retrying generated suffixes only when the unique index rejects a race. */
+export async function createArtifact(baseSlug: string, title: string, tokenId: number | null, automatic: boolean) {
+  for (let attempt = 0; attempt < (automatic ? MAX_AUTO_SLUG_ATTEMPTS : 1); attempt++) {
+    const slug = automatic ? autoSlugCandidate(baseSlug, attempt) : baseSlug
+    if (automatic && !usableAutoSlug(slug)) continue
+    try {
+      return await one<{ id: number }>(
+        'INSERT INTO artifacts.artifacts(slug, title, created_by_token) VALUES ($1, $2, $3) RETURNING id::int',
+        [slug, title, tokenId],
+      )
+    } catch (error) {
+      if (!uniqueViolation(error)) throw error
+      if (!automatic) throw slugTaken(slug)
+    }
   }
+  throw slugUnavailable(baseSlug)
 }
 
 export function checkTitle(t: unknown) {

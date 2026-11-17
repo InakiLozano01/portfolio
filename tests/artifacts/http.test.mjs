@@ -81,6 +81,30 @@ test('noindex everywhere and the sandbox on content', async () => {
   assert.equal(post.status, 405)
 })
 
+test('automatic slugs preserve suffixes under races and stop at a stable limit', async () => {
+  const concurrent = await Promise.all(Array.from({ length: 8 }, () => api('POST', 'artifacts', {
+    title: 'Concurrent slug', html: html('Concurrent slug'),
+  })))
+  assert.deepEqual(concurrent.map((r) => r.status), Array(8).fill(201))
+  const slugs = concurrent.map((r) => r.body.slug)
+  assert.equal(new Set(slugs).size, 8)
+  assert.ok(slugs.includes('concurrent-slug'))
+  assert.ok(slugs.includes('concurrent-slug-2'))
+
+  await services.pool.query(`
+    INSERT INTO artifacts.artifacts(slug, title)
+    SELECT CASE WHEN n = 1 THEN 'bounded-slug' ELSE 'bounded-slug-' || n::text END, 'Bounded slug'
+    FROM generate_series(1, 100) AS n
+  `)
+  try {
+    const exhausted = await api('POST', 'artifacts', { title: 'Bounded slug', html: html('Bounded slug') })
+    assert.equal(exhausted.status, 409)
+    assert.equal(exhausted.body.error.code, 'slug_unavailable')
+  } finally {
+    await services.pool.query("DELETE FROM artifacts.artifacts WHERE title = 'Bounded slug'")
+  }
+})
+
 test('owner access: restricted with no shares is reachable only by the owner, and an admin password change ends it', async () => {
   await create('draft')
   const anon = await new Browser().open('draft')

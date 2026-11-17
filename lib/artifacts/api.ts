@@ -157,9 +157,12 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
       if ('visibility' in body) throw bad('visibility is gone; set general access with access: {kind: restricted|link|password, role}')
       if (tokenId && body.access) throw denied()
       const title = S.checkTitle(body.title)
-      const slug = body.slug != null ? await S.checkSlug(body.slug) : await S.uniqueSlug(slugify(title))
+      const automaticSlug = body.slug == null
+      const slug = automaticSlug ? slugify(title) : await S.checkSlug(body.slug)
+      const row = await S.createArtifact(slug, title, tokenId, automaticSlug)
+      if (!row) throw new HttpError(500, 'internal', 'Artifact creation returned no id')
       const files = await inlineFiles(body)
-      const { id } = await one('INSERT INTO artifacts.artifacts(slug, title, created_by_token) VALUES ($1, $2, $3) RETURNING id::int', [slug, title, tokenId])
+      const { id } = row
       const a = await S.findArtifact(id)
       try {
         // With no files the artifact starts empty (version 0), so a first publish with uploads becomes one complete v1.
