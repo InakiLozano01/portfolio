@@ -95,6 +95,7 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
   S.sweepUploadsHourly()
   // A limited token (see bearerActor) only reaches the restricted artifacts it created, and never shares, opens or deletes them.
   const tokenId = Number(/^limited:(\d+):/.exec(by)?.[1]) || null
+  const uploadScope = /^(?:limited|agent):(\d+):/.exec(by)?.[1] ?? 'owner'
   const denied = () => new HttpError(403, 'forbidden', 'This token is limited to its own restricted artifacts')
   const own = async (artifactId: number) => {
     if (tokenId && !(await one("SELECT 1 FROM artifacts.artifacts WHERE id = $1 AND created_by_token = $2 AND access = 'restricted'", [artifactId, tokenId]))) throw notFound()
@@ -140,15 +141,9 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
       const u = await S.completeUpload(ref)
       const a = await S.findArtifact(u.artifact_id)
       if (body.stage) return json({ id: ref, path: u.path, staged: true, url: S.artifactUrl(a) })
-      // Claimed before the version is written, so a repeated or concurrent complete answers without a second version.
-      if (!(await S.consumeClaim([ref])).length) return json(await detail(a.id))
-      try {
-        await S.writeVersion(a, { fromVersionId: (await S.versionRow(a))?.id, files: [{ path: u.path, key: u.key }], note: body.note ?? `upload ${u.path}`, by })
-      } catch (e) {
-        await q('UPDATE artifacts.uploads SET consumed_at = NULL WHERE id = $1', [ref])
-        throw e
-      }
-      return json(await detail(a.id), 201)
+      // Claiming and writing the version happen under the same artifact/upload locks.
+      const version = await S.writeVersion(a, { fromVersionId: (await S.versionRow(a))?.id, uploads: [ref], note: body.note ?? `upload ${u.path}`, by })
+      return json(await detail(a.id), version == null ? 200 : 201)
     }
   }
 
@@ -196,10 +191,10 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
   }
   if (sub === 'versions' && M === 'POST' && !rest.length) {
     const body = await readJson(req, LIMITS.body)
-    const files = [...(await inlineFiles(body)), ...(await S.consumeUploads(a, body.uploads))]
+    const files = await inlineFiles(body)
     const from = body.replace ? null : (await S.versionRow(a))?.id
-    await S.writeVersion(a, { fromVersionId: from, files, remove: checkRemove(body.removeFiles), note: body.note ?? null, by })
-    await S.consumeClaim(body.uploads)
+    const version = await S.writeVersion(a, { fromVersionId: from, files, uploads: body.uploads, remove: checkRemove(body.removeFiles), note: body.note ?? null, by })
+    if (version == null) return json(await detail(a.id))
     await S.gcBlobs()
     return json(await detail(a.id), 201)
   }
@@ -233,7 +228,7 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
       return json(await detail(a.id))
     }
   }
-  if (sub === 'uploads' && M === 'POST' && !rest.length) return json(await S.startUpload(a, await readJson(req, 4096)), 201)
+  if (sub === 'uploads' && M === 'POST' && !rest.length) return json(await S.startUpload(a, await readJson(req, 4096), uploadScope), 201)
   if (sub === 'access' && M === 'PUT') {
     const extra = await A.setAccess(a, await readJson(req, 4096))
     return json({ ...(await detail(a.id)), ...extra })
@@ -267,7 +262,7 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
   throw notFound('Endpoint')
 }
 
-/** Bearer API token → actor name (`agent:<name>`, or `limited:<id>:<name>`), or null when the header is absent. */
+/** Bearer API token → actor name with token id, or null when the header is absent. */
 export async function bearerActor(req: Request) {
   const header = req.headers.get('authorization')
   if (!header) return null
@@ -275,5 +270,5 @@ export async function bearerActor(req: Request) {
   const t = m && (await one('UPDATE artifacts.api_tokens SET last_used_at = now() WHERE token_hash = $1 AND revoked_at IS NULL RETURNING id::int, name, limited', [sha256(m[1])]))
   if (!t) throw new HttpError(401, 'unauthorized', 'Missing or invalid bearer token', { auth: true })
   // The actor name carries the limit, so every door (API, MCP) enforces it in agentApi.
-  return t.limited ? `limited:${t.id}:${t.name}` : `agent:${t.name}`
+  return t.limited ? `limited:${t.id}:${t.name}` : `agent:${t.id}:${t.name}`
 }

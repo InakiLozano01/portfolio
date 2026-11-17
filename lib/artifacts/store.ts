@@ -113,14 +113,26 @@ export async function gcBlobs() {
 export interface NewFile { path: string; key: string }
 
 /** New immutable version = files of `fromVersionId` (or nothing) + `files` - `remove`. */
-export async function writeVersion(a: Artifact, opts: { fromVersionId?: number | null; files?: NewFile[]; remove?: string[]; note?: string | null; by: string }) {
-  const { fromVersionId, files = [], remove = [], note = null, by } = opts
+export async function writeVersion(a: Artifact, opts: { fromVersionId?: number | null; files?: NewFile[]; uploads?: unknown; remove?: string[]; note?: string | null; by: string }) {
+  const { fromVersionId, files = [], uploads, remove = [], note = null, by } = opts
   return tx(async (c) => {
     const { current_version: cur } = await one('SELECT current_version FROM artifacts.artifacts WHERE id = $1 FOR UPDATE', [a.id], c)
+    const uploadIds = uploads == null ? [] : Array.isArray(uploads) && uploads.every((id) => typeof id === 'string') ? [...new Set(uploads)] : null
+    if (uploadIds == null) throw bad('uploads must be an array of upload ids')
+    let uploadFiles: NewFile[] = []
+    if (uploadIds.length) {
+      const rows = await q(`SELECT id, path, object_key, completed_at, consumed_at
+        FROM artifacts.uploads WHERE id = ANY($1) AND artifact_id = $2 FOR UPDATE`, [uploadIds, a.id], c)
+      if (rows.length !== uploadIds.length || rows.some((u) => !u.completed_at)) throw bad('every upload must be completed for this artifact')
+      if (rows.every((u) => u.consumed_at)) return null
+      if (rows.some((u) => u.consumed_at)) throw new HttpError(409, 'upload_consumed', 'One or more uploads were already placed in a version')
+      uploadFiles = rows.map((u) => ({ path: u.path, key: u.object_key }))
+      await q('UPDATE artifacts.uploads SET consumed_at = now() WHERE id = ANY($1)', [uploadIds], c)
+    }
     const next = cur + 1
     const { id: vid } = await one('INSERT INTO artifacts.versions(artifact_id, version, note, created_by) VALUES ($1, $2, $3, $4) RETURNING id::int', [a.id, next, note, by], c)
     if (fromVersionId) await q('INSERT INTO artifacts.files(version_id, path, blob_key) SELECT $1, path, blob_key FROM artifacts.files WHERE version_id = $2', [vid, fromVersionId], c)
-    for (const f of files) {
+    for (const f of [...files, ...uploadFiles]) {
       await q(`INSERT INTO artifacts.files(version_id, path, blob_key) VALUES ($1, $2, $3)
         ON CONFLICT (version_id, path) DO UPDATE SET blob_key = excluded.blob_key`, [vid, f.path, f.key], c)
     }
@@ -190,7 +202,7 @@ const uploadView = (u: any) => ({
   completed: !!u.completed_at, expiresAt: u.expires_at,
 })
 
-export async function startUpload(a: Artifact, body: Record<string, any>) {
+export async function startUpload(a: Artifact, body: Record<string, any>, scope = 'owner') {
   const path = checkPath(body.path)
   const size = body.size
   if (!Number.isInteger(size) || size < 1 || size > LIMITS.file) throw bad(`size must be 1-${LIMITS.file} bytes`)
@@ -198,8 +210,8 @@ export async function startUpload(a: Artifact, body: Record<string, any>) {
   // HTML is read whole into memory to inject the client, so it keeps the inline limit.
   if (/^text\/html\b/i.test(contentType) && size > LIMITS.inlineFile) throw bad(`HTML files must be at most ${LIMITS.inlineFile} bytes`)
   const fingerprint = typeof body.fingerprint === 'string' ? body.fingerprint.slice(0, 200) : null
-  if (body.sha256 != null && (typeof body.sha256 !== 'string' || !SHA_RE.test(body.sha256))) throw bad('sha256 must be 64 lowercase hex chars')
-  const digest: string | null = body.sha256 ?? null
+  if (typeof body.sha256 !== 'string' || !SHA_RE.test(body.sha256)) throw bad('sha256 must be 64 lowercase hex chars')
+  const digest: string = body.sha256
   await sweepUploads()
   if (fingerprint) {
     // A staged upload that already completed is resumed too, so a rerun does not send it again.
@@ -211,13 +223,13 @@ export async function startUpload(a: Artifact, body: Record<string, any>) {
   return tx(async (c) => {
     // One upload start at a time, so two cannot both pass the cap check.
     await q('SELECT pg_advisory_xact_lock(7314001)', [], c)
-    const { n } = await one('SELECT COUNT(*)::int n FROM artifacts.uploads WHERE completed_at IS NULL AND expires_at > now()', [], c)
+    const { n } = await one('SELECT COUNT(*)::int n FROM artifacts.uploads WHERE upload_scope = $1 AND completed_at IS NULL AND expires_at > now()', [scope], c)
     if (n >= OPEN_UPLOADS) throw new HttpError(429, 'upload_limit', `At most ${OPEN_UPLOADS} uploads can be open at once; complete or abort one`)
     await reserve(size, c)
     const s3UploadId = await S3.createMultipart(objectKey, contentType)
-    const u = await one(`INSERT INTO artifacts.uploads(id, artifact_id, path, size, content_type, fingerprint, sha256, object_key, s3_upload_id, part_size, expires_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now() + interval '${UPLOAD_TTL_H} hours') RETURNING *`,
-      [randomToken(12), a.id, path, size, contentType, fingerprint, digest, objectKey, s3UploadId, LIMITS.partSize], c)
+    const u = await one(`INSERT INTO artifacts.uploads(id, artifact_id, path, size, content_type, fingerprint, upload_scope, sha256, object_key, s3_upload_id, part_size, expires_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now() + interval '${UPLOAD_TTL_H} hours') RETURNING *`,
+      [randomToken(12), a.id, path, size, contentType, fingerprint, scope, digest, objectKey, s3UploadId, LIMITS.partSize], c)
     return { ...uploadView(u), resumed: false }
   })
 }
@@ -250,9 +262,11 @@ export async function putPart(id: string, n: number, req: Request) {
 
 /** Finishes the object and checks its digest; the blob then exists and can be placed in a version. */
 export async function completeUpload(id: string) {
-  const u = await openUpload(id)
-  const view = uploadView(u)
-  if (!u.completed_at) {
+  const result = await tx(async (c) => {
+    const u = await one('SELECT * FROM artifacts.uploads WHERE id = $1 AND expires_at > now() FOR UPDATE', [id], c)
+    if (!u) throw notFound('Upload')
+    if (u.completed_at) return { u, encode: false }
+    const view = uploadView(u)
     const missing = Array.from({ length: view.partCount }, (_, i) => i + 1).filter((n) => !u.parts[String(n)])
     if (missing.length) throw new HttpError(409, 'incomplete', `Missing parts: ${missing.join(', ')}`, { missing })
     await S3.completeMultipart(u.object_key, u.s3_upload_id, Array.from({ length: view.partCount }, (_, i) => u.parts[String(i + 1)]))
@@ -260,21 +274,22 @@ export async function completeUpload(id: string) {
     const hash = createHash('sha256')
     for await (const chunk of (await S3.getObject(u.object_key)).body ?? []) hash.update(chunk)
     const digest = hash.digest('hex')
-    if (u.sha256 && digest !== u.sha256) {
-      // Every part may have matched its own digest (a swapped part), so which bytes are wrong is unknown: start over.
-      await q('DELETE FROM artifacts.uploads WHERE id = $1', [id])
-      await S3.deleteObject(u.object_key)
-      throw new HttpError(422, 'integrity', 'The assembled file does not match the declared sha256; start a new upload')
+    if (digest !== u.sha256) {
+      await q('DELETE FROM artifacts.uploads WHERE id = $1', [id], c)
+      return { u, encode: false, integrity: true }
     }
     const video = isVideo(u.content_type)
-    await tx(async (c) => {
-      await q('INSERT INTO artifacts.blobs(key, sha256, size, stored_bytes, content_type, video_status) VALUES ($1, $2, $3, $3, $4, $5) ON CONFLICT (key) DO NOTHING',
-        [u.object_key, digest, u.size, u.content_type, video ? 'pending' : null], c)
-      await q('UPDATE artifacts.uploads SET completed_at = now() WHERE id = $1', [id], c)
-    })
-    if (video) await enqueueEncode(u.object_key)
+    await q('INSERT INTO artifacts.blobs(key, sha256, size, stored_bytes, content_type, video_status) VALUES ($1, $2, $3, $3, $4, $5) ON CONFLICT (key) DO NOTHING',
+      [u.object_key, digest, u.size, u.content_type, video ? 'pending' : null], c)
+    await q('UPDATE artifacts.uploads SET completed_at = now() WHERE id = $1', [id], c)
+    return { u: { ...u, completed_at: new Date(), path: u.path as string, key: u.object_key as string }, encode: video }
+  })
+  if (result.integrity) {
+    await S3.deleteObject(result.u.object_key).catch(() => {})
+    throw new HttpError(422, 'integrity', 'The assembled file does not match the declared sha256; start a new upload')
   }
-  return { ...u, path: u.path as string, key: u.object_key as string }
+  if (result.encode) await enqueueEncode(result.u.object_key)
+  return { ...result.u, path: result.u.path as string, key: result.u.object_key as string }
 }
 
 /** Places completed uploads in a version, then forgets the uploads. */

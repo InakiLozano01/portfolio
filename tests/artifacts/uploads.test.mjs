@@ -179,6 +179,13 @@ test('a corrupted or swapped part is refused and creates no version', async () =
   assert.equal((await api('GET', `uploads/${u.id}`)).status, 404, 'the bad upload is dropped; start again')
 })
 
+test('multipart starts require a declared whole-file sha256', async () => {
+  await api('POST', 'artifacts', { title: 'Hash required', slug: 'hash-required', html: html('Hash required') })
+  const missing = await api('POST', 'artifacts/hash-required/uploads', { path: 'x.bin', size: 1 })
+  assert.equal(missing.status, 400, missing.text)
+  assert.equal(missing.body.error.code, 'bad_request')
+})
+
 test('repeating complete is safe for staged and unstaged uploads', async () => {
   await api('POST', 'artifacts', { title: 'Repeat', slug: 'repeat', html: html('Repeat') })
   const data = crypto.randomBytes(1000)
@@ -197,15 +204,40 @@ test('repeating complete is safe for staged and unstaged uploads', async () => {
   assert.equal((await api('POST', 'artifacts/repeat/versions', { uploads: [s.id] })).status, 201)
 })
 
+test('concurrent complete and version publish consume one upload once', async () => {
+  await api('POST', 'artifacts', { title: 'Concurrent', slug: 'concurrent', html: html('Concurrent') })
+  const data = crypto.randomBytes(1000)
+  const u = await uploadAll(api, 'concurrent', 'c.bin', data, token)
+
+  const completed = await api('POST', `uploads/${u.id}/complete`, { stage: true })
+  assert.equal(completed.status, 200, completed.text)
+  const completeResults = await Promise.all([
+    api('POST', `uploads/${u.id}/complete`, {}),
+    api('POST', `uploads/${u.id}/complete`, {}),
+  ])
+  assert.deepEqual(completeResults.map((r) => r.status).sort(), [200, 201])
+  assert.equal((await api('GET', 'artifacts/concurrent')).body.versions.length, 2)
+
+  const staged = await uploadAll(api, 'concurrent', 'd.bin', data, token)
+  assert.equal((await api('POST', `uploads/${staged.id}/complete`, { stage: true })).status, 200)
+  const versionResults = await Promise.all([
+    api('POST', 'artifacts/concurrent/versions', { uploads: [staged.id] }),
+    api('POST', 'artifacts/concurrent/versions', { uploads: [staged.id] }),
+  ])
+  assert.deepEqual(versionResults.map((r) => r.status).sort(), [200, 201])
+  assert.equal((await api('GET', 'artifacts/concurrent')).body.versions.length, 3)
+})
+
 test('open uploads are limited, and expired ones release their slot and their reservation', async () => {
   await api('POST', 'artifacts', { title: 'Open limit', slug: 'open-limit', html: html('Open limit') })
   const used = (await api('GET', 'storage')).body.usedBytes
-  const big = await api('POST', 'artifacts/open-limit/uploads', { path: 'big.bin', size: CAP - used - 1000 })
+  const digest = sha(Buffer.alloc(0))
+  const big = await api('POST', 'artifacts/open-limit/uploads', { path: 'big.bin', size: CAP - used - 1000, sha256: digest })
   assert.equal(big.status, 201, big.text)
-  assert.equal((await api('POST', 'artifacts/open-limit/uploads', { path: 'more.bin', size: 2000 })).status, 507)
+  assert.equal((await api('POST', 'artifacts/open-limit/uploads', { path: 'more.bin', size: 2000, sha256: digest })).status, 507)
   const opened = [big.body.id]
   for (let i = 0; ; i++) {
-    const r = await api('POST', 'artifacts/open-limit/uploads', { path: `s${i}.bin`, size: 10 })
+    const r = await api('POST', 'artifacts/open-limit/uploads', { path: `s${i}.bin`, size: 10, sha256: digest })
     if (r.status !== 201) {
       assert.equal(r.status, 429, r.text)
       assert.equal(r.body.error.code, 'upload_limit')
@@ -216,7 +248,7 @@ test('open uploads are limited, and expired ones release their slot and their re
   }
   // The 24 h expiry, brought forward.
   await services.pool.query("UPDATE artifacts.uploads SET expires_at = now() - interval '1 second' WHERE id = ANY($1)", [opened])
-  const again = await api('POST', 'artifacts/open-limit/uploads', { path: 'big.bin', size: CAP - used - 1000 })
+  const again = await api('POST', 'artifacts/open-limit/uploads', { path: 'big.bin', size: CAP - used - 1000, sha256: digest })
   assert.equal(again.status, 201, again.text)
   assert.notEqual(again.body.id, big.body.id)
   assert.equal((await api('GET', `uploads/${big.body.id}`)).status, 404)

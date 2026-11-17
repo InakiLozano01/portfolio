@@ -14,6 +14,7 @@ const run = promisify(execFile)
 const CAP = 64 << 20 // a small storage cap so the cap test does not need gigabytes
 let services, app, api, token, owner
 const html = (title, body = '') => `<!doctype html><html><head><title>${title}</title></head><body><h1>${title}</h1>${body}</body></html>`
+const emptySha = crypto.createHash('sha256').update('').digest('hex')
 
 before(async () => {
   services = await startServices()
@@ -421,7 +422,7 @@ test('multipart upload resumes, and the storage cap refuses before any part', as
   await create('upload', { access: { kind: 'link', role: 'viewer' } })
   const size = (16 << 20) + 12345
   const data = crypto.randomBytes(size)
-  const start = await api('POST', 'artifacts/upload/uploads', { path: 'big/file.bin', size, fingerprint: 'fp-1' })
+  const start = await api('POST', 'artifacts/upload/uploads', { path: 'big/file.bin', size, fingerprint: 'fp-1', sha256: crypto.createHash('sha256').update(data).digest('hex') })
   assert.equal(start.status, 201, start.text)
   assert.equal(start.body.partCount, 2)
   const partUrl = (n) => `${ORIGIN.app}/api/v1/uploads/${start.body.id}/parts/${n}`
@@ -432,7 +433,7 @@ test('multipart upload resumes, and the storage cap refuses before any part', as
   assert.equal((await put(1, data.subarray(0, 10))).status, 400, 'a short part is refused')
   assert.equal((await api('POST', `uploads/${start.body.id}/complete`, {})).status, 409)
   // "Interrupted": starting again with the same fingerprint resumes the same upload.
-  const again = await api('POST', 'artifacts/upload/uploads', { path: 'big/file.bin', size, fingerprint: 'fp-1' })
+  const again = await api('POST', 'artifacts/upload/uploads', { path: 'big/file.bin', size, fingerprint: 'fp-1', sha256: crypto.createHash('sha256').update(data).digest('hex') })
   assert.equal(again.body.id, start.body.id)
   assert.equal(again.body.resumed, true)
   assert.deepEqual(again.body.received, [2])
@@ -450,13 +451,13 @@ test('multipart upload resumes, and the storage cap refuses before any part', as
   assert.ok(storage.body.usedBytes >= size)
   assert.equal(storage.body.capBytes, CAP)
   assert.ok(storage.body.artifacts.find((x) => x.slug === 'upload').storageBytes >= size)
-  const over = await api('POST', 'artifacts/upload/uploads', { path: 'huge.bin', size: CAP })
+  const over = await api('POST', 'artifacts/upload/uploads', { path: 'huge.bin', size: CAP, sha256: emptySha })
   assert.equal(over.status, 507)
   assert.match(over.body.error.message, /storage is full/i)
-  assert.equal((await api('POST', 'artifacts/upload/uploads', { path: 'x.bin', size: 2 ** 30 + 1 })).status, 400)
+  assert.equal((await api('POST', 'artifacts/upload/uploads', { path: 'x.bin', size: 2 ** 30 + 1, sha256: emptySha })).status, 400)
 
   // Deleting the artifact frees its storage, including an upload still in progress.
-  const pending = await api('POST', 'artifacts/upload/uploads', { path: 'pending.bin', size: 1000 })
+  const pending = await api('POST', 'artifacts/upload/uploads', { path: 'pending.bin', size: 1000, sha256: emptySha })
   assert.equal(pending.status, 201)
   await api('DELETE', 'artifacts/upload')
   assert.equal((await api('GET', `uploads/${pending.body.id}`)).status, 404)

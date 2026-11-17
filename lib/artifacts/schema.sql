@@ -82,6 +82,8 @@ CREATE TABLE IF NOT EXISTS artifacts.answer_keys (
 CREATE TABLE IF NOT EXISTS artifacts.uploads (
   id text PRIMARY KEY, artifact_id bigint NOT NULL REFERENCES artifacts.artifacts(id) ON DELETE CASCADE,
   path text NOT NULL, size bigint NOT NULL, content_type text NOT NULL, fingerprint text,
+  -- Limits are applied per caller scope, not across every token and the owner combined.
+  upload_scope text NOT NULL DEFAULT 'owner',
   -- The declared whole-file digest, checked on complete.
   sha256 text,
   object_key text NOT NULL, s3_upload_id text NOT NULL, part_size integer NOT NULL,
@@ -89,3 +91,5 @@ CREATE TABLE IF NOT EXISTS artifacts.uploads (
   -- Set once the file is placed in a version; the row stays until expiry so a repeated complete is answered, not 404.
   consumed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL);
+ALTER TABLE artifacts.uploads ADD COLUMN IF NOT EXISTS upload_scope text NOT NULL DEFAULT 'owner';
+CREATE INDEX IF NOT EXISTS uploads_scope_open ON artifacts.uploads (upload_scope, expires_at) WHERE completed_at IS NULL;
