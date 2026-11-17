@@ -20,11 +20,13 @@
     "db:migrate": "node scripts/postgres-schema.cjs",
     "db:migrate:artifacts": "node scripts/artifacts-schema.cjs",
     "db:import": "node scripts/import-mongo-export.cjs",
+    "check:artifacts:deployment": "node scripts/artifacts-deployment-check.mjs",
     "test:postgres": "node --test scripts/test-postgres.cjs",
     "postinstall": "patch-package --error-on-fail",
     "test:artifacts": "node --test --test-concurrency=1 tests/artifacts/http.test.mjs",
     "test:artifacts:uploads": "node --test --test-concurrency=1 tests/artifacts/uploads.test.mjs",
     "test:artifacts:encoder": "node --test tests/artifacts/encoder.test.mjs",
+    "test:artifacts:deployment": "node --test tests/artifacts/deployment-check.test.mjs",
     "test:artifacts:browser": "node --test tests/artifacts/browser.test.mjs",
     "test:security": "node --test scripts/test-dependency-security.cjs && node scripts/check-security-dependencies.cjs",
     "typecheck": "node node_modules/@typescript/native/bin/tsc --noEmit --incremental false"
