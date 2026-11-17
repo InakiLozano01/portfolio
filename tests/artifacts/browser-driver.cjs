@@ -20,6 +20,7 @@ async function main() {
     const frame = page.frameLocator('#f')
     await frame.locator('body[data-done]').waitFor({ timeout: 20000 })
     out.probes = JSON.parse(await frame.locator('body').getAttribute('data-done'))
+    out.contentUrl = await page.locator('#f').getAttribute('src')
 
     // The Share button opens the console's share dialog on the artifacts origin.
     await page.getByRole('link', { name: 'Compartir' }).click()
@@ -47,12 +48,19 @@ async function main() {
     out.responseRows = (await admin.locator('summary').allTextContents()).map((t) => t.trim()).sort()
     const [csv] = await Promise.all([admin.waitForEvent('download'), admin.getByRole('button', { name: 'CSV' }).click()])
     out.csv = require('node:fs').readFileSync(await csv.path(), 'utf8')
+    const [json] = await Promise.all([admin.waitForEvent('download'), admin.getByRole('button', { name: 'JSON' }).click()])
+    out.json = JSON.parse(require('node:fs').readFileSync(await json.path(), 'utf8'))
 
     // Share dialog: change general access, share with a role, change it, remove it.
     await row.getByRole('button', { name: /^Share / }).click()
     const dialog = admin.getByRole('dialog', { name: 'Share' })
     await dialog.getByLabel('Who can open it').selectOption('restricted')
     await admin.getByText('General access updated').first().waitFor()
+    const staleContext = await browser.newContext()
+    const stale = await staleContext.newPage()
+    const staleResponse = await stale.goto(out.contentUrl)
+    out.revokedStatus = staleResponse.status()
+    await staleContext.close()
     await dialog.getByLabel('Email').fill('carl@example.test')
     await dialog.getByLabel('Role', { exact: true }).selectOption('editor')
     await dialog.getByLabel('Send invitation').uncheck()
@@ -65,6 +73,26 @@ async function main() {
     await admin.getByRole('dialog', { name: /Remove carl/ }).getByRole('button', { name: 'Remove' }).click()
     await dialog.getByText('Not shared with anyone yet.').waitFor()
     out.removed = true
+    await dialog.getByRole('button', { name: 'Close' }).click()
+
+    // Token management is intentionally tested through the admin UI, then at the public bearer seam.
+    const tokenPanel = admin.locator('section').filter({ has: admin.getByRole('heading', { name: 'API tokens' }) })
+    await tokenPanel.scrollIntoViewIfNeeded()
+    const tokenName = 'browser-token'
+    await tokenPanel.locator('input[placeholder="laptop-cli"]').fill(tokenName)
+    await tokenPanel.getByRole('button', { name: 'Create', exact: true }).click()
+    const tokenStatus = tokenPanel.getByRole('status')
+    await tokenStatus.waitFor()
+    out.createdToken = (await tokenStatus.locator('code').textContent()).trim()
+    const tokenProbe = await admin.context().newPage()
+    await tokenProbe.setExtraHTTPHeaders({ authorization: `Bearer ${out.createdToken}` })
+    out.tokenAcceptedStatus = (await tokenProbe.goto(`${APP}/api/v1/artifacts`)).status()
+    const tokenRow = tokenPanel.locator('li').filter({ hasText: tokenName })
+    await tokenRow.getByRole('button', { name: 'Revoke' }).click()
+    await admin.getByRole('dialog', { name: new RegExp(`Revoke ${tokenName}`) }).getByRole('button', { name: 'Revoke' }).click()
+    await tokenRow.getByText('Revoked').waitFor()
+    out.tokenRevokedStatus = (await tokenProbe.goto(`${APP}/api/v1/artifacts`)).status()
+    await tokenProbe.close()
   } finally {
     await browser.close()
   }

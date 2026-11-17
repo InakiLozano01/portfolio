@@ -64,6 +64,7 @@ test('shell, share page and admin console in Chromium', { timeout: 240000 }, asy
   // ...while the client bridge works, with the visitor's real role.
   assert.equal(seen.probes.role, 'owner')
   assert.equal(seen.probes.response, 'b')
+  assert.match(seen.contentUrl, /\/c\/[^/]+\/index\.html$/)
 
   assert.equal(seen.sharePageTitle, 'Browser demo')
   assert.equal(seen.backOnArtifact, true)
@@ -71,8 +72,13 @@ test('shell, share page and admin console in Chromium', { timeout: 240000 }, asy
   // One response from before the owner signed in (anonymous, by browser), one from the owner.
   assert.deepEqual(seen.responseRows, ['Anonymous', 'You'])
   assert.match(seen.csv.split('\r\n')[0], /"q1"$/)
+  assert.deepEqual(seen.json.map((r) => r.answers.q1).sort(), ['b', 'b'])
   assert.equal(seen.sharedWithEditor, 'editor')
   assert.equal(seen.removed, true)
+  assert.equal(seen.revokedStatus, 403)
+  assert.match(seen.createdToken, /^[A-Za-z0-9_-]{40,}$/)
+  assert.equal(seen.tokenAcceptedStatus, 200)
+  assert.equal(seen.tokenRevokedStatus, 401)
 
   // What the console did is real on the server.
   const d = (await api('GET', 'artifacts/browser-demo')).body
