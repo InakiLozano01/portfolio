@@ -94,7 +94,7 @@ export async function startMailSink(dir) {
           if (end < 0) return
           data += buf.slice(0, end).replace(/(^|\r\n)\.\./g, '$1.') // undo SMTP dot-stuffing
           buf = buf.slice(end + 5)
-          messages.push(parseMail(data.replace(/\r\n\.\./g, '\r\n.'), rcpt)) // undo SMTP dot-stuffing
+          messages.push(parseMail(data, rcpt))
           data = null
           rcpt = []
           sock.write('250 queued\r\n')
