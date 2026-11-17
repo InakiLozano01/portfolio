@@ -4,7 +4,7 @@ import { getAdminSession } from '@/lib/admin-auth'
 import { authOptions, authorizeAdmin } from '@/lib/auth'
 import Admin from '@/models/Admin'
 import { getClientIp } from '@/lib/client-ip'
-import { blocked, hit, reset } from '@/lib/rate-limit'
+import { hit, release, reset } from '@/lib/rate-limit'
 import { CFG, HttpError, bad, notFound, one, q, tx } from './db'
 import { sendPlain } from './mail'
 import { artifactUrl, bumpEpoch, type Artifact } from './store'
@@ -71,13 +71,23 @@ export async function effectiveRole(req: Request, a: Artifact, v: Visitor): Prom
   return best
 }
 
-/** Refuses once any [key, limit] has that many failures in the window; only failed attempts (401/410) count. */
+/**
+ * Refuses once any [key, limit] has that many failures in the window; only failed attempts (401/410) keep their count.
+ * The attempt is counted before it runs, so a parallel burst cannot slip past the limit, and a refused one is taken
+ * back, so a client that is already blocked cannot push the shared keys (account, artifact) towards their limit.
+ */
 async function guarded<T>(keys: [string, number][], fn: () => Promise<T>): Promise<T> {
-  if (keys.some(([k, limit]) => blocked(k, limit))) throw new HttpError(429, 'rate_limited', 'Too many attempts, try again later', { retryAfter: WINDOW / 1000 })
+  const refund = () => keys.forEach(([k]) => release(k))
+  if (keys.map(([k, limit]) => hit(k, limit, WINDOW)).some((r) => !r.ok)) {
+    refund()
+    throw new HttpError(429, 'rate_limited', 'Too many attempts, try again later', { retryAfter: WINDOW / 1000 })
+  }
   try {
-    return await fn()
+    const out = await fn()
+    refund()
+    return out
   } catch (e) {
-    if (e instanceof HttpError && (e.status === 401 || e.status === 410)) keys.forEach(([k, limit]) => hit(k, limit, WINDOW))
+    if (!(e instanceof HttpError && (e.status === 401 || e.status === 410))) refund()
     throw e
   }
 }
@@ -98,16 +108,10 @@ async function newSession(fields: { account_id?: number; artifact_id?: number; p
 }
 const MAX_AGE = SESSION_DAYS * 86400
 
-export async function accountSignIn(req: Request, email: string, password: string) {
-  const acctKey = `artifacts:login:acct:${email}`
-  // The per-account ceiling is high on purpose: ten wrong guesses from one visitor must not lock the real person out.
-  const acct = await guarded([[`artifacts:login:ip:${getClientIp(req)}`, 10], [acctKey, 100]], async () => {
-    const acct = await one('SELECT id::int, password_hash FROM artifacts.accounts WHERE email = $1', [email])
-    const ok = (await verifyPassword(password, acct?.password_hash ?? (await dummyHash()))) && !!acct?.password_hash
-    if (!ok) throw new HttpError(401, 'invalid_credentials', 'Email o contraseña incorrectos')
-    return acct
-  })
-  reset(acctKey)
+async function accountSignIn(email: string, password: string) {
+  const acct = await one('SELECT id::int, password_hash FROM artifacts.accounts WHERE email = $1', [email])
+  const ok = (await verifyPassword(password, acct?.password_hash ?? (await dummyHash()))) && !!acct?.password_hash
+  if (!ok) throw new HttpError(401, 'invalid_credentials', 'Email o contraseña incorrectos')
   const s = await newSession({ account_id: acct.id })
   return { csrf: s.csrf, setCookie: cookie(ACCOUNT_COOKIE, s.token, MAX_AGE) }
 }
@@ -301,6 +305,8 @@ export async function spendPasswordToken(req: Request, token: string, password: 
     if (!t) throw new HttpError(410, 'expired', 'El enlace ya se usó o venció.')
     await q('UPDATE artifacts.accounts SET password_hash = $2 WHERE id = $1', [t.account_id, hash], c)
     await q('DELETE FROM artifacts.sessions WHERE account_id = $1', [t.account_id], c)
+    // Using one link ends every other invitation and reset link for the account.
+    await q('DELETE FROM artifacts.tokens WHERE account_id = $1', [t.account_id], c)
     return t
   }))
   const s = await newSession({ account_id: t.account_id })
@@ -320,6 +326,17 @@ export async function signIn(req: Request, body: Record<string, any>) {
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase().slice(0, 254) : ''
   const password = typeof body.password === 'string' ? body.password.slice(0, 200) : ''
   if (!email || !password) throw bad('email and password required')
+  const ip = getClientIp(req)
+  const emailKeys = [`artifacts:login:acct:${email}`, `artifacts:login:acct:${email}:${ip}`]
+  // One set of limits for every email, the admin's included (its console limit is 5 per email and address), so the
+  // answers never tell which email is the admin's. The per-email ceiling is high on purpose: wrong guesses from one
+  // visitor must not lock the real person out.
+  const out = await guarded([[`artifacts:login:ip:${ip}`, 10], [emailKeys[1], 5], [emailKeys[0], 100]], () => signInAs(req, email, password))
+  emailKeys.forEach(reset)
+  return out
+}
+
+async function signInAs(req: Request, email: string, password: string) {
   if (await Admin.findOne({ email }).select('_id').lean()) {
     let admin: Awaited<ReturnType<typeof authorizeAdmin>> = null
     try {
@@ -333,7 +350,7 @@ export async function signIn(req: Request, body: Record<string, any>) {
     const token = await encode({ token: { name: admin.name, email: admin.email, sub: admin.id, id: admin.id, authAt: Date.now() }, secret: process.env.NEXTAUTH_SECRET!, maxAge })
     return { owner: true, csrf: null, setCookie: `${ownerCookieName()}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${authOptions.useSecureCookies ? '; Secure' : ''}` }
   }
-  return { owner: false, ...(await accountSignIn(req, email, password)) }
+  return { owner: false, ...(await accountSignIn(email, password)) }
 }
 
 export const ownerSignOutCookie = () => `${ownerCookieName()}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${authOptions.useSecureCookies ? '; Secure' : ''}`

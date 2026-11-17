@@ -19,7 +19,7 @@ export const ORIGIN = {
 }
 export const ADMIN = { email: 'owner@example.test', password: 'owner-test-password' }
 export const OWNER_INBOX = 'inbox@example.test'
-// Named per port so concurrent runs on different ARTIFACTS_TEST_PORTs do not remove each other's containers.
+// Suffixed with the port so concurrent runs on different ports never remove each other's containers.
 const NAMES = { pg: `artifacts-test-pg-${P}`, minio: `artifacts-test-minio-${P}`, redis: `artifacts-test-redis-${P}` }
 const IMAGES = {
   pg: process.env.ARTIFACTS_TEST_PG_IMAGE || 'fleet-security/pg16-alpine:20261021',
@@ -92,7 +92,7 @@ export async function startMailSink(dir) {
         if (data !== null) {
           const end = buf.indexOf('\r\n.\r\n')
           if (end < 0) return
-          data += buf.slice(0, end)
+          data += buf.slice(0, end).replace(/(^|\r\n)\.\./g, '$1.') // undo SMTP dot-stuffing
           buf = buf.slice(end + 5)
           messages.push(parseMail(data, rcpt))
           data = null

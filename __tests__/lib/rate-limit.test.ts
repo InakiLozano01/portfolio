@@ -1,4 +1,4 @@
-import { blocked, clientIpFromHeaders, hit, reset } from '../../lib/rate-limit'
+import { blocked, clientIpFromHeaders, hit, release, reset } from '../../lib/rate-limit'
 
 test('counts hits per key inside the window and resets on demand', () => {
   const key = `test:${Math.random()}`
@@ -8,6 +8,9 @@ test('counts hits per key inside the window and resets on demand', () => {
   expect(over.ok).toBe(false)
   expect(over.retryAfter).toBeGreaterThan(0)
   reset(key)
+  expect(blocked(key, 3)).toBe(false)
+  for (let i = 0; i < 3; i++) hit(key, 3, 60_000)
+  release(key)
   expect(blocked(key, 3)).toBe(false)
 })
 
