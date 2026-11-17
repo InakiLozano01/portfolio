@@ -137,8 +137,11 @@ export async function submitResponse(req: Request, a: Artifact, v: Visitor, role
   // otherwise anyone could mail their own words to any address from the owner's sender.
   if (v.account) {
     if (hit(`artifacts:copy:${email}`, 5, 3600e3).ok) {
+      // The copy shows what the response view shows: the score and correct answers only when the artifact reveals them.
+      const view = feedbackView(a, row, key)!
       sendPlain(email!, `Tu respuesta: ${a.title}`, [`Esto es lo que enviaste en «${a.title}»:`, JSON.stringify(answers, null, 2),
-        ...(a.feedback !== 'none' && g.score != null ? [`Puntaje: ${g.score} de ${g.maxScore}`] : [])], { href: artifactUrl(a), label: 'Abrir' }).catch(() => {})
+        ...(view.score != null ? [`Puntaje: ${view.score} de ${view.maxScore}`] : []),
+        ...(view.correct ? ['Respuestas correctas:', JSON.stringify(view.correct, null, 2)] : [])], { href: artifactUrl(a), label: 'Abrir' }).catch(() => {})
     }
   } else if (email && row.inserted && hit(`artifacts:copy:${email}`, 1, 24 * 3600e3).ok && hit(`artifacts:copy:ip:${getClientIp(req)}`, 5, 3600e3).ok) {
     sendPlain(email, `Tu respuesta: ${a.title}`, [`Recibimos tu respuesta en «${a.title}».`], { href: artifactUrl(a), label: 'Abrir' }).catch(() => {})
