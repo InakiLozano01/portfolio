@@ -35,7 +35,7 @@ await artifact.videoStatus('media/talk.mp4')        // {status: 'pending' | 'rea
 await artifact.login(); await artifact.logout(); artifact.onSession((info) => { /* re-render */ })
 ```
 
-Uploaded video: `<video data-artifact-video="media/talk.mp4" controls></video>`. The client sets the poster and plays the HLS renditions (natively or with hls.js), or shows a note while it encodes. Embedded YouTube, Vimeo or Drive players work as usual. Asset paths must be relative (`img/logo.png`).
+Uploaded video: `<video data-artifact-video="media/talk.mp4" controls></video>`. The client sets the poster and plays the HLS renditions (natively or with hls.js), or shows a note while it encodes. Embedded players (YouTube, Vimeo, Drive) load, but the sandbox gives artifact code an opaque origin and Chromium then sends no `Referer` at all, so a player that requires one (YouTube does) may refuse to play. Asset paths must be relative (`img/logo.png`).
 
 Answer key: `{"q1": {"answer": "b"}, "q2": {"answer": ["a", "c"], "points": 2}, "q3": {"answer": "Buenos Aires"}}`. Exact match per question: a list compares as a set, text ignores case, accents and extra spaces. It is never served to visitors; replacing it regrades every response.
 
@@ -91,6 +91,7 @@ To make the tools available to every agent, register the endpoint in the agent h
 
 ## Operations
 
-- Tests: build once with `NEXT_DIST_DIR=.next-test npx next build`, then `npm run test:artifacts` (HTTP, both origins), `npm run test:artifacts:encoder` (ffmpeg), `npm run test:artifacts:browser` (Chromium). They start and remove their own PostgreSQL, MinIO and Redis containers on 127.0.0.1:55490-55494.
-- Environment for the app and the encoder: `ARTIFACTS_S3_ENDPOINT`, `ARTIFACTS_S3_BUCKET`, `ARTIFACTS_S3_ACCESS_KEY`, `ARTIFACTS_S3_SECRET_KEY`, plus the existing `DATABASE_URL`, `REDIS_URL`, `NEXTAUTH_SECRET` and SMTP settings. `ARTIFACTS_APP_ORIGIN` and `ARTIFACTS_CONTENT_ORIGIN` default to the production hostnames.
+- Tests: build once with `NEXT_DIST_DIR=.next-test npx next build`, then `npm run test:artifacts` (HTTP, both origins), `npm run test:artifacts:encoder` (ffmpeg), `npm run test:artifacts:browser` (Chromium); for video, `node --test tests/artifacts/video.test.mjs` (1080p ladder, formats, disguised playlists) and `tests/artifacts/video.browser.test.mjs` (playback in Chromium), and `ARTIFACTS_APP_IMAGE=<image built from the Dockerfile> node --test tests/artifacts/encoder-service.test.mjs` (the compose service as deployed). They start and remove their own PostgreSQL, MinIO and Redis containers on 127.0.0.1, five ports from `ARTIFACTS_TEST_PORT` (default 55490).
+- Environment for the app: `ARTIFACTS_S3_ENDPOINT`, `ARTIFACTS_S3_BUCKET`, `ARTIFACTS_S3_ACCESS_KEY`, `ARTIFACTS_S3_SECRET_KEY`, plus the existing `DATABASE_URL`, `REDIS_URL`, `NEXTAUTH_SECRET` and SMTP settings. `ARTIFACTS_APP_ORIGIN` and `ARTIFACTS_CONTENT_ORIGIN` default to the production hostnames.
+- Environment for the encoder (`PORTFOLIO_ENCODER_ENV_FILE` in `compose.postgres-app.yml`), and nothing else: `DATABASE_URL`, `REDIS_URL`, `ARTIFACTS_S3_ENDPOINT`, `ARTIFACTS_S3_BUCKET`, `ARTIFACTS_S3_ACCESS_KEY`, `ARTIFACTS_S3_SECRET_KEY`. Optional: `ARTIFACTS_ENCODER_TMP` (scratch directory, default `/tmp`).
 - API tokens: create and revoke them in the console (Artifacts → API tokens). A **limited** token only reaches the restricted artifacts it created and cannot share them, change their general access or delete them; use it for automations such as the CRM.
