@@ -9,6 +9,54 @@ const LOGIN_WINDOW = 15 * 60 * 1000;
 // bcrypt hash of a random string; only used to spend the same time when an email is unknown.
 const DUMMY_HASH = '$2a$10$.2j.CG3d8paQIYjx6NZwLOzecX2hJa8cKxYx0CjfTuAGB2Iwc5JSG';
 
+/** The admin credential check, shared with the artifacts origin's owner sign-in. */
+export async function authorizeAdmin(credentials: Record<string, string> | undefined, req?: { headers?: Record<string, any> }) {
+    // During build time, skip auth
+    if (process.env.SKIP_DB_DURING_BUILD === 'true') {
+        console.log('[Database] Skipping auth during build');
+        return null;
+    }
+
+    const email = String(credentials?.email || '').trim().toLowerCase().slice(0, 200);
+    const password = String(credentials?.password || '').slice(0, 200);
+    const ip = clientIpFromHeaders(req?.headers as Record<string, string> | undefined);
+    // Throttle by address and by account: 20 tries per address and 5 per account+address per 15 minutes.
+    const ipKey = `login:ip:${ip}`;
+    const accountKey = `login:acct:${email}:${ip}`;
+    // Count the attempt before verifying, so a burst of parallel requests cannot slip past the limit.
+    const ipOk = hit(ipKey, 20, LOGIN_WINDOW).ok;
+    const accountOk = hit(accountKey, 5, LOGIN_WINDOW).ok;
+    if (!ipOk || !accountOk) {
+        throw new Error('Too many sign-in attempts. Wait 15 minutes and try again.');
+    }
+
+    let admin: any = null;
+    let valid = false;
+    try {
+        await connectToDatabase();
+        admin = await Admin.findOne({ email });
+        // Compare against a dummy hash when the account does not exist, so timing reveals nothing.
+        valid = admin
+            ? await admin.comparePassword(password)
+            : (await bcrypt.compare(password, DUMMY_HASH), false);
+    } catch (error) {
+        console.error('Auth error:', error);
+        throw new Error('Sign-in is unavailable right now. Try again in a minute.');
+    }
+
+    if (!admin || !valid) {
+        // One message for an unknown email and a wrong password, so accounts cannot be enumerated.
+        throw new Error('Email or password is incorrect.');
+    }
+
+    reset(accountKey);
+    return {
+        id: admin._id.toString(),
+        email: admin.email,
+        name: admin.name,
+    };
+}
+
 export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
@@ -17,52 +65,7 @@ export const authOptions: NextAuthOptions = {
                 email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" }
             },
-            async authorize(credentials, req) {
-                // During build time, skip auth
-                if (process.env.SKIP_DB_DURING_BUILD === 'true') {
-                    console.log('[Database] Skipping auth during build');
-                    return null;
-                }
-
-                const email = String(credentials?.email || '').trim().toLowerCase().slice(0, 200);
-                const password = String(credentials?.password || '').slice(0, 200);
-                const ip = clientIpFromHeaders(req?.headers as Record<string, string> | undefined);
-                // Throttle by address and by account: 20 tries per address and 5 per account+address per 15 minutes.
-                const ipKey = `login:ip:${ip}`;
-                const accountKey = `login:acct:${email}:${ip}`;
-                // Count the attempt before verifying, so a burst of parallel requests cannot slip past the limit.
-                const ipOk = hit(ipKey, 20, LOGIN_WINDOW).ok;
-                const accountOk = hit(accountKey, 5, LOGIN_WINDOW).ok;
-                if (!ipOk || !accountOk) {
-                    throw new Error('Too many sign-in attempts. Wait 15 minutes and try again.');
-                }
-
-                let admin: any = null;
-                let valid = false;
-                try {
-                    await connectToDatabase();
-                    admin = await Admin.findOne({ email });
-                    // Compare against a dummy hash when the account does not exist, so timing reveals nothing.
-                    valid = admin
-                        ? await admin.comparePassword(password)
-                        : (await bcrypt.compare(password, DUMMY_HASH), false);
-                } catch (error) {
-                    console.error('Auth error:', error);
-                    throw new Error('Sign-in is unavailable right now. Try again in a minute.');
-                }
-
-                if (!admin || !valid) {
-                    // One message for an unknown email and a wrong password, so accounts cannot be enumerated.
-                    throw new Error('Email or password is incorrect.');
-                }
-
-                reset(accountKey);
-                return {
-                    id: admin._id.toString(),
-                    email: admin.email,
-                    name: admin.name,
-                };
-            }
+            authorize: (credentials, req) => authorizeAdmin(credentials, req),
         })
     ],
     pages: {

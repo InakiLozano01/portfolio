@@ -30,3 +30,4 @@ blogs_for_agent_to_post/
 .impeccable/decision/
 .impeccable/mocks/
 .impeccable/hook.cache.json
+.next-test/

@@ -11,9 +11,9 @@ const customJestConfig = {
     '^bson$': '<rootDir>/node_modules/bson/lib/bson.cjs',
     '^isomorphic-dompurify$': '<rootDir>/node_modules/isomorphic-dompurify/dist/browser.js',
   },
-  modulePathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/public/tinymce/'],
-  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/public/tinymce/', '<rootDir>/node_modules/'],
-  watchPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/public/tinymce/'],
+  modulePathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/.next-test/', '<rootDir>/public/tinymce/'],
+  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/.next-test/', '<rootDir>/tests/artifacts/', '<rootDir>/public/tinymce/', '<rootDir>/node_modules/'],
+  watchPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/.next-test/', '<rootDir>/public/tinymce/'],
 }
 
 module.exports = createJestConfig(customJestConfig)

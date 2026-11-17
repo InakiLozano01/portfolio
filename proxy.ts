@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { isAppHost, isContentHost } from '@/lib/artifacts/route'
 
 const locales = ['en', 'es'] as const
 const defaultLocale = 'en'
@@ -39,6 +40,17 @@ function getLocale(request: NextRequest): string {
 }
 
 export async function proxy(request: NextRequest) {
+  // The artifacts origins are told apart by the Host nginx forwards; each is served from its own internal route tree.
+  const rawHost = request.headers.get('host')
+  const artifactsPrefix = isAppHost(rawHost) ? '/artifacts-app' : isContentHost(rawHost) ? '/artifacts-content' : null
+  if (artifactsPrefix) {
+    // The handler reads the visitor's path from this header; it is always overwritten here, so it cannot be forged.
+    const headers = new Headers(request.headers)
+    headers.set('x-artifacts-path', request.nextUrl.pathname)
+    return NextResponse.rewrite(new URL(`${artifactsPrefix}${request.nextUrl.pathname}${request.nextUrl.search}`, request.url), { request: { headers } })
+  }
+  if (/^\/artifacts-(?:app|content)(?:\/|$)/.test(request.nextUrl.pathname)) return new NextResponse('Not found', { status: 404 })
+
   const host = getForwardedHost(request) || request.nextUrl.host
   const proto = getForwardedProto(request)
 
@@ -128,5 +140,7 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     '/((?!api|_next/static|_next/image|favicon|.*\\..*|sitemap|robots).*)',
+    // The artifacts origins route every path, including /api and dotted file paths such as index.html.
+    { source: '/((?!_next/static|_next/image).*)', has: [{ type: 'host', value: 'artifacts(?:-content)?\\..*' }] },
   ],
 }

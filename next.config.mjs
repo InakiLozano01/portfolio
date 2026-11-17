@@ -1,14 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  // Lets the artifacts test suites build next to a production .next they may not be able to overwrite.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   outputFileTracingIncludes: {
     '/api/admin/invoices/**': ['./assets/invoices/**/*'],
+    '/artifacts-content/**': ['./node_modules/hls.js/dist/hls.light.min.js'],
   },
   // @react-pdf/renderer ships fontkit + yoga (wasm); keep it external so its
   // assets resolve from node_modules at runtime instead of being bundled.
   serverExternalPackages: ['@react-pdf/renderer'],
   experimental: {
     cpus: 1,
+    // Requests on the artifacts origins pass through proxy.ts, which buffers bodies; upload parts are 16 MiB (nginx allows 41m).
+    proxyClientMaxBodySize: '41mb',
   },
 
   // Performance optimizations
@@ -20,6 +25,8 @@ const nextConfig = {
     return [
       {
         source: '/(.*)',
+        // The artifacts origins set their own framing and CSP: content must be framable by the artifacts app origin.
+        missing: [{ type: 'host', value: 'artifacts(?:-content)?\\..*' }],
         headers: [
           {
             key: 'X-Content-Type-Options',
