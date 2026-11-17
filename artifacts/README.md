@@ -65,7 +65,7 @@ The admin console uses the same handlers at `/api/admin/artifacts/…` with the 
 | GET | `artifacts/:ref/state/history` | Newest 500 revisions are kept |
 | GET / DELETE | `artifacts/:ref/responses`, `…/responses/:id` | `?format=csv` |
 | GET / PUT / DELETE | `artifacts/:ref/answer-key` | `{key}` |
-| GET / POST / DELETE | `tokens`, `tokens/:id` | Token returned once on create |
+| GET / POST / DELETE | `tokens`, `tokens/:id` | Owner session only, never a token. Token returned once on create |
 | GET | `storage` | Used, cap (20 GB) and per artifact |
 
 Limits: 40 MB request body, 15 MB per inline file, 1 GB per uploaded file, 20 GB in total (refused before any part is accepted), 300 files per version, 2 MB of state, 256 KB per response.

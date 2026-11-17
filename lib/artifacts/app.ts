@@ -37,7 +37,7 @@ async function bootFor(req: Request, a: S.Artifact | null, v: A.Visitor) {
   return {
     role,
     boot: {
-      id: a?.id ?? null, slug: a?.slug ?? null, title: role ? a!.title : null, version: role ? a!.current_version : null, role,
+      id: a?.id ?? null, slug: role ? a!.slug : null, title: role ? a!.title : null, version: role ? a!.current_version : null, role,
       user: v.account ? v.account.alias || v.account.email : v.owner ? 'Propietario' : null,
       csrf: v.account?.csrf ?? pw?.csrf ?? null, access: role && a ? a.access : null,
       responses: role && a ? { who: a.responders, open: a.responses_open, feedback: a.feedback } : null,

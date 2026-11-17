@@ -118,6 +118,11 @@ export async function submitResponse(req: Request, a: Artifact, v: Visitor, role
     if (!name && !email) throw bad('Indicá tu nombre o tu email para responder')
   }
   const key = await answerKeyOf(a.id)
+  // A graded response that shows its result is final: resubmitting and watching the score would reveal the answer key.
+  if (key && a.feedback !== 'none' && !v.owner && !r.setCookie &&
+    (await one('SELECT 1 FROM artifacts.responses WHERE artifact_id = $1 AND responder_key = $2', [a.id, r.key]))) {
+    throw new HttpError(409, 'already_submitted', 'Ya enviaste tu respuesta')
+  }
   const g = grade(key, answers)
   const row = await one(`INSERT INTO artifacts.responses(artifact_id, responder_key, account_id, declared_name, declared_email, answers, score, max_score)
     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8)
@@ -128,9 +133,14 @@ export async function submitResponse(req: Request, a: Artifact, v: Visitor, role
     sendPlain(ownerAddress(), `Nueva respuesta: ${a.title}`, [`${who} respondió «${a.title}».`, ...(g.score != null ? [`Puntaje: ${g.score} de ${g.maxScore}`] : [])],
       { href: artifactUrl(a), label: 'Abrir el artifact' }).catch(() => {})
   }
-  // The copy goes to whatever address was given, so it is rate limited per address and per client.
-  if (email && hit(`artifacts:copy:${email}`, 5, 3600e3).ok && hit(`artifacts:copy:ip:${getClientIp(req)}`, 10, 3600e3).ok) {
-    sendPlain(email, `Tu respuesta: ${a.title}`, [`Esto es lo que enviaste en «${a.title}»:`, JSON.stringify(answers, null, 2)], { href: artifactUrl(a), label: 'Abrir' }).catch(() => {})
+  // Only an account's own address gets its answers back. A typed address is unverified, so it gets fixed text, once:
+  // otherwise anyone could mail their own words to any address from the owner's sender.
+  if (v.account) {
+    if (hit(`artifacts:copy:${email}`, 5, 3600e3).ok) {
+      sendPlain(email!, `Tu respuesta: ${a.title}`, [`Esto es lo que enviaste en «${a.title}»:`, JSON.stringify(answers, null, 2)], { href: artifactUrl(a), label: 'Abrir' }).catch(() => {})
+    }
+  } else if (email && row.inserted && hit(`artifacts:copy:${email}`, 1, 24 * 3600e3).ok && hit(`artifacts:copy:ip:${getClientIp(req)}`, 5, 3600e3).ok) {
+    sendPlain(email, `Tu respuesta: ${a.title}`, [`Recibimos tu respuesta en «${a.title}».`], { href: artifactUrl(a), label: 'Abrir' }).catch(() => {})
   }
   return { response: feedbackView(a, row, key), setCookie: r.setCookie }
 }

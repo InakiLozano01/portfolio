@@ -16,7 +16,11 @@ import { deleteObject, deletePrefix, getObject, putObject } from '../lib/artifac
 const require = createRequire(import.meta.url)
 const pg = require('pg')
 const { Redis } = require('ioredis')
-const run = promisify(execFile)
+const exec = promisify(execFile)
+// ffmpeg picks the input format by sniffing bytes; without a whitelist a playlist renamed .mp4 could pull local files into the output.
+const INPUT = ['-format_whitelist', 'mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,avi,mpegts,mpeg']
+// A file that never finishes must not hold the queue: two hours covers 1 GB at 1 CPU.
+const run = (cmd, args, opts) => exec(cmd, args, { timeout: 2 * 3600e3, killSignal: 'SIGKILL', ...opts })
 const QUEUE = 'artifacts:encode'
 const PROCESSING = 'artifacts:encode:processing'
 const LADDER = [
@@ -32,7 +36,7 @@ const db = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 2, app
 const redis = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null })
 
 async function probe(file) {
-  const { stdout } = await run('ffprobe', ['-v', 'error', '-print_format', 'json', '-show_streams', '-show_format', file])
+  const { stdout } = await run('ffprobe', ['-v', 'error', ...INPUT, '-print_format', 'json', '-show_streams', '-show_format', file])
   const info = JSON.parse(stdout)
   const v = info.streams.find((s) => s.codec_type === 'video' && s.disposition?.attached_pic !== 1)
   if (!v || !v.width || !v.height) throw new Error('no video stream')
@@ -49,7 +53,7 @@ async function encode(input, out, src) {
   // A source below 360p is kept at its own height (rounded down to even).
   const rungs = ladder.length ? ladder : [{ ...LADDER[0], height: src.height - (src.height % 2) }]
   const n = rungs.length
-  const args = ['-hide_banner', '-loglevel', 'error', '-y', '-i', input,
+  const args = ['-hide_banner', '-loglevel', 'error', '-y', ...INPUT, '-i', input,
     '-filter_complex', `[0:v]split=${n}${rungs.map((_, i) => `[s${i}]`).join('')};${rungs.map((r, i) => `[s${i}]scale=-2:${r.height}[v${i}]`).join(';')}`]
   rungs.forEach((r, i) => {
     args.push('-map', `[v${i}]`, `-c:v:${i}`, 'libx264', `-b:v:${i}`, r.video, `-maxrate:v:${i}`, r.max, `-bufsize:v:${i}`, r.buf)
@@ -62,7 +66,7 @@ async function encode(input, out, src) {
     path.join(out, '%v', 'index.m3u8'))
   await run('ffmpeg', args, { maxBuffer: 1 << 24 })
   const at = Math.min(1, src.duration / 2)
-  await run('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-ss', String(at), '-i', input, '-frames:v', '1',
+  await run('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-ss', String(at), ...INPUT, '-i', input, '-frames:v', '1',
     '-vf', `scale=-2:${Math.min(720, rungs.at(-1).height)}`, '-q:v', '3', path.join(out, 'poster.jpg')])
   return rungs.map((r) => r.height)
 }

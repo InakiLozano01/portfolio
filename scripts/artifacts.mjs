@@ -23,7 +23,7 @@ const USAGE = `usage: artifacts <command> [args] [--flags]   (every command prin
   responses settings <ref> [--who anonymous|declared|account] [--open|--closed] [--feedback none|score|answers] [--notify|--no-notify]
   responses export <ref> [--csv] | responses delete <ref> <id>
   answer-key <ref> (<file.json> | --json '<json>' | --delete | --show)
-  tokens | token create <name> | token revoke <id> | storage`
+  storage`
 
 function parseArgs(argv) {
   const pos = []
@@ -180,11 +180,6 @@ async function main() {
       if (flags.delete) return out(withUrl(a1, await call('DELETE', `artifacts/${enc(a1)}/answer-key`)))
       if (flags.show) return out(withUrl(a1, await call('GET', `artifacts/${enc(a1)}/answer-key`)))
       return out(withUrl(a1, await call('PUT', `artifacts/${enc(a1)}/answer-key`, { json: { key: readJsonArg(a2, flags) } })))
-    case 'tokens': return out(await call('GET', 'tokens'))
-    case 'token':
-      if (a1 === 'create') return out(await call('POST', 'tokens', { json: { name: a2 } }))
-      if (a1 === 'revoke') return out(await call('DELETE', `tokens/${enc(a2)}`))
-      break
     case 'storage': return out(await call('GET', 'storage'))
   }
   die(USAGE)

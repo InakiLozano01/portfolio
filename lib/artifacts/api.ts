@@ -94,6 +94,8 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
   const [r0, ref, r2, ...rest] = parts
 
   if (r0 === 'tokens') {
+    // Only the owner's session manages tokens: a leaked token must not be able to mint one that outlives its revocation.
+    if (by !== 'owner') throw new HttpError(403, 'forbidden', 'Only the owner can manage API tokens')
     if (M === 'GET' && !ref) return json(await q('SELECT id::int, name, created_at AS "createdAt", last_used_at AS "lastUsedAt", revoked_at AS "revokedAt" FROM artifacts.api_tokens ORDER BY id'))
     if (M === 'POST' && !ref) {
       const { name } = await readJson(req, 4096)

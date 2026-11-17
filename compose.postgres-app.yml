@@ -44,9 +44,9 @@ services:
     restart: unless-stopped
     init: true
     command: ["node", "scripts/artifacts-encoder.mjs"]
+    # Only DATABASE_URL, REDIS_URL and ARTIFACTS_S3_*: ffmpeg reads untrusted files here, so the app's other secrets stay out.
     env_file:
-      - ${PORTFOLIO_EXISTING_ENV_FILE:?Existing private application environment required}
-      - ${PORTFOLIO_DATABASE_ENV_FILE:?Private PostgreSQL app environment required}
+      - ${PORTFOLIO_ENCODER_ENV_FILE:?Private encoder environment required}
     volumes:
       - artifacts_encoder_tmp:/tmp
     networks: [portfolio_network]

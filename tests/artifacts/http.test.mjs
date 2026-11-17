@@ -286,8 +286,9 @@ test('responses in three identity modes, privacy, grading, regrade, export, noti
   assert.deepEqual(sub.body.response.correct, { q1: 'b', q2: ['a', 'c'], q3: 'Buenos Aires' })
   await mailTo(app.mail, (m) => m.to.includes(OWNER_INBOX) && /quiz/.test(m.subject))
   const fix = await x.req(`${ORIGIN.app}/api/a/${a.id}/response`, { method: 'PUT', shell: true, json: { answers: { q1: 'a', q2: ['a', 'c'], q3: 'x' } } })
-  assert.equal(fix.body.response.score, 2)
-  assert.deepEqual((await x.req(`${ORIGIN.app}/api/a/${a.id}/response`, { shell: true })).body.response.answers.q1, 'a')
+  // A graded response that shows its result is final, or resubmitting would reveal the key one question at a time.
+  assert.equal(fix.status, 409)
+  assert.deepEqual((await x.req(`${ORIGIN.app}/api/a/${a.id}/response`, { shell: true })).body.response.answers.q1, 'b')
 
   // Another responder sees only their own (nothing yet), never the first one's.
   const y = new Browser()
@@ -303,6 +304,9 @@ test('responses in three identity modes, privacy, grading, regrade, export, noti
   assert.equal(scored.correct, undefined)
   await settings({ feedback: 'none' })
   assert.equal((await y.req(`${ORIGIN.app}/api/a/${a.id}/response`, { shell: true })).body.response.score, undefined)
+  // With no result shown, a response can be corrected until responses close.
+  assert.equal((await y.req(`${ORIGIN.app}/api/a/${a.id}/response`, { method: 'PUT', shell: true, json: { answers: { q1: 'b', q3: 'x' } } })).status, 200)
+  assert.equal((await y.req(`${ORIGIN.app}/api/a/${a.id}/response`, { shell: true })).body.response.answers.q3, 'x')
   for (const p of ['answer-key', 'answerKey', 'key']) assert.equal((await y.req(`${ORIGIN.app}/api/a/${a.id}/${p}`, { shell: true })).status, 404)
   const info = await y.req(`${ORIGIN.app}/api/a/${a.id}/info`, { shell: true })
   assert.doesNotMatch(info.text + (await y.req((await y.open('quiz')).iframe)).text, /Buenos Aires/)
@@ -320,9 +324,11 @@ test('responses in three identity modes, privacy, grading, regrade, export, noti
   const d = new Browser()
   await d.open('quiz')
   assert.equal((await d.req(`${ORIGIN.app}/api/a/${a.id}/response`, { method: 'PUT', shell: true, json: { answers: { q1: 'b' } } })).status, 400)
-  assert.equal((await d.req(`${ORIGIN.app}/api/a/${a.id}/response`, { method: 'PUT', shell: true, json: { answers: { q1: 'b' }, name: 'Caro', email: 'caro@example.test' } })).status, 200)
+  assert.equal((await d.req(`${ORIGIN.app}/api/a/${a.id}/response`, { method: 'PUT', shell: true, json: { answers: { q1: 'a', q3: 'visit evil.example' }, name: 'Caro', email: 'caro@example.test' } })).status, 200)
+  // A typed address is unverified: it gets a fixed receipt, never the submitted text.
   const copy = await mailTo(app.mail, (m) => m.to.includes('caro@example.test'))
-  assert.match(copy.text, /"q1": "b"/)
+  assert.match(copy.text, /Recibimos tu respuesta/)
+  assert.doesNotMatch(copy.text, /evil\.example/)
 
   // Accounts only: one response per account across browsers.
   await settings({ who: 'account' })
@@ -336,6 +342,8 @@ test('responses in three identity modes, privacy, grading, regrade, export, noti
     await dan.open('quiz')
     assert.equal((await dan.req(`${ORIGIN.app}/api/a/${a.id}/response`, { method: 'PUT', shell: true, json: { answers: { q1: answer } } })).status, 200)
   }
+  // An account's own address gets its answers back.
+  assert.match((await mailTo(app.mail, (m) => m.to.includes('dan@example.test') && /Tu respuesta/.test(m.subject))).text, /"q1"/)
 
   // Closed responses refuse submissions but still show your own.
   await settings({ open: false })
@@ -354,7 +362,7 @@ test('responses in three identity modes, privacy, grading, regrade, export, noti
   assert.equal((await api('PUT', 'artifacts/quiz/answer-key', { key: { q1: { answer: 'a', points: 5 } } })).body.regraded, 4)
   list = (await api('GET', 'artifacts/quiz/responses')).body
   assert.equal(list.find((r) => r.email === 'dan@example.test').score, 0)
-  assert.equal(list[0].score, 5)
+  assert.equal(list.find((r) => r.name === 'Caro').score, 5)
   const csv = await api('GET', 'artifacts/quiz/responses?format=csv')
   assert.match(csv.headers.get('content-type'), /text\/csv/)
   assert.match(csv.text.split('\r\n')[0], /"id","submittedAt","updatedAt","identity","name","email","alias","score","maxScore","q1"/)
@@ -508,12 +516,16 @@ test('agent API authentication and token revocation', async () => {
   const anon = new Browser()
   assert.equal((await anon.req(`${ORIGIN.app}/api/v1/artifacts`)).status, 401)
   assert.equal((await anon.req(`${ORIGIN.app}/api/v1/artifacts`, { headers: { authorization: 'Bearer nope' } })).status, 401)
-  const t = await api('POST', 'tokens', { name: 'short-lived' })
+  const asOwner = (method, path, json) => owner.req(`${ORIGIN.app}/api/v1/${path}`, { method, json, headers: { origin: ORIGIN.app } })
+  // A token cannot manage tokens: a leaked one must not mint a successor.
+  assert.equal((await api('POST', 'tokens', { name: 'sneaky' })).status, 403)
+  assert.equal((await api('GET', 'tokens')).status, 403)
+  const t = await asOwner('POST', 'tokens', { name: 'short-lived' })
   const temp = agent(t.body.token)
   assert.equal((await temp('GET', 'artifacts')).status, 200)
-  assert.equal((await api('DELETE', `tokens/${t.body.id}`)).status, 200)
+  assert.equal((await asOwner('DELETE', `tokens/${t.body.id}`)).status, 200)
   assert.equal((await temp('GET', 'artifacts')).status, 401)
-  const list = await api('GET', 'tokens')
+  const list = await asOwner('GET', 'tokens')
   assert.ok(list.body.every((x) => !('token' in x) && !('token_hash' in x)))
   // The console door on the main origin needs the admin session.
   assert.equal((await anon.req(`${ORIGIN.main}/api/admin/artifacts/artifacts`)).status, 401)

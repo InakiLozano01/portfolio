@@ -71,13 +71,13 @@ export async function effectiveRole(req: Request, a: Artifact, v: Visitor): Prom
   return best
 }
 
-/** Refuses once any key has `limit` failures in the window; only failed attempts (401/410) count. */
-async function guarded<T>(keys: string[], limit: number, fn: () => Promise<T>): Promise<T> {
-  if (keys.some((k) => blocked(k, limit))) throw new HttpError(429, 'rate_limited', 'Too many attempts, try again later', { retryAfter: WINDOW / 1000 })
+/** Refuses once any [key, limit] has that many failures in the window; only failed attempts (401/410) count. */
+async function guarded<T>(keys: [string, number][], fn: () => Promise<T>): Promise<T> {
+  if (keys.some(([k, limit]) => blocked(k, limit))) throw new HttpError(429, 'rate_limited', 'Too many attempts, try again later', { retryAfter: WINDOW / 1000 })
   try {
     return await fn()
   } catch (e) {
-    if (e instanceof HttpError && (e.status === 401 || e.status === 410)) keys.forEach((k) => hit(k, limit, WINDOW))
+    if (e instanceof HttpError && (e.status === 401 || e.status === 410)) keys.forEach(([k, limit]) => hit(k, limit, WINDOW))
     throw e
   }
 }
@@ -100,7 +100,8 @@ const MAX_AGE = SESSION_DAYS * 86400
 
 export async function accountSignIn(req: Request, email: string, password: string) {
   const acctKey = `artifacts:login:acct:${email}`
-  const acct = await guarded([`artifacts:login:ip:${getClientIp(req)}`, acctKey], 10, async () => {
+  // The per-account ceiling is high on purpose: ten wrong guesses from one visitor must not lock the real person out.
+  const acct = await guarded([[`artifacts:login:ip:${getClientIp(req)}`, 10], [acctKey, 100]], async () => {
     const acct = await one('SELECT id::int, password_hash FROM artifacts.accounts WHERE email = $1', [email])
     const ok = (await verifyPassword(password, acct?.password_hash ?? (await dummyHash()))) && !!acct?.password_hash
     if (!ok) throw new HttpError(401, 'invalid_credentials', 'Email o contraseña incorrectos')
@@ -119,7 +120,7 @@ export async function signOut(req: Request) {
 
 export async function unlock(req: Request, a: Artifact, password: unknown) {
   if (typeof password !== 'string' || password.length > 200) throw bad('password required')
-  await guarded([`artifacts:unlock:ip:${getClientIp(req)}`, `artifacts:unlock:a:${a.id}`], 20, async () => {
+  await guarded([[`artifacts:unlock:ip:${getClientIp(req)}`, 20], [`artifacts:unlock:a:${a.id}`, 200]], async () => {
     const ok = (await verifyPassword(password, a.password_hash ?? (await dummyHash()))) && a.access === 'password'
     if (!ok) throw new HttpError(401, 'invalid_password', 'Contraseña incorrecta')
   })
@@ -294,7 +295,7 @@ export async function peekToken(token: string) {
 export async function spendPasswordToken(req: Request, token: string, password: string) {
   if (password.length < 8 || password.length > 200) throw bad('La contraseña debe tener entre 8 y 200 caracteres.')
   const hash = await hashPassword(password)
-  const t = await guarded([`artifacts:token:ip:${getClientIp(req)}`], 20, () => tx(async (c) => {
+  const t = await guarded([[`artifacts:token:ip:${getClientIp(req)}`, 20]], () => tx(async (c) => {
     const t = await one(`UPDATE artifacts.tokens SET used_at = now() WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()
       RETURNING account_id::int, artifact_id::int`, [sha256(token)], c)
     if (!t) throw new HttpError(410, 'expired', 'El enlace ya se usó o venció.')
