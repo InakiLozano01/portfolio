@@ -60,6 +60,17 @@ const nextConfig = {
         ],
       },
       {
+        // The owner's share page on the artifacts app origin (a Next page; everything else there sets its own headers).
+        source: '/share/:path*',
+        has: [{ type: 'host', value: 'artifacts\\..*' }],
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" },
+        ],
+      },
+      {
         source: '/images/:path*',
         headers: [
           {

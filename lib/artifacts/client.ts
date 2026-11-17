@@ -48,7 +48,7 @@ const info=()=>({id:B.id,slug:B.slug,title:B.title,version:B.version,role:B.role
 canEdit:can("editor"),canRespond:can("responder"),access:B.access,responses:B.responses});
 function sync(){if(pill){pill.textContent=B.user?B.user+" · Salir":"Ingresar";pill.hidden=false}
 if(f&&f.contentWindow)f.contentWindow.postMessage({__artifact:1,event:"session",info:info()},"*")}
-async function refresh(){const j=await api("GET",A("/info"));const had=!!B.role;B=Object.assign(B,j);if(!f||!had&&B.role)return location.reload();sync()}
+async function refresh(){const j=await api("GET",A("/info"));const had=!!B.role;B=Object.assign(B,j);if(!f||!had&&B.role||B.role==="owner")return location.reload();sync()}
 function openLogin(){if(waiting)return waiting.p;let res,rej;const p=new Promise((a,b)=>{res=a;rej=b});waiting={p,res,rej};
 err.textContent="";if(udlg&&udlg.open)udlg.close();dlg.showModal();return p}
 function cancel(d){d.close();if(waiting){waiting.rej(fail("cancelled","Login cancelled"));waiting=null}}

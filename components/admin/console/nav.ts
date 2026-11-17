@@ -1,5 +1,6 @@
 import {
   Cpu,
+  FileBox,
   FileUp,
   FolderKanban,
   Inbox,
@@ -35,6 +36,7 @@ export const NAV: { group?: string; items: NavItem[] }[] = [
       { href: '/admin/site', label: 'Site pages', icon: PanelsTopLeft, keywords: 'sections home about education experience contact' },
       { href: '/admin/skills', label: 'Skills', icon: Cpu, keywords: 'technologies stack' },
       { href: '/admin/files', label: 'Files', icon: FileUp, keywords: 'cv photo portrait assets upload' },
+      { href: '/admin/artifacts', label: 'Artifacts', icon: FileBox, keywords: 'share html client pages responses video tokens' },
     ],
   },
   {
