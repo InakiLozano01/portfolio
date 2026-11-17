@@ -444,8 +444,11 @@ test('multipart upload resumes, and the storage cap refuses before any part', as
   assert.match(over.body.error.message, /storage is full/i)
   assert.equal((await api('POST', 'artifacts/upload/uploads', { path: 'x.bin', size: 2 ** 30 + 1 })).status, 400)
 
-  // Deleting the artifact frees its storage.
+  // Deleting the artifact frees its storage, including an upload still in progress.
+  const pending = await api('POST', 'artifacts/upload/uploads', { path: 'pending.bin', size: 1000 })
+  assert.equal(pending.status, 201)
   await api('DELETE', 'artifacts/upload')
+  assert.equal((await api('GET', `uploads/${pending.body.id}`)).status, 404)
   assert.ok((await api('GET', 'storage')).body.usedBytes < storage.body.usedBytes - size + 1)
 })
 

@@ -164,6 +164,7 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
     if (M === 'GET') return json(await detail(a.id))
     if (M === 'PATCH') { await patchArtifact(a, await readJson(req, 65536)); return json(await detail(a.id)) }
     if (M === 'DELETE') {
+      for (const u of await q('SELECT id FROM artifacts.uploads WHERE artifact_id = $1', [a.id])) await S.abortUpload(u.id)
       await q('DELETE FROM artifacts.artifacts WHERE id = $1', [a.id])
       await S.gcBlobs()
       return json({ deleted: true, slug: a.slug })
