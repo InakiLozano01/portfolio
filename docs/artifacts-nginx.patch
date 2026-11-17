@@ -1,15 +1,36 @@
 --- a/nginx/nginx.conf
 +++ b/nginx/nginx.conf
-@@ -851,7 +851,7 @@
+@@ -850,9 +850,12 @@
+     }
  
      # =========================
-     # artifacts.inakilozano.com (app/API/shell) + artifacts-content.inakilozano.com (sandboxed artifact HTML)
+-    # artifacts.inakilozano.com (app/API/shell) + artifacts-content.inakilozano.com (sandboxed artifact HTML)
 -    # -> portfolio artifacts server (3480). Source: portfolio repo, artifacts/. Never indexed.
++    # artifacts.inakilozano.com (app, API, MCP) + artifacts-content.inakilozano.com (sandboxed artifact files)
 +    # -> the portfolio app (3003), which tells the two hosts apart by Host. Source: portfolio repo, lib/artifacts/. Never indexed.
      # Server-level add_header drops the http-level set on purpose: content must be framable by the app origin.
++    # Client IP: cloudflare-realip.conf (http level) replaces $remote_addr with CF-Connecting-IP only when the peer is a
++    # Cloudflare address, so limit_req keys on the visitor, not the edge. The app reads CF-Connecting-IP, so it is
++    # overwritten with that $remote_addr: a value a non-Cloudflare peer sends straight to the origin never reaches the app.
      # =========================
      server {
-@@ -893,18 +893,34 @@
+         listen 80;
+@@ -881,30 +884,49 @@
+         add_header X-Robots-Tag              "noindex, nofollow, noarchive" always;
+         add_header X-Content-Type-Options    "nosniff" always;
+ 
++        # JSON API bodies are capped at 40 MB by the app.
+         client_max_body_size 41m;
+ 
++        # Locations below set no proxy_set_header of their own, so they all inherit this set.
+         proxy_http_version 1.1;
+         proxy_set_header Host              $host;
+         proxy_set_header X-Real-IP         $remote_addr;
+         proxy_set_header X-Forwarded-For   $remote_addr;
++        proxy_set_header CF-Connecting-IP  $remote_addr;
+         proxy_set_header X-Forwarded-Proto https;
+         proxy_hide_header X-Robots-Tag;
+         proxy_hide_header X-Content-Type-Options;
          proxy_read_timeout 60s;
          proxy_send_timeout 60s;
  
@@ -48,13 +69,17 @@
          }
      }
  
-@@ -931,10 +947,13 @@
+@@ -927,14 +949,17 @@
+         proxy_set_header Host              $host;
+         proxy_set_header X-Real-IP         $remote_addr;
+         proxy_set_header X-Forwarded-For   $remote_addr;
++        proxy_set_header CF-Connecting-IP  $remote_addr;
+         proxy_set_header X-Forwarded-Proto https;
          proxy_hide_header X-Robots-Tag;
          proxy_hide_header X-Content-Type-Options;
- 
 +        # Video segments stream through the app; give range requests on large files time.
 +        proxy_read_timeout 120s;
-+
+ 
          location / {
              limit_req zone=static_limit burst=100 nodelay;
              limit_except GET HEAD { deny all; }
