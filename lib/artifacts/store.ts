@@ -190,6 +190,8 @@ export async function startUpload(a: Artifact, body: Record<string, any>) {
   const size = body.size
   if (!Number.isInteger(size) || size < 1 || size > LIMITS.file) throw bad(`size must be 1-${LIMITS.file} bytes`)
   const contentType = checkType(body.contentType, path)
+  // HTML is read whole into memory to inject the client, so it keeps the inline limit.
+  if (/^text\/html\b/i.test(contentType) && size > LIMITS.inlineFile) throw bad(`HTML files must be at most ${LIMITS.inlineFile} bytes`)
   const fingerprint = typeof body.fingerprint === 'string' ? body.fingerprint.slice(0, 200) : null
   await sweepUploads()
   if (fingerprint) {
@@ -272,6 +274,14 @@ export async function abortUpload(id: string) {
   if (!u) throw notFound('Upload')
   if (!u.completed_at) await S3.abortMultipart(u.object_key, u.s3_upload_id)
   else await gcBlobs()
+}
+
+let lastSweep = 0
+// shortcut: swept at most hourly on agent API traffic, not on a timer; add one if abandoned uploads must free the cap while idle.
+export function sweepUploadsHourly() {
+  if (Date.now() - lastSweep < 3600e3) return
+  lastSweep = Date.now()
+  sweepUploads().catch(() => {})
 }
 
 /** Expired uploads release their reservation and their parts. */

@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS artifacts.artifacts (
   password_hash text, password_epoch integer NOT NULL DEFAULT 0,
   responders text NOT NULL DEFAULT 'account' CHECK (responders IN ('anonymous', 'declared', 'account')),
   responses_open boolean NOT NULL DEFAULT true,
-  feedback text NOT NULL DEFAULT 'none' CHECK (feedback IN ('none', 'score', 'answers')),
+  feedback text NOT NULL DEFAULT 'score' CHECK (feedback IN ('none', 'score', 'answers')),
   notify_owner boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
 

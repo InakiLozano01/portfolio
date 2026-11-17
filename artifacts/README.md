@@ -83,6 +83,12 @@ node scripts/artifacts.mjs state history kickoff-acme
 
 MCP: streamable HTTP at `https://artifacts.inakilozano.com/mcp` with the same bearer token; tools mirror the agent API except large uploads.
 
+To make the tools available to every agent, register the endpoint in the agent hub once (needs an admin grant; the `shared-mcp-hub` skill has the details):
+
+1. Create an API token in the console (Artifacts → API tokens) and store it in the keys hub as service `artifacts-inaki`.
+2. Register an HTTP MCP server named `artifacts` with `hub_admin_register_mcp`: URL `https://artifacts.inakilozano.com/mcp`, bearer authentication with that key.
+3. Check it with `hub_search_tools` (query `artifacts`): `create_artifact` and `share_artifact` should be listed.
+
 ## Operations
 
 - Tests: build once with `NEXT_DIST_DIR=.next-test npx next build`, then `npm run test:artifacts` (HTTP, both origins), `npm run test:artifacts:encoder` (ffmpeg), `npm run test:artifacts:browser` (Chromium). They start and remove their own PostgreSQL, MinIO and Redis containers on 127.0.0.1:55490-55494.

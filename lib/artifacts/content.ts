@@ -10,8 +10,9 @@ import { ASSET_PATH_RE, injectIntoHtml, verifyContent } from './util'
 const HLS_TYPES: Record<string, string> = { m3u8: 'application/vnd.apple.mpegurl', ts: 'video/mp2t', jpg: 'image/jpeg' }
 const HLS_REST_RE = /^(?:master\.m3u8|poster\.jpg|\d{3,4}\/(?:index\.m3u8|seg_\d{1,5}\.ts))$/
 
+// The referrer is the origin only, never the capability path; embedded players such as YouTube refuse requests without one.
 const base = () => ({
-  'X-Robots-Tag': ROBOTS, 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
+  'X-Robots-Tag': ROBOTS, 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store',
 })
 const text = (status: number, body: string) => new Response(body, { status, headers: { ...base(), 'Content-Type': 'text/plain; charset=utf-8' } })

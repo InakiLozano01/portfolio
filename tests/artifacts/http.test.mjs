@@ -288,6 +288,8 @@ test('responses in three identity modes, privacy, grading, regrade, export, noti
   const fix = await x.req(`${ORIGIN.app}/api/a/${a.id}/response`, { method: 'PUT', shell: true, json: { answers: { q1: 'a', q2: ['a', 'c'], q3: 'x' } } })
   // A graded response that shows its result is final, or resubmitting would reveal the key one question at a time.
   assert.equal(fix.status, 409)
+  // A responder answers but never writes the shared state.
+  assert.equal((await x.req(`${ORIGIN.app}/api/a/${a.id}/state`, { method: 'PUT', shell: true, json: { state: 1 } })).status, 403)
   assert.deepEqual((await x.req(`${ORIGIN.app}/api/a/${a.id}/response`, { shell: true })).body.response.answers.q1, 'b')
 
   // Another responder sees only their own (nothing yet), never the first one's.

@@ -1,7 +1,7 @@
 // Responses, the answer key and grading.
 import { getClientIp } from '@/lib/client-ip'
 import { hit } from '@/lib/rate-limit'
-import { HttpError, LIMITS, bad, notFound, one, q, tx } from './db'
+import { CFG, HttpError, LIMITS, bad, notFound, one, q, tx } from './db'
 import { RESPONDER_COOKIE, atLeast, checkEmail, cookie, cookies, type Effective, type Visitor } from './access'
 import { ownerAddress, sendPlain } from './mail'
 import { artifactUrl, type Artifact } from './store'
@@ -131,13 +131,14 @@ export async function submitResponse(req: Request, a: Artifact, v: Visitor, role
   const who = v.owner ? 'owner' : v.account ? (v.account.alias || v.account.email) : name || email || 'anónimo'
   if (row.inserted && a.notify_owner && ownerAddress()) {
     sendPlain(ownerAddress(), `Nueva respuesta: ${a.title}`, [`${who} respondió «${a.title}».`, ...(g.score != null ? [`Puntaje: ${g.score} de ${g.maxScore}`] : [])],
-      { href: artifactUrl(a), label: 'Abrir el artifact' }).catch(() => {})
+      { href: `${process.env.NEXTAUTH_URL || CFG.appOrigin()}/admin/artifacts`, label: 'Ver las respuestas' }).catch(() => {})
   }
   // Only an account's own address gets its answers back. A typed address is unverified, so it gets fixed text, once:
   // otherwise anyone could mail their own words to any address from the owner's sender.
   if (v.account) {
     if (hit(`artifacts:copy:${email}`, 5, 3600e3).ok) {
-      sendPlain(email!, `Tu respuesta: ${a.title}`, [`Esto es lo que enviaste en «${a.title}»:`, JSON.stringify(answers, null, 2)], { href: artifactUrl(a), label: 'Abrir' }).catch(() => {})
+      sendPlain(email!, `Tu respuesta: ${a.title}`, [`Esto es lo que enviaste en «${a.title}»:`, JSON.stringify(answers, null, 2),
+        ...(a.feedback !== 'none' && g.score != null ? [`Puntaje: ${g.score} de ${g.maxScore}`] : [])], { href: artifactUrl(a), label: 'Abrir' }).catch(() => {})
     }
   } else if (email && row.inserted && hit(`artifacts:copy:${email}`, 1, 24 * 3600e3).ok && hit(`artifacts:copy:ip:${getClientIp(req)}`, 5, 3600e3).ok) {
     sendPlain(email, `Tu respuesta: ${a.title}`, [`Recibimos tu respuesta en «${a.title}».`], { href: artifactUrl(a), label: 'Abrir' }).catch(() => {})

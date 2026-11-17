@@ -169,6 +169,7 @@ async function main() {
       if (a1 === 'history') return out(withUrl(a2, await call('GET', `artifacts/${enc(a2)}/state/history`)))
       break
     case 'responses':
+      if (a1 === 'export' && flags.csv) console.error(`${BASE}/${a2}`)
       if (a1 === 'export') return out(withUrl(a2, await call('GET', `artifacts/${enc(a2)}/responses${flags.csv ? '?format=csv' : ''}`, { raw: !!flags.csv })))
       if (a1 === 'delete') return out(withUrl(a2, await call('DELETE', `artifacts/${enc(a2)}/responses/${enc(a3)}`)))
       if (a1 === 'settings') {

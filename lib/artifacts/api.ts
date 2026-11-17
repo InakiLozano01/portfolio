@@ -92,6 +92,7 @@ async function patchArtifact(a: Artifact, body: Record<string, any>) {
 export async function agentApi(req: Request, parts: string[], url: URL, by: string): Promise<Response> {
   const M = req.method
   const [r0, ref, r2, ...rest] = parts
+  S.sweepUploadsHourly()
 
   if (r0 === 'tokens') {
     // Only the owner's session manages tokens: a leaked token must not be able to mint one that outlives its revocation.
@@ -142,6 +143,8 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
     if (M === 'GET') return json(await list())
     if (M === 'POST') {
       const body = await readJson(req, LIMITS.body)
+      // The old server's field: ignoring it would turn a request for a public artifact into a restricted one without a word.
+      if ('visibility' in body) throw bad('visibility is gone; set general access with access: {kind: restricted|link|password, role}')
       const title = S.checkTitle(body.title)
       const slug = body.slug != null ? await S.checkSlug(body.slug) : await S.uniqueSlug(slugify(title))
       const files = await inlineFiles(body)

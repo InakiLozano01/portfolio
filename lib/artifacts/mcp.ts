@@ -2,6 +2,7 @@
 // Each tool is one agent API call; large-file upload is left to the CLI.
 import { HttpError, errorResponse, json, readJson } from './db'
 import { agentApi, bearerActor } from './api'
+import { artifactUrl, findArtifact } from './store'
 
 type Tool = { name: string; description: string; method: string; path: (a: any) => string; body?: (a: any) => unknown; props: Record<string, object>; required?: string[] }
 
@@ -15,13 +16,13 @@ const TOOLS: Tool[] = [
   { name: 'list_artifacts', description: 'List every artifact with its URL, general access, share and response counts and storage.', method: 'GET', path: () => 'artifacts', props: {} },
   { name: 'get_artifact', description: 'One artifact: versions, files (with video status), shares, state revision, storage.', method: 'GET', path: (a) => `artifacts/${enc(a.ref)}`, props: ref, required: ['ref'] },
   {
-    name: 'create_artifact', description: 'Publish a new artifact from HTML and small inline files. Returns its URL. New artifacts are restricted until general access is set.',
+    name: 'create_artifact', description: 'Publish a new artifact from HTML and small inline files (under 1 MB in total). For videos, large files or whole folders use the CLI: node scripts/artifacts.mjs publish <dir>. Returns its URL. New artifacts are restricted until general access is set.',
     method: 'POST', path: () => 'artifacts', body: (a) => pick(a, ['title', 'slug', 'html', 'files', 'note', 'access']),
     props: { title: str('Title'), slug: str('Optional slug'), html: str('index.html content'), files: { type: 'array', description: '[{path, content | base64, contentType?}]', items: { type: 'object' } }, note: str('Version note'), access: obj('Optional general access {kind, role, password?, generatePassword?}') },
     required: ['title', 'html'],
   },
   {
-    name: 'publish_version', description: 'New version from the current files plus these changes (replace: true starts empty).', method: 'POST', path: (a) => `artifacts/${enc(a.ref)}/versions`,
+    name: 'publish_version', description: 'New version from the current files plus these changes (replace: true starts empty). For videos or large files use the CLI: node scripts/artifacts.mjs publish <dir> --slug <slug>.', method: 'POST', path: (a) => `artifacts/${enc(a.ref)}/versions`,
     body: (a) => pick(a, ['html', 'files', 'removeFiles', 'note', 'replace']),
     props: { ...ref, html: str('New index.html'), files: { type: 'array', items: { type: 'object' } }, removeFiles: { type: 'array', items: { type: 'string' } }, note: str('Version note'), replace: { type: 'boolean' } }, required: ['ref'],
   },
@@ -93,7 +94,11 @@ async function call(req: Request, by: string, msg: any) {
     } catch (e) {
       res = errorResponse(e)
     }
-    return { isError: !res.ok, content: [{ type: 'text', text: await res.text() }] }
+    const content = [{ type: 'text', text: await res.text() }]
+    // Every result about an artifact carries its URL, so the agent can hand the owner a link.
+    const a = res.ok && args.ref != null ? await findArtifact(String(args.ref)).catch(() => null) : null
+    if (a) content.push({ type: 'text', text: `url: ${artifactUrl(a)}` })
+    return { isError: !res.ok, content }
   }
   throw Object.assign(new Error(`Method not found: ${method}`), { rpc: -32601 })
 }
