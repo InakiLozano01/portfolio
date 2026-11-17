@@ -1,28 +1,27 @@
 ---
 name: artifacts-publish
-description: "Publish, version, share and manage editable HTML artifacts on artifacts.inakilozano.com, Iñaki's personal never-indexed artifact server. Use for \"publish it on artifacts\", \"give me an artifact link\", \"share this HTML with <client>\", \"<client> needs to be able to edit it\", \"make it private\", \"create a user/password for <person>\", \"what did <person> change\", or when another skill has a finished interactive HTML for one of Iñaki's own clients (not 021, which uses slides-publish)."
+description: "Publish, version, share and manage HTML artifacts on artifacts.inakilozano.com, Iñaki's never-indexed artifact server: presentations, forms, quizzes, interactive tools and video. Use for \"publish it on artifacts\", \"give me an artifact link\", \"share this with <person> as viewer/editor\", \"<client> needs to be able to edit it\", \"put a password on it\", \"make it private\", \"collect answers / make a quiz\", \"upload this video\", \"what did <person> change\", \"export the responses\", or when another skill has a finished interactive HTML for one of Iñaki's own clients (not 021, which uses slides-publish)."
 ---
 
 # artifacts-publish
 
-Output: `https://artifacts.inakilozano.com/<slug>`, checked with an HTTP 200. For editors, also the username and password delivered to Iñaki, never to anyone else.
+Output: the artifact's URL `https://artifacts.inakilozano.com/<slug>`, which every command returns, and whatever the owner must hand over by hand (a generated password is shown once: give it to Iñaki, never to anyone else).
 
-Full reference: `artifacts/README.md` in the portfolio repo (InakiLozano01/portfolio).
+Reference: `artifacts/README.md` in the portfolio repo (InakiLozano01/portfolio). Vocabulary: general access, shared password, share, account, role (viewer, responder, editor), state, response, answer key.
 
-## Auth
+## Two ways in
 
-The token lives in the keys hub as service `artifacts` (Bearer, prefix `/api/v1/`). Never ask for it and never print it.
+- **CLI** (any shell with the repo): `node scripts/artifacts.mjs <command>`. Token in `~/.config/artifacts/token` (mode 600). Never print or ask for the token; if the file is missing, tell Iñaki to create a token in the admin console (Artifacts → API tokens).
+- **MCP** (no shell): the artifacts tools through the agent hub (`hub_search_tools` "artifacts"): `create_artifact`, `publish_version`, `set_general_access`, `share_artifact`, `get_state`, `export_responses`, `set_answer_key`, … Same operations, except large uploads, which need the CLI.
 
-- MCP: `hub_key_operation service=artifacts operation=create-artifact body={title, html, visibility?, slug?, files?}` and `operation=list-artifacts`.
-- From myvps, any path: `echo '<json>' | agent-keys-hub artifacts METHOD /api/v1/...`
+## Recipes (CLI)
 
-## Recipes
+- **Publish a folder or a page**: `publish ./dir --slug <slug> --title "<title>"`. Run it again to publish a new version that matches the folder; unchanged files are not re-sent. Large files and videos upload in resumable parts; rerun the same command after an interruption.
+- **Who can open it**: new artifacts are restricted (only Iñaki). `access <slug> link --role viewer` for anyone with the link; `access <slug> password --role viewer --generate` for a shared password (returned once); `access <slug> restricted` to close it. Tightening cuts off open pages at once.
+- **Share with a person**: `share <slug> <email> viewer|responder|editor [--alias Name]` emails an invitation; the person sets their own password once and uses one account for everything shared with them. `--no-email` returns a password once instead. `unshare`, `resend`, `shares <slug>`, `accounts`, `reset <email>`.
+- **Editable artifact**: in the HTML use `await artifact.ready`, `artifact.getState()`, `artifact.saveState(state, {baseRev})`; share as editor. Seed with `state put <slug> --json '{…}'`; report changes with `state history <slug>` and `state get <slug> --rev N`.
+- **Form or quiz**: in the HTML call `artifact.submitResponse(answers, {name, email})` and `artifact.getResponse()`. Choose who answers with `responses settings <slug> --who account|declared|anonymous`, what they see with `--feedback none|score|answers`, `--notify` to email Iñaki, `--closed` to stop. Grade with `answer-key <slug> key.json` (`{"q1": {"answer": "b", "points": 1}}`); it is never served to visitors and regrades existing responses. `responses export <slug> [--csv]`.
+- **Video**: put the file in the folder and write `<video data-artifact-video="media/talk.mp4" controls></video>`. It encodes to adaptive HLS after upload (minutes); the page says so meanwhile. Up to 1 GB per file, 20 GB in total. YouTube/Vimeo/Drive embeds also work.
+- **Housekeeping**: `get`, `list`, `rename <slug> --title … --slug …` (old links break), `rollback <slug> <version>`, `delete <slug> --yes`, `storage`.
 
-- **Publish**: `POST /api/v1/artifacts {title, html}`. The slug comes from the title. Use relative paths for assets, or inline everything.
-- **Update**: `POST /api/v1/artifacts/<slug>/versions {html, note}`. The slug stays the same. Fetch the current file first with `GET .../files/index.html`.
-- **Editable by a guest**: inside the HTML, use `await artifact.ready`, `artifact.getState()` and `artifact.saveState(state, {baseRev})`. `saveState` opens the login dialog by itself. Then `POST .../credentials {username}` returns a password that is shown only once. Give it to Iñaki.
-- **Private**: `PATCH .../<slug> {visibility: "private"}`. Viewing then needs a credential too.
-- **What changed**: `GET .../state/history` lists who saved and when. `GET .../state?rev=N` returns a single revision.
-- **Revoke a guest**: `DELETE .../credentials/<username>`.
-
-Starter for an editable artifact: `artifacts/examples/crm-stages.html`.
+Assets must use relative paths. Check the returned URL opens before handing it over.

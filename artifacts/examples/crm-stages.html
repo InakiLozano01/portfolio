@@ -49,7 +49,7 @@ const DEFAULT = { stages: [
   { name: 'Calificación', tasks: ['Llamada de descubrimiento'], triggers: ['Lead asignado a un vendedor'] },
   { name: 'Propuesta', tasks: ['Enviar propuesta'], triggers: ['Necesidad confirmada'] },
 ] };
-let data = DEFAULT, rev = 0, canEdit = false, dirty = false;
+let data = DEFAULT, rev = 0, canEdit = false, user = null, dirty = false;
 const $ = (id) => document.getElementById(id);
 const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); n.append(...kids); return n; };
 
@@ -76,12 +76,13 @@ function status(text) { $('status').textContent = text; }
 function savedLine(r) { return r.rev ? `Versión ${r.rev} · guardado por ${r.savedBy} · ${new Date(r.savedAt).toLocaleString('es-AR')}` : 'Sin cambios guardados todavía'; }
 function session(info) {
   canEdit = info.canEdit;
-  $('login').textContent = canEdit ? `${info.user} · Salir` : 'Ingresar para editar';
-  $('login').hidden = !info.hasCredentials;
+  user = info.user;
+  $('login').textContent = user ? `${user} · Salir` : 'Ingresar para editar';
+  $('login').hidden = canEdit && !user; // anyone with the link already edits
   render();
 }
 
-$('login').onclick = () => (canEdit ? artifact.logout() : artifact.login()).then(session).catch(() => {});
+$('login').onclick = () => (user ? artifact.logout() : artifact.login()).then(session).catch(() => {});
 $('add').onclick = () => { data.stages.push({ name: 'Nueva etapa', tasks: [], triggers: [] }); touch(true); };
 $('save').onclick = async () => {
   $('save').disabled = true;

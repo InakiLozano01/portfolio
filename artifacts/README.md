@@ -1,82 +1,90 @@
-# Artifacts server
+# Artifacts
 
-Shareable, never-indexed HTML artifacts at `https://artifacts.inakilozano.com/<slug>`. Every artifact can have guest editors whose edits persist on the server.
+HTML pages the owner shares at `https://artifacts.inakilozano.com/<slug>`, never indexed. Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/0001-*`, `docs/adr/0002-*`. Behaviour: `docs/artifacts-spec.md`.
 
-- **App origin** `artifacts.inakilozano.com`: agent API, guest login, and the viewer "shell" page.
-- **Content origin** `artifacts-content.inakilozano.com`: serves the artifact's own files inside a sandboxed iframe.
+Artifacts are part of the portfolio Next.js app (`lib/artifacts/`). The same process serves two hostnames, told apart by `Host` in `proxy.ts`:
 
-The server is a single Node process with no npm dependencies (`node:sqlite`, `crypto.argon2`), started with `artifacts/compose.yml` behind the host nginx.
+- **App origin** `artifacts.inakilozano.com`: the viewer shell, sign-in, invitation and reset pages, the guest API (`/api/a/<id>/…`, used only by the shell), the agent API (`/api/v1/…`) and the MCP endpoint (`/mcp`).
+- **Content origin** `artifacts-content.inakilozano.com`: artifact files only, GET/HEAD, never cookies, always `Content-Security-Policy: sandbox …` without `allow-same-origin`.
 
-## Publishing (agents)
+Data: plain SQL tables in the portfolio PostgreSQL, schema `artifacts` (`lib/artifacts/schema.sql`, applied with `npm run db:migrate:artifacts`). Files: the `artifacts` bucket in the `minio` service. Video: the `artifacts-encoder` service (`scripts/artifacts-encoder.mjs`) takes jobs from Redis and stores HLS renditions; the original upload is deleted (ADR 0002). There is no backup job.
 
-Auth: `Authorization: Bearer <token>`. The token is stored in the agent keys hub as service **`artifacts`** and is never printed. Call through the hub:
+## Access
 
-```sh
-# from myvps
-echo '{"title":"CRM etapas Andrés","html":"<!doctype html>..."}' | agent-keys-hub artifacts POST /api/v1/artifacts
-agent-keys-hub artifacts GET /api/v1/artifacts
-```
-
-The MCP tools work too: `hub_key_operation service=artifacts operation=create-artifact|list-artifacts`.
-
-| Method | Path (`/api/v1/...`) | Body / notes |
-|---|---|---|
-| GET | `artifacts` | List artifacts. |
-| POST | `artifacts` | `{title, html, slug?, visibility?: "public"\|"private", note?, files?: [{path, content \| base64, contentType?}]}`. The slug comes from the title (`crm-etapas-andres`, then `-2` if taken) unless you pass one. |
-| GET | `artifacts/:ref` | `:ref` is the id or the slug. Returns the versions, the current files, the credential usernames and the current `stateRev`. |
-| PATCH | `artifacts/:ref` | `{title?, slug?, visibility?}`. Renaming the slug breaks old links: there is no redirect. |
-| DELETE | `artifacts/:ref` | Deletes everything: versions, files, state, credentials. |
-| POST | `artifacts/:ref/versions` | `{html?, files?, removeFiles?: [path], note?}`. Starts from the previous version's files. The slug serves the latest version. |
-| POST | `artifacts/:ref/rollback` | `{version}` creates a new version that copies an old one. |
-| GET | `artifacts/:ref/files/<path>?version=N` | Download a file, e.g. the current `index.html` before you edit it. |
-| PUT | `artifacts/:ref/files/<path>` | Raw body (≤ 15 MB) with a `Content-Type` header. Creates a new version. |
-| DELETE | `artifacts/:ref/files/<path>` | Creates a new version without that file. |
-| POST | `artifacts/:ref/credentials` | `{username, password?, replace?}`. Leave out `password` and one is generated and **returned once**. `replace: true` resets the password and logs out that user's sessions. |
-| DELETE | `artifacts/:ref/credentials/:username` | Revokes the credential, its sessions, and every content link already issued. |
-| GET / PUT | `artifacts/:ref/state` | Read or seed the editable state. PUT takes `{state, baseRev?}`. GET accepts `?rev=N`. |
-| GET | `artifacts/:ref/state/history?limit=` | `[{rev, savedBy, savedAt, bytes}]`. The newest 500 revisions are kept. |
-| GET / POST / DELETE | `tokens`, `tokens/:id` | List, create (`{name}`, the token is returned once) or revoke API tokens. |
-
-Limits: request bodies up to 40 MB, 15 MB per file, 100 MB and 300 files per version, 2 MB per state document.
-
-Asset paths must be **relative** (`img/logo.png`, never `/img/logo.png`). The artifact is served under a per-version capability path.
-
-## Visibility and editing
-
-- `public`: anyone with the link can view. Only credential holders can edit.
-- `private`: anyone without a session sees a login form and nothing else, not even the title. Content links already issued stop working as soon as the artifact turns private.
-- Credentials are scoped to one artifact. Logging in sets an `HttpOnly; Secure; SameSite=Strict` `__Host-` cookie that lasts 30 days. Writes also require a per-session CSRF token and the app `Origin`. After 10 failed logins per IP, or per artifact+username, in 15 minutes, logins return 429; nginx `auth_limit` also applies.
+- **Owner**: whoever holds the portfolio admin login. Signing in on the artifacts origin mints a NextAuth session cookie for that host only, with the console's lifetime (30 min) and revocation on password change. The owner reaches every artifact and sees a **Compartir** button that opens the share dialog.
+- **General access** per artifact: `restricted` (only the owner and shares), `link` (anyone with the link) or `password` (anyone who enters the shared password), each granting a role. A restricted artifact shows only a sign-in screen, without its title. New artifacts start restricted.
+- **Shares**: an account (one per email, optional alias) gets a role on an artifact. Effective role = the highest of the share and the general access the visitor satisfies.
+- **Roles**: viewer reads files and state; responder also submits its own response; editor also writes state and reads its history. Nobody but the owner and agents changes files, shares or settings.
+- Tightening access (restricting, a new shared password, removing or lowering a share, deleting an account) bumps the artifact's epoch, so content links already issued stop working.
+- Invitations, password resets, response notifications and response copies go out through the portfolio's SMTP mail. Sign-in, shared-password and link attempts are rate limited per address and per account or artifact.
 
 ## Client contract (inside the artifact)
 
-Every HTML file served gets a script injected that defines `window.artifact`. The artifact never sees cookies or tokens. Calls go through `postMessage` to the shell, and the shell talks to the API.
+Every HTML file gets a script that defines `window.artifact`. It talks to the shell with `postMessage`; artifact code never sees cookies or tokens and cannot call the API.
 
 ```js
-const info = await artifact.ready;          // {id, slug, title, version, visibility, hasCredentials, user, canEdit}
-const { state, rev, savedBy, savedAt } = await artifact.getState();   // state is null until the first save
-const saved = await artifact.saveState(newState, { baseRev: rev });  // opens the login dialog if needed
-// errors carry .code: 'unauthorized' | 'conflict' (err.currentRev) | 'too_large' | 'cancelled' | 'not_framed'
-await artifact.history();                   // editors only: [{rev, savedBy, savedAt, bytes}]
-await artifact.getState({ rev: 3 });        // editors only: an older revision
-await artifact.login(); await artifact.logout();
-artifact.onSession(info => { /* re-render on login/logout */ });
+const info = await artifact.ready  // {id, slug, title, version, role, user, owner, canEdit, canRespond, access, responses: {who, open, feedback}}
+const { state, rev, savedBy, savedAt } = await artifact.getState()       // state is null until the first save
+await artifact.saveState(next, { baseRev: rev })   // editors; opens the sign-in dialog if needed; err.code 'conflict' has err.currentRev
+await artifact.history()                            // editors: [{rev, savedBy, savedAt, bytes}]
+await artifact.getState({ rev: 3 })                 // editors: an older revision
+const { response } = await artifact.getResponse()   // your own response or null
+const r = await artifact.submitResponse({ q1: 'b', q2: ['a', 'c'] }, { name, email })  // name/email only when the artifact asks for a declared identity
+// r.response.score / maxScore when the artifact shows scores; r.response.correct when it shows the answers
+await artifact.videoStatus('media/talk.mp4')        // {status: 'pending' | 'ready' | 'failed'}
+await artifact.login(); await artifact.logout(); artifact.onSession((info) => { /* re-render */ })
 ```
 
-`examples/crm-stages.html` is a complete editable example (stages, tasks, triggers).
+Uploaded video: `<video data-artifact-video="media/talk.mp4" controls></video>`. The client sets the poster and plays the HLS renditions (natively or with hls.js), or shows a note while it encodes. Embedded YouTube, Vimeo or Drive players work as usual. Asset paths must be relative (`img/logo.png`).
 
-## Security model
+Answer key: `{"q1": {"answer": "b"}, "q2": {"answer": ["a", "c"], "points": 2}, "q3": {"answer": "Buenos Aires"}}`. Exact match per question: a list compares as a set, text ignores case, accents and extra spaces. It is never served to visitors; replacing it regrades every response.
 
-Artifact HTML runs on a separate origin, inside `<iframe sandbox="allow-scripts allow-forms allow-popups ...">` without `allow-same-origin`. The content origin also sends `Content-Security-Policy: sandbox ...`, so the sandbox holds even when the file is opened directly. Artifact code therefore runs in an opaque origin. It cannot read app cookies, the session, the CSRF token, other artifacts or storage, and it cannot call the API: there is no CORS, and the guest API requires a custom header that forces a preflight the server never answers. The shell answers `postMessage` only from its own iframe, and only for its own artifact. Content URLs carry an HMAC capability bound to artifact, version and epoch, valid 12 h. Passwords are stored with argon2id. API tokens are 256-bit random values stored as SHA-256 hashes.
+Example: `artifacts/examples/crm-stages.html` (editable state).
 
-Pages are never indexed: `robots.txt` disallows everything, every response carries `X-Robots-Tag: noindex, nofollow, noarchive` (from both the app and nginx), every served page gets a robots `<meta>` tag, and there is no sitemap.
+## Agent API (`/api/v1`, `Authorization: Bearer <token>`)
+
+The admin console uses the same handlers at `/api/admin/artifacts/…` with the admin session.
+
+| Method | Path | Body / notes |
+|---|---|---|
+| GET / POST | `artifacts` | List; create `{title, html?, files?: [{path, content \| base64, contentType?}], slug?, note?, access?}` |
+| GET / PATCH / DELETE | `artifacts/:ref` | Detail; `{title?, slug?, responses?: {who, open, feedback, notifyOwner}}`; delete everything |
+| POST | `artifacts/:ref/versions` | `{html?, files?, uploads?: [uploadId], removeFiles?, replace?, note?}` |
+| POST | `artifacts/:ref/rollback` | `{version}` |
+| GET / PUT / DELETE | `artifacts/:ref/files/<path>` | Download; raw body ≤ 15 MB as a new version; remove |
+| POST | `artifacts/:ref/uploads` | `{path, size, contentType?, fingerprint?}` → `{id, partSize, partCount, received}`; same fingerprint resumes |
+| PUT | `uploads/:id/parts/:n` | Raw part, exactly `partSize` bytes (16 MiB) except the last |
+| GET / DELETE | `uploads/:id` | Status / abort |
+| POST | `uploads/:id/complete` | `{stage?: true, note?}`: a new version with the file, or staged for `versions.uploads` |
+| PUT | `artifacts/:ref/access` | `{kind, role?, password? \| generatePassword?: true}` (generated password returned once) |
+| GET / PUT | `artifacts/:ref/shares` | List; `{email, role, alias?, notify?: true}` (notify false → a new account's password returned once) |
+| DELETE / POST | `artifacts/:ref/shares/:account` (`/resend`) | Remove; resend the invitation |
+| GET / PATCH / DELETE | `accounts`, `accounts/:account` | List with shares; `{alias}`; delete |
+| POST | `accounts/:account/reset` | `{notify?: true}` ends sessions; email link or password returned once |
+| GET / PUT | `artifacts/:ref/state` | `?rev=`; `{state, baseRev?}` |
+| GET | `artifacts/:ref/state/history` | Newest 500 revisions are kept |
+| GET / DELETE | `artifacts/:ref/responses`, `…/responses/:id` | `?format=csv` |
+| GET / PUT / DELETE | `artifacts/:ref/answer-key` | `{key}` |
+| GET / POST / DELETE | `tokens`, `tokens/:id` | Token returned once on create |
+| GET | `storage` | Used, cap (20 GB) and per artifact |
+
+Limits: 40 MB request body, 15 MB per inline file, 1 GB per uploaded file, 20 GB in total (refused before any part is accepted), 300 files per version, 2 MB of state, 256 KB per response.
+
+## CLI and MCP
+
+`scripts/artifacts.mjs` (no dependencies, Node 22+) covers every operation and uploads large files in resumable parts. Token in `~/.config/artifacts/token` with mode 600 (or `ARTIFACTS_TOKEN_FILE`); server from `ARTIFACTS_URL`. Run it without arguments for usage. Every command prints JSON with the artifact's `url`.
+
+```sh
+node scripts/artifacts.mjs publish ./deck --slug kickoff-acme --title "Kickoff Acme"   # creates or publishes a new version matching the folder
+node scripts/artifacts.mjs access kickoff-acme link --role viewer
+node scripts/artifacts.mjs share kickoff-acme andres@example.com editor --alias Andrés
+node scripts/artifacts.mjs state history kickoff-acme
+```
+
+MCP: streamable HTTP at `https://artifacts.inakilozano.com/mcp` with the same bearer token; tools mirror the agent API except large uploads.
 
 ## Operations
 
-```sh
-docker compose -f artifacts/compose.yml up -d --build                           # deploy (port 127.0.0.1:3480)
-docker compose -f artifacts/compose.yml exec -T artifacts node server.mjs token create <name>   # prints once; pipe it into a secret store
-docker compose -f artifacts/compose.yml exec artifacts node server.mjs token list | token revoke <id>
-node --test artifacts/selftest.mjs                                              # end-to-end test against a throwaway server
-```
-
-The data lives in `/home/ubuntu/vps/artifacts-data` (bind mount): `artifacts.db` plus content-addressed `blobs/`. To restore, stop the container, extract a backup tarball into that directory, and start it again.
+- Tests: build once with `NEXT_DIST_DIR=.next-test npx next build`, then `npm run test:artifacts` (HTTP, both origins), `npm run test:artifacts:encoder` (ffmpeg), `npm run test:artifacts:browser` (Chromium). They start and remove their own PostgreSQL, MinIO and Redis containers on 127.0.0.1:55490-55494.
+- Environment for the app and the encoder: `ARTIFACTS_S3_ENDPOINT`, `ARTIFACTS_S3_BUCKET`, `ARTIFACTS_S3_ACCESS_KEY`, `ARTIFACTS_S3_SECRET_KEY`, plus the existing `DATABASE_URL`, `REDIS_URL`, `NEXTAUTH_SECRET` and SMTP settings. `ARTIFACTS_APP_ORIGIN` and `ARTIFACTS_CONTENT_ORIGIN` default to the production hostnames.
+- API tokens: create and revoke them in the console (Artifacts → API tokens).
