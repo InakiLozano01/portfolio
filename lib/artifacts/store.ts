@@ -216,7 +216,7 @@ export async function startUpload(a: Artifact, body: Record<string, any>, scope 
   if (fingerprint) {
     // A staged upload that already completed is resumed too, so a rerun does not send it again.
     const open = await one(`SELECT * FROM artifacts.uploads WHERE artifact_id = $1 AND path = $2 AND size = $3 AND fingerprint = $4
-      AND sha256 IS NOT DISTINCT FROM $5 AND consumed_at IS NULL AND expires_at > now()`, [a.id, path, size, fingerprint, digest])
+      AND upload_scope = $5 AND sha256 IS NOT DISTINCT FROM $6 AND consumed_at IS NULL AND expires_at > now()`, [a.id, path, size, fingerprint, scope, digest])
     if (open) return { ...uploadView(open), resumed: true }
   }
   const objectKey = `o/${randomToken(18)}`
