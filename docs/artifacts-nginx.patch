@@ -1,0 +1,65 @@
+--- a/nginx/nginx.conf
++++ b/nginx/nginx.conf
+@@ -851,7 +851,7 @@
+ 
+     # =========================
+     # artifacts.inakilozano.com (app/API/shell) + artifacts-content.inakilozano.com (sandboxed artifact HTML)
+-    # -> portfolio artifacts server (3480). Source: portfolio repo, artifacts/. Never indexed.
++    # -> the portfolio app (3003), which tells the two hosts apart by Host. Source: portfolio repo, lib/artifacts/. Never indexed.
+     # Server-level add_header drops the http-level set on purpose: content must be framable by the app origin.
+     # =========================
+     server {
+@@ -893,18 +893,34 @@
+         proxy_read_timeout 60s;
+         proxy_send_timeout 60s;
+ 
+-        location ~ ^/api/a/[^/]+/login$ {
++        # Sign-in, shared password, invitation/reset links.
++        location ~ ^/api/(session|password/|a/[^/]+/unlock$) {
+             limit_req zone=auth_limit burst=5 nodelay;
+-            proxy_pass http://127.0.0.1:3480;
++            proxy_pass http://127.0.0.1:3003;
++        }
++
++        # Resumable upload parts: 16 MiB each, sent straight through without buffering, with time for slow links.
++        location ~ ^/api/v1/uploads/[^/]+/parts/ {
++            limit_req zone=api_limit burst=20 nodelay;
++            client_max_body_size 20m;
++            proxy_request_buffering off;
++            proxy_read_timeout 300s;
++            proxy_send_timeout 300s;
++            proxy_pass http://127.0.0.1:3003;
+         }
+ 
+         location /api/ {
+             limit_req zone=api_limit burst=20 nodelay;
+-            proxy_pass http://127.0.0.1:3480;
++            proxy_pass http://127.0.0.1:3003;
++        }
++
++        location = /mcp {
++            limit_req zone=api_limit burst=20 nodelay;
++            proxy_pass http://127.0.0.1:3003;
+         }
+ 
+         location / {
+-            proxy_pass http://127.0.0.1:3480;
++            proxy_pass http://127.0.0.1:3003;
+         }
+     }
+ 
+@@ -931,10 +947,13 @@
+         proxy_hide_header X-Robots-Tag;
+         proxy_hide_header X-Content-Type-Options;
+ 
++        # Video segments stream through the app; give range requests on large files time.
++        proxy_read_timeout 120s;
++
+         location / {
+             limit_req zone=static_limit burst=100 nodelay;
+             limit_except GET HEAD { deny all; }
+-            proxy_pass http://127.0.0.1:3480;
++            proxy_pass http://127.0.0.1:3003;
+         }
+     }
+ 

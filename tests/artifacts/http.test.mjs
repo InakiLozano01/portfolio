@@ -461,6 +461,46 @@ test('a video upload is pending until encoded, and the client can see it', async
   assert.equal((await api('GET', 'artifacts/video/files/talk.mp4')).status, 409)
 })
 
+test('an encoded video is served as HLS behind the capability, with the player script', { timeout: 240000 }, async () => {
+  const IMAGE = process.env.ARTIFACTS_ENCODER_IMAGE || 'portfolio-invoice-notes:20261102'
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'artifacts-hls-'))
+  fs.chmodSync(dir, 0o777)
+  try {
+    await run('docker', ['run', '--rm', '-v', `${dir}:/w`, '--entrypoint', 'ffmpeg', IMAGE, '-hide_banner', '-loglevel', 'error',
+      '-f', 'lavfi', '-i', 'testsrc=size=640x360:rate=24', '-t', '2', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '/w/clip.mp4'])
+    const clip = fs.readFileSync(path.join(dir, 'clip.mp4'))
+    const a = await create('hls', { access: { kind: 'link', role: 'viewer' }, files: [{ path: 'media/clip.mp4', base64: clip.toString('base64') }] })
+    const env = { DATABASE_URL: process.env.DATABASE_URL, REDIS_URL: process.env.REDIS_URL, ...Object.fromEntries(Object.entries(process.env).filter(([k]) => k.startsWith('ARTIFACTS_S3_'))) }
+    await run('docker', ['run', '--rm', '--network', 'host', '-v', `${ROOT}:/w:ro`, ...Object.entries(env).flatMap(([k, v]) => ['-e', `${k}=${v}`]),
+      '--entrypoint', 'node', IMAGE, '/w/scripts/artifacts-encoder.mjs', '--once'])
+    const b = new Browser()
+    const page = await b.open('hls')
+    assert.deepEqual((await b.req(`${ORIGIN.app}/api/a/${a.id}/video?path=media/clip.mp4`, { shell: true })).body, { status: 'ready' })
+    const direct = await b.req(`${page.base}media/clip.mp4`)
+    assert.equal(direct.status, 302)
+    assert.match(direct.headers.get('location'), /\/media\/clip\.mp4\/hls\/master\.m3u8$/)
+    const master = await b.req(`${page.base}media/clip.mp4/hls/master.m3u8`)
+    assert.equal(master.headers.get('content-type'), 'application/vnd.apple.mpegurl')
+    assert.equal(master.headers.get('access-control-allow-origin'), '*')
+    assert.match(master.text, /360\/index\.m3u8/)
+    const playlist = await b.req(`${page.base}media/clip.mp4/hls/360/index.m3u8`)
+    const seg = playlist.text.split('\n').find((l) => l.startsWith('seg_'))
+    const ranged = await b.req(`${page.base}media/clip.mp4/hls/360/${seg}`, { headers: { range: 'bytes=0-187' } })
+    assert.equal(ranged.status, 206)
+    assert.equal(ranged.buf[0], 0x47)
+    assert.equal((await b.req(`${page.base}media/clip.mp4/hls/poster.jpg`)).headers.get('content-type'), 'image/jpeg')
+    // Tightening access kills the HLS URLs too.
+    await setAccess('hls', { kind: 'restricted' })
+    assert.equal((await b.req(`${page.base}media/clip.mp4/hls/master.m3u8`)).status, 403)
+    const player = await b.req(`${ORIGIN.content}/_/hls.js`)
+    assert.equal(player.status, 200)
+    assert.match(player.text, /Hls/)
+  } finally {
+    await run('docker', ['run', '--rm', '-v', `${dir}:/w`, '--entrypoint', 'sh', IMAGE, '-c', 'rm -rf /w/*']).catch(() => {})
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('agent API authentication and token revocation', async () => {
   const anon = new Browser()
   assert.equal((await anon.req(`${ORIGIN.app}/api/v1/artifacts`)).status, 401)

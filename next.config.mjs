@@ -9,7 +9,8 @@ const nextConfig = {
   },
   // @react-pdf/renderer ships fontkit + yoga (wasm); keep it external so its
   // assets resolve from node_modules at runtime instead of being bundled.
-  serverExternalPackages: ['@react-pdf/renderer'],
+  // aws4 and ioredis stay external so the image ships them for scripts/artifacts-encoder.mjs.
+  serverExternalPackages: ['@react-pdf/renderer', 'aws4', 'ioredis'],
   experimental: {
     cpus: 1,
     // Requests on the artifacts origins pass through proxy.ts, which buffers bodies; upload parts are 16 MiB (nginx allows 41m).

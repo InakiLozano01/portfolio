@@ -60,6 +60,31 @@ services:
           memory: 256m
           pids: 128
 
+  # Artifact files (artifacts.inakilozano.com). No host port: only the app and the encoder reach it on the network.
+  minio:
+    labels:
+      - "autoheal=true"   # see /home/ubuntu/vps/server-admin/autoheal/
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e # RELEASE.2025-09-07T16-13-09Z
+    restart: unless-stopped
+    command: ["server", "/data"]
+    env_file:
+      - .env.minio   # MINIO_ROOT_USER, MINIO_ROOT_PASSWORD
+    volumes:
+      - artifacts_minio_data:/data
+    networks: [portfolio_network]
+    cpus: "0.5"
+    mem_limit: 512m
+    memswap_limit: 512m
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options: { max-size: "10m", max-file: "3" }
+
   portfolio:
     labels:
       - "autoheal=true"   # see /home/ubuntu/vps/server-admin/autoheal/
@@ -112,3 +137,4 @@ networks:
 volumes:
   mongodb_data:
   redis_data:
+  artifacts_minio_data:

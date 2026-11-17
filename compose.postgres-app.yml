@@ -37,6 +37,28 @@ services:
       timeout: 5s
       start_period: 60s
       retries: 3
+  # Encodes uploaded artifact videos to HLS (scripts/artifacts-encoder.mjs). Same image and environment as the app,
+  # which ships ffmpeg; jobs come from Redis, files from MinIO. /tmp holds one video at a time while it encodes.
+  artifacts-encoder:
+    image: ${PORTFOLIO_APP_IMAGE:?Reviewed application image required}
+    restart: unless-stopped
+    init: true
+    command: ["node", "scripts/artifacts-encoder.mjs"]
+    env_file:
+      - ${PORTFOLIO_EXISTING_ENV_FILE:?Existing private application environment required}
+      - ${PORTFOLIO_DATABASE_ENV_FILE:?Private PostgreSQL app environment required}
+    volumes:
+      - artifacts_encoder_tmp:/tmp
+    networks: [portfolio_network]
+    cpus: "1"
+    mem_limit: 1g
+    memswap_limit: 1g
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+volumes:
+  artifacts_encoder_tmp:
 networks:
   portfolio_network:
     external: true
