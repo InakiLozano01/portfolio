@@ -33,14 +33,14 @@ async function detail(ref: string | number) {
   }
 }
 
-async function list() {
+async function list(tokenId: number | null = null) {
   const rows = await q(`SELECT a.id::int, a.slug, a.title, a.current_version, a.access, a.access_role, a.password_hash, a.responders, a.responses_open,
     a.feedback, a.notify_owner, a.created_at, a.updated_at,
     (SELECT COUNT(*)::int FROM artifacts.shares s WHERE s.artifact_id = a.id) AS share_count,
     (SELECT COUNT(*)::int FROM artifacts.responses r WHERE r.artifact_id = a.id) AS response_count,
     (SELECT COALESCE(SUM(b.stored_bytes), 0)::float8 FROM artifacts.blobs b WHERE b.key IN
       (SELECT f.blob_key FROM artifacts.files f JOIN artifacts.versions v ON v.id = f.version_id WHERE v.artifact_id = a.id)) AS storage
-    FROM artifacts.artifacts a ORDER BY a.updated_at DESC`)
+    FROM artifacts.artifacts a WHERE $1::bigint IS NULL OR (a.created_by_token = $1 AND a.access = 'restricted') ORDER BY a.updated_at DESC`, [tokenId])
   return rows.map((a) => ({ ...summary(a), shareCount: a.share_count, responseCount: a.response_count, storageBytes: a.storage }))
 }
 
@@ -93,23 +93,31 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
   const M = req.method
   const [r0, ref, r2, ...rest] = parts
   S.sweepUploadsHourly()
+  // A limited token (see bearerActor) only reaches the restricted artifacts it created, and never shares, opens or deletes them.
+  const tokenId = Number(/^limited:(\d+):/.exec(by)?.[1]) || null
+  const denied = () => new HttpError(403, 'forbidden', 'This token is limited to its own restricted artifacts')
+  const own = async (artifactId: number) => {
+    if (tokenId && !(await one("SELECT 1 FROM artifacts.artifacts WHERE id = $1 AND created_by_token = $2 AND access = 'restricted'", [artifactId, tokenId]))) throw notFound()
+  }
 
   if (r0 === 'tokens') {
     // Only the owner's session manages tokens: a leaked token must not be able to mint one that outlives its revocation.
     if (by !== 'owner') throw new HttpError(403, 'forbidden', 'Only the owner can manage API tokens')
-    if (M === 'GET' && !ref) return json(await q('SELECT id::int, name, created_at AS "createdAt", last_used_at AS "lastUsedAt", revoked_at AS "revokedAt" FROM artifacts.api_tokens ORDER BY id'))
+    if (M === 'GET' && !ref) return json(await q('SELECT id::int, name, limited, created_at AS "createdAt", last_used_at AS "lastUsedAt", revoked_at AS "revokedAt" FROM artifacts.api_tokens ORDER BY id'))
     if (M === 'POST' && !ref) {
-      const { name } = await readJson(req, 4096)
+      const { name, limited } = await readJson(req, 4096)
       if (typeof name !== 'string' || !/^[\w.-]{1,64}$/.test(name)) throw bad('name must match [A-Za-z0-9_.-]{1,64}')
       const token = randomToken(32)
-      const row = await one('INSERT INTO artifacts.api_tokens(name, token_hash) VALUES ($1, $2) RETURNING id::int', [name, sha256(token)])
-      return json({ id: row.id, name, token }, 201)
+      const row = await one('INSERT INTO artifacts.api_tokens(name, token_hash, limited) VALUES ($1, $2, $3) RETURNING id::int', [name, sha256(token), limited === true])
+      return json({ id: row.id, name, limited: limited === true, token }, 201)
     }
     if (M === 'DELETE' && /^\d+$/.test(ref || '')) {
       const r = await q('UPDATE artifacts.api_tokens SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL RETURNING 1', [Number(ref)])
       return json({ revoked: r.length > 0 }, r.length ? 200 : 404)
     }
   }
+
+  if (tokenId && (r0 === 'storage' || r0 === 'accounts')) throw denied()
 
   if (r0 === 'storage' && M === 'GET' && !ref) {
     return json({ usedBytes: await S.storageUsed(), capBytes: CFG.storageCap(), artifacts: (await list()).map((a) => ({ slug: a.slug, storageBytes: a.storageBytes })) })
@@ -123,6 +131,7 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
   }
 
   if (r0 === 'uploads' && ref) {
+    if (tokenId) await own((await one('SELECT artifact_id::int FROM artifacts.uploads WHERE id = $1', [ref]))?.artifact_id ?? 0)
     if (M === 'GET' && !r2) return json(await S.getUpload(ref))
     if (M === 'PUT' && r2 === 'parts' && rest.length === 1) return json(await S.putPart(ref, Number(rest[0]), req))
     if (M === 'DELETE' && !r2) { await S.abortUpload(ref); return json({ aborted: true }) }
@@ -140,15 +149,16 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
   if (r0 !== 'artifacts') throw notFound('Endpoint')
 
   if (!ref) {
-    if (M === 'GET') return json(await list())
+    if (M === 'GET') return json(await list(tokenId))
     if (M === 'POST') {
       const body = await readJson(req, LIMITS.body)
       // The old server's field: ignoring it would turn a request for a public artifact into a restricted one without a word.
       if ('visibility' in body) throw bad('visibility is gone; set general access with access: {kind: restricted|link|password, role}')
+      if (tokenId && body.access) throw denied()
       const title = S.checkTitle(body.title)
       const slug = body.slug != null ? await S.checkSlug(body.slug) : await S.uniqueSlug(slugify(title))
       const files = await inlineFiles(body)
-      const { id } = await one('INSERT INTO artifacts.artifacts(slug, title) VALUES ($1, $2) RETURNING id::int', [slug, title])
+      const { id } = await one('INSERT INTO artifacts.artifacts(slug, title, created_by_token) VALUES ($1, $2, $3) RETURNING id::int', [slug, title, tokenId])
       const a = await S.findArtifact(id)
       try {
         await S.writeVersion(a, { files, note: body.note ?? 'initial', by })
@@ -164,6 +174,8 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
 
   const a = await S.findArtifact(ref!)
   const sub = r2 ?? ''
+  await own(a.id)
+  if (tokenId && ((sub === '' && M === 'DELETE') || sub === 'access' || sub === 'shares')) throw denied()
 
   if (sub === '') {
     if (M === 'GET') return json(await detail(a.id))
@@ -248,12 +260,13 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
   throw notFound('Endpoint')
 }
 
-/** Bearer API token → actor name, or null when the header is absent. */
+/** Bearer API token → actor name (`agent:<name>`, or `limited:<id>:<name>`), or null when the header is absent. */
 export async function bearerActor(req: Request) {
   const header = req.headers.get('authorization')
   if (!header) return null
   const m = /^Bearer\s+(\S+)$/i.exec(header)
-  const t = m && (await one('UPDATE artifacts.api_tokens SET last_used_at = now() WHERE token_hash = $1 AND revoked_at IS NULL RETURNING name', [sha256(m[1])]))
+  const t = m && (await one('UPDATE artifacts.api_tokens SET last_used_at = now() WHERE token_hash = $1 AND revoked_at IS NULL RETURNING id::int, name, limited', [sha256(m[1])]))
   if (!t) throw new HttpError(401, 'unauthorized', 'Missing or invalid bearer token', { auth: true })
-  return `agent:${t.name}`
+  // The actor name carries the limit, so every door (API, MCP) enforces it in agentApi.
+  return t.limited ? `limited:${t.id}:${t.name}` : `agent:${t.name}`
 }

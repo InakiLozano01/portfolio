@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS artifacts.settings (key text PRIMARY KEY, value text 
 
 CREATE TABLE IF NOT EXISTS artifacts.api_tokens (
   id bigserial PRIMARY KEY, name text NOT NULL, token_hash text NOT NULL UNIQUE,
+  -- A limited token only reaches the restricted artifacts it created, and cannot share, open or delete them.
+  limited boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(), last_used_at timestamptz, revoked_at timestamptz);
 
 CREATE TABLE IF NOT EXISTS artifacts.artifacts (
@@ -17,6 +19,7 @@ CREATE TABLE IF NOT EXISTS artifacts.artifacts (
   responses_open boolean NOT NULL DEFAULT true,
   feedback text NOT NULL DEFAULT 'score' CHECK (feedback IN ('none', 'score', 'answers')),
   notify_owner boolean NOT NULL DEFAULT false,
+  created_by_token bigint REFERENCES artifacts.api_tokens(id),
   created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
 
 CREATE TABLE IF NOT EXISTS artifacts.versions (

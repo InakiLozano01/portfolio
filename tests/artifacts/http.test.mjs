@@ -528,6 +528,25 @@ test('agent API authentication and token revocation', async () => {
   assert.equal((await temp('GET', 'artifacts')).status, 200)
   assert.equal((await asOwner('DELETE', `tokens/${t.body.id}`)).status, 200)
   assert.equal((await temp('GET', 'artifacts')).status, 401)
+  // A limited token reaches only the restricted artifacts it created, and cannot share, open or delete them.
+  const lim = agent((await asOwner('POST', 'tokens', { name: 'crm', limited: true })).body.token)
+  const theirs = (await api('POST', 'artifacts', { title: 'Not the CRMs', html: '<p>x</p>' })).body
+  const mine = await lim('POST', 'artifacts', { title: 'CRM page', html: '<p>crm</p>' })
+  assert.equal(mine.status, 201, mine.text)
+  assert.equal(mine.body.access.kind, 'restricted')
+  assert.deepEqual((await lim('GET', 'artifacts')).body.map((x) => x.slug), [mine.body.slug])
+  assert.equal((await lim('POST', `artifacts/${mine.body.slug}/versions`, { html: '<p>v2</p>' })).status, 201)
+  assert.equal((await lim('GET', `artifacts/${theirs.slug}`)).status, 404)
+  assert.equal((await lim('POST', `artifacts/${theirs.slug}/versions`, { html: '<p>no</p>' })).status, 404)
+  assert.equal((await lim('POST', 'artifacts', { title: 'Open', html: '<p>x</p>', access: { kind: 'link' } })).status, 403)
+  assert.equal((await lim('PUT', `artifacts/${mine.body.slug}/access`, { kind: 'link' })).status, 403)
+  assert.equal((await lim('PUT', `artifacts/${mine.body.slug}/shares`, { email: 'x@example.test', role: 'viewer', notify: false })).status, 403)
+  assert.equal((await lim('DELETE', `artifacts/${mine.body.slug}`)).status, 403)
+  for (const p of ['storage', 'accounts', 'tokens']) assert.equal((await lim('GET', p)).status, 403)
+  // Once the owner opens it, it is out of the limited token's reach.
+  assert.equal((await api('PUT', `artifacts/${mine.body.slug}/access`, { kind: 'link', role: 'viewer' })).status, 200)
+  assert.equal((await lim('GET', `artifacts/${mine.body.slug}`)).status, 404)
+  assert.deepEqual((await lim('GET', 'artifacts')).body, [])
   const list = await asOwner('GET', 'tokens')
   assert.ok(list.body.every((x) => !('token' in x) && !('token_hash' in x)))
   // The console door on the main origin needs the admin session.

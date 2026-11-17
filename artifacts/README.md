@@ -93,4 +93,4 @@ To make the tools available to every agent, register the endpoint in the agent h
 
 - Tests: build once with `NEXT_DIST_DIR=.next-test npx next build`, then `npm run test:artifacts` (HTTP, both origins), `npm run test:artifacts:encoder` (ffmpeg), `npm run test:artifacts:browser` (Chromium). They start and remove their own PostgreSQL, MinIO and Redis containers on 127.0.0.1:55490-55494.
 - Environment for the app and the encoder: `ARTIFACTS_S3_ENDPOINT`, `ARTIFACTS_S3_BUCKET`, `ARTIFACTS_S3_ACCESS_KEY`, `ARTIFACTS_S3_SECRET_KEY`, plus the existing `DATABASE_URL`, `REDIS_URL`, `NEXTAUTH_SECRET` and SMTP settings. `ARTIFACTS_APP_ORIGIN` and `ARTIFACTS_CONTENT_ORIGIN` default to the production hostnames.
-- API tokens: create and revoke them in the console (Artifacts → API tokens).
+- API tokens: create and revoke them in the console (Artifacts → API tokens). A **limited** token only reaches the restricted artifacts it created and cannot share them, change their general access or delete them; use it for automations such as the CRM.

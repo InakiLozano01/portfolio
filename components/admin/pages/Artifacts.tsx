@@ -22,7 +22,7 @@ interface Detail extends Summary {
   hasAnswerKey: boolean
 }
 interface Response { id: number; name: string | null; email: string | null; alias: string | null; identity: string; score: number | null; maxScore: number | null; submittedAt: string; updatedAt: string; answers: Record<string, unknown> }
-interface Token { id: number; name: string; createdAt: string; lastUsedAt: string | null; revokedAt: string | null }
+interface Token { id: number; name: string; limited: boolean; createdAt: string; lastUsedAt: string | null; revokedAt: string | null }
 interface Account { id: number; email: string; alias: string | null; hasPassword: boolean; shares: { slug: string; title: string; role: string }[] }
 
 const ACCESS_LABEL: Record<Kind, string> = { restricted: 'Restricted', link: 'Anyone with the link', password: 'Shared password' }
@@ -309,6 +309,7 @@ function TokensPanel() {
   const confirm = useConfirm()
   const { copy } = useCopy()
   const [name, setName] = useState('')
+  const [limited, setLimited] = useState(false)
   const [created, setCreated] = useState<{ name: string; token: string } | null>(null)
   return (
     <Panel>
@@ -316,7 +317,7 @@ function TokensPanel() {
       <form className="flex items-end gap-2 px-6 pt-4" onSubmit={async (e) => {
         e.preventDefault()
         try {
-          setCreated(await api(`${API}/tokens`, { method: 'POST', body: { name } }))
+          setCreated(await api(`${API}/tokens`, { method: 'POST', body: { name, limited } }))
           setName('')
           reload()
         } catch (err) {
@@ -324,6 +325,10 @@ function TokensPanel() {
         }
       }}>
         <Field label="Name" className="flex-1">{(p) => <Input {...p} value={name} pattern="[A-Za-z0-9_.\-]{1,64}" placeholder="laptop-cli" onChange={(e) => setName(e.target.value)} />}</Field>
+        <label className="flex h-9 items-center gap-2 text-[13px] text-fg-dim" title="Only reaches the restricted artifacts it creates; cannot share, open or delete them.">
+          <input type="checkbox" checked={limited} onChange={(e) => setLimited(e.target.checked)} />
+          Limited
+        </label>
         <Button type="submit" icon={KeyRound} disabled={!name}>Create</Button>
       </form>
       {created && (
@@ -335,7 +340,7 @@ function TokensPanel() {
       <ul className="mt-3 max-h-[300px] divide-y divide-line/[0.07] overflow-y-auto">
         {(data || []).map((t) => (
           <li key={t.id} className="flex items-center gap-3 px-6 py-2.5 text-[13px]">
-            <span className="min-w-0 flex-1 truncate font-mono text-fg">{t.name}</span>
+            <span className="min-w-0 flex-1 truncate font-mono text-fg">{t.name}{t.limited && <span className="ml-2 font-sans text-[12px] text-fg-dim">limited</span>}</span>
             <span className="text-[12px] text-fg-dim">{t.revokedAt ? 'Revoked' : t.lastUsedAt ? <>Used <TimeAgo value={t.lastUsedAt} /></> : 'Never used'}</span>
             {!t.revokedAt && <Button size="sm" variant="ghost" onClick={async () => {
               if (await confirm({ title: `Revoke ${t.name}?`, body: 'Agents using it stop working at once.', confirmLabel: 'Revoke' })) {
