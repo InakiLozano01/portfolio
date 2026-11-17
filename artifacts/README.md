@@ -26,8 +26,8 @@ Every HTML file gets a script that defines `window.artifact`. It talks to the sh
 const info = await artifact.ready  // {id, slug, title, version, role, user, owner, canEdit, canRespond, access, responses: {who, open, feedback}}
 const { state, rev, savedBy, savedAt } = await artifact.getState()       // state is null until the first save
 await artifact.saveState(next, { baseRev: rev })   // editors; opens the sign-in dialog if needed; err.code 'conflict' has err.currentRev
-await artifact.history()                            // editors: [{rev, savedBy, savedAt, bytes}]
-await artifact.getState({ rev: 3 })                 // editors: an older revision
+await artifact.history()                            // editors: the newest 100 [{rev, savedBy, savedAt, bytes}]; no paging
+await artifact.getState({ rev: 3 })                 // editors: any kept revision (the newest 500), by number
 const { response } = await artifact.getResponse()   // your own response or null
 const r = await artifact.submitResponse({ q1: 'b', q2: ['a', 'c'] }, { name, email })  // name/email only when the artifact asks for a declared identity
 // r.response.score / maxScore when the artifact shows scores; r.response.correct when it shows the answers

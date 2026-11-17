@@ -28,6 +28,12 @@ export function blocked(key: string, limit: number) {
   return !!bucket && bucket.resetAt > Date.now() && bucket.count >= limit
 }
 
+/** Takes back one hit counted against `key`. */
+export function release(key: string) {
+  const bucket = buckets.get(key)
+  if (bucket && bucket.count > 0) bucket.count--
+}
+
 export function reset(key: string) {
   buckets.delete(key)
 }
