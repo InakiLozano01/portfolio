@@ -11,6 +11,7 @@ import { Readable } from 'node:stream'
 import { promisify } from 'node:util'
 import { createRequire } from 'node:module'
 import { deleteObject, deletePrefix, getObject, putObject } from '../lib/artifacts/s3.mjs'
+import { assertValidEnv } from './artifacts-deployment-check.mjs'
 
 // require(): the image's traced node_modules carry only the CommonJS entries of pg and ioredis.
 const require = createRequire(import.meta.url)
@@ -32,6 +33,7 @@ const TYPES = { m3u8: 'application/vnd.apple.mpegurl', ts: 'video/mp2t', jpg: 'i
 const once = process.argv.includes('--once')
 const log = (...a) => console.log(new Date().toISOString(), ...a)
 
+assertValidEnv(process.env, 'encoder', { allowUnknown: true })
 const db = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 2, application_name: 'artifacts-encoder' })
 const redis = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null })
 
