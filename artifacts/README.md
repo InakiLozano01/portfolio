@@ -47,15 +47,15 @@ The admin console uses the same handlers at `/api/admin/artifacts/…` with the 
 
 | Method | Path | Body / notes |
 |---|---|---|
-| GET / POST | `artifacts` | List; create `{title, html?, files?: [{path, content \| base64, contentType?}], slug?, note?, access?}` |
+| GET / POST | `artifacts` | List; create `{title, html?, files?: [{path, content \| base64, contentType?}], slug?, note?, access?}`; without `html` and `files` it starts empty (version 0) until the first `versions` call |
 | GET / PATCH / DELETE | `artifacts/:ref` | Detail; `{title?, slug?, responses?: {who, open, feedback, notifyOwner}}`; delete everything |
 | POST | `artifacts/:ref/versions` | `{html?, files?, uploads?: [uploadId], removeFiles?, replace?, note?}` |
 | POST | `artifacts/:ref/rollback` | `{version}` |
 | GET / PUT / DELETE | `artifacts/:ref/files/<path>` | Download; raw body ≤ 15 MB as a new version; remove |
-| POST | `artifacts/:ref/uploads` | `{path, size, contentType?, fingerprint?}` → `{id, partSize, partCount, received}`; same fingerprint resumes |
-| PUT | `uploads/:id/parts/:n` | Raw part, exactly `partSize` bytes (16 MiB) except the last |
+| POST | `artifacts/:ref/uploads` | `{path, size, contentType?, fingerprint?, sha256?}` → `{id, partSize, partCount, received, completed}`; same fingerprint (and sha256) resumes an open or staged upload. At most 8 open at once (429 `upload_limit`) |
+| PUT | `uploads/:id/parts/:n` | Raw part, exactly `partSize` bytes (16 MiB) except the last; `X-Content-Sha256` header is checked (400 `integrity`) |
 | GET / DELETE | `uploads/:id` | Status / abort |
-| POST | `uploads/:id/complete` | `{stage?: true, note?}`: a new version with the file, or staged for `versions.uploads` |
+| POST | `uploads/:id/complete` | `{stage?: true, note?}`: a new version with the file, or staged for `versions.uploads`. A file that does not match `sha256` is refused (422 `integrity`, the upload is dropped). Repeating it answers again without a new version |
 | PUT | `artifacts/:ref/access` | `{kind, role?, password? \| generatePassword?: true}` (generated password returned once) |
 | GET / PUT | `artifacts/:ref/shares` | List; `{email, role, alias?, notify?: true}` (notify false → a new account's password returned once) |
 | DELETE / POST | `artifacts/:ref/shares/:account` (`/resend`) | Remove; resend the invitation |
@@ -72,7 +72,7 @@ Limits: 40 MB request body, 15 MB per inline file, 1 GB per uploaded file, 20 GB
 
 ## CLI and MCP
 
-`scripts/artifacts.mjs` (no dependencies, Node 22+) covers every operation and uploads large files in resumable parts. Token in `~/.config/artifacts/token` with mode 600 (or `ARTIFACTS_TOKEN_FILE`); server from `ARTIFACTS_URL`. Run it without arguments for usage. Every command prints JSON with the artifact's `url`.
+`scripts/artifacts.mjs` (no dependencies, Node 22+) covers every operation and uploads large files in resumable parts. Token in `~/.config/artifacts/token` with mode 600 (or `ARTIFACTS_TOKEN_FILE`); server from `ARTIFACTS_URL`. Run it without arguments for usage. Every command prints JSON with the artifact's `url` (`responses export --csv` prints it on stderr). Uploads send whole-file and per-part SHA-256. A publish with large files creates one version; an interrupted publish rerun sends only what is missing and reuses the artifact it created (its slug is kept in `pending/` next to the token file until the publish finishes).
 
 ```sh
 node scripts/artifacts.mjs publish ./deck --slug kickoff-acme --title "Kickoff Acme"   # creates or publishes a new version matching the folder

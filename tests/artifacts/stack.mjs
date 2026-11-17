@@ -19,7 +19,8 @@ export const ORIGIN = {
 }
 export const ADMIN = { email: 'owner@example.test', password: 'owner-test-password' }
 export const OWNER_INBOX = 'inbox@example.test'
-const NAMES = { pg: 'artifacts-test-pg', minio: 'artifacts-test-minio', redis: 'artifacts-test-redis' }
+// Named by port so concurrent runs on other ports keep their own containers.
+const NAMES = { pg: `artifacts-test-pg-${P}`, minio: `artifacts-test-minio-${P}`, redis: `artifacts-test-redis-${P}` }
 const IMAGES = {
   pg: process.env.ARTIFACTS_TEST_PG_IMAGE || 'fleet-security/pg16-alpine:20261021',
   minio: process.env.ARTIFACTS_TEST_MINIO_IMAGE || 'minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e',

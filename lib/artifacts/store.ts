@@ -1,4 +1,6 @@
 // Artifacts, versions, files, blobs, uploads and state.
+import { createHash } from 'node:crypto'
+
 import * as S3 from './s3.mjs'
 import { CFG, HttpError, LIMITS, bad, notFound, one, q, readBody, tx } from './db'
 import { ASSET_PATH_RE, CONTENT_TYPE_RE, RESERVED_SLUGS, SLUG_RE, guessType, randomToken, sha256 } from './util'
@@ -99,7 +101,7 @@ async function enqueueEncode(key: string) {
 /** Removes blobs no file references (and no unfinished upload will need), with their stored objects. */
 export async function gcBlobs() {
   const dead = await q(`DELETE FROM artifacts.blobs b WHERE NOT EXISTS (SELECT 1 FROM artifacts.files f WHERE f.blob_key = b.key)
-    AND NOT EXISTS (SELECT 1 FROM artifacts.uploads u WHERE u.object_key = b.key) RETURNING key`)
+    AND NOT EXISTS (SELECT 1 FROM artifacts.uploads u WHERE u.object_key = b.key AND u.consumed_at IS NULL) RETURNING key`)
   for (const { key } of dead) {
     await S3.deleteObject(key).catch((e) => console.error('[artifacts] gc', key, e.message))
     await S3.deletePrefix(`h/${key}/`).catch((e) => console.error('[artifacts] gc', key, e.message))
@@ -179,6 +181,9 @@ export const stateHistory = (a: Artifact, limit = 100) =>
 // ---------- uploads ----------
 
 const UPLOAD_TTL_H = 24
+// Each open upload reserves its size against the cap until it completes or expires; this keeps abandoned starts from holding it all.
+const OPEN_UPLOADS = 8
+const SHA_RE = /^[0-9a-f]{64}$/
 const uploadView = (u: any) => ({
   id: u.id, path: u.path, size: Number(u.size), contentType: u.content_type, partSize: u.part_size,
   partCount: Math.max(1, Math.ceil(Number(u.size) / u.part_size)), received: Object.keys(u.parts).map(Number).sort((x, y) => x - y),
@@ -193,21 +198,26 @@ export async function startUpload(a: Artifact, body: Record<string, any>) {
   // HTML is read whole into memory to inject the client, so it keeps the inline limit.
   if (/^text\/html\b/i.test(contentType) && size > LIMITS.inlineFile) throw bad(`HTML files must be at most ${LIMITS.inlineFile} bytes`)
   const fingerprint = typeof body.fingerprint === 'string' ? body.fingerprint.slice(0, 200) : null
+  if (body.sha256 != null && (typeof body.sha256 !== 'string' || !SHA_RE.test(body.sha256))) throw bad('sha256 must be 64 lowercase hex chars')
+  const digest: string | null = body.sha256 ?? null
   await sweepUploads()
   if (fingerprint) {
+    // A staged upload that already completed is resumed too, so a rerun does not send it again.
     const open = await one(`SELECT * FROM artifacts.uploads WHERE artifact_id = $1 AND path = $2 AND size = $3 AND fingerprint = $4
-      AND completed_at IS NULL AND expires_at > now()`, [a.id, path, size, fingerprint])
+      AND sha256 IS NOT DISTINCT FROM $5 AND consumed_at IS NULL AND expires_at > now()`, [a.id, path, size, fingerprint, digest])
     if (open) return { ...uploadView(open), resumed: true }
   }
   const objectKey = `o/${randomToken(18)}`
   return tx(async (c) => {
     // One upload start at a time, so two cannot both pass the cap check.
     await q('SELECT pg_advisory_xact_lock(7314001)', [], c)
+    const { n } = await one('SELECT COUNT(*)::int n FROM artifacts.uploads WHERE completed_at IS NULL AND expires_at > now()', [], c)
+    if (n >= OPEN_UPLOADS) throw new HttpError(429, 'upload_limit', `At most ${OPEN_UPLOADS} uploads can be open at once; complete or abort one`)
     await reserve(size, c)
     const s3UploadId = await S3.createMultipart(objectKey, contentType)
-    const u = await one(`INSERT INTO artifacts.uploads(id, artifact_id, path, size, content_type, fingerprint, object_key, s3_upload_id, part_size, expires_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now() + interval '${UPLOAD_TTL_H} hours') RETURNING *`,
-      [randomToken(12), a.id, path, size, contentType, fingerprint, objectKey, s3UploadId, LIMITS.partSize], c)
+    const u = await one(`INSERT INTO artifacts.uploads(id, artifact_id, path, size, content_type, fingerprint, sha256, object_key, s3_upload_id, part_size, expires_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now() + interval '${UPLOAD_TTL_H} hours') RETURNING *`,
+      [randomToken(12), a.id, path, size, contentType, fingerprint, digest, objectKey, s3UploadId, LIMITS.partSize], c)
     return { ...uploadView(u), resumed: false }
   })
 }
@@ -223,6 +233,8 @@ export async function getUpload(id: string) {
 }
 
 export async function putPart(id: string, n: number, req: Request) {
+  const digest = req.headers.get('x-content-sha256')
+  if (digest != null && !SHA_RE.test(digest)) throw bad('X-Content-Sha256 must be 64 lowercase hex chars')
   const u = await openUpload(id)
   if (u.completed_at) throw new HttpError(409, 'completed', 'Upload already completed')
   const { partCount } = uploadView(u)
@@ -230,12 +242,13 @@ export async function putPart(id: string, n: number, req: Request) {
   const expected = n < partCount ? u.part_size : Number(u.size) - u.part_size * (partCount - 1)
   const buf = await readBody(req, u.part_size)
   if (buf.length !== expected) throw bad(`part ${n} must be exactly ${expected} bytes, got ${buf.length}`)
+  if (digest && sha256(buf) !== digest) throw new HttpError(400, 'integrity', `Part ${n} bytes do not match X-Content-Sha256; send it again`)
   const etag = await S3.uploadPart(u.object_key, u.s3_upload_id, n, buf)
   await q("UPDATE artifacts.uploads SET parts = parts || jsonb_build_object($2::text, $3::text) WHERE id = $1", [id, String(n), etag])
   return { part: n, bytes: buf.length }
 }
 
-/** Finishes the object; the blob then exists and can be placed in a version. */
+/** Finishes the object and checks its digest; the blob then exists and can be placed in a version. */
 export async function completeUpload(id: string) {
   const u = await openUpload(id)
   const view = uploadView(u)
@@ -243,10 +256,20 @@ export async function completeUpload(id: string) {
     const missing = Array.from({ length: view.partCount }, (_, i) => i + 1).filter((n) => !u.parts[String(n)])
     if (missing.length) throw new HttpError(409, 'incomplete', `Missing parts: ${missing.join(', ')}`, { missing })
     await S3.completeMultipart(u.object_key, u.s3_upload_id, Array.from({ length: view.partCount }, (_, i) => u.parts[String(i + 1)]))
+    // The parts are already joined in the bucket, so the whole file is read back once to hash it.
+    const hash = createHash('sha256')
+    for await (const chunk of (await S3.getObject(u.object_key)).body ?? []) hash.update(chunk)
+    const digest = hash.digest('hex')
+    if (u.sha256 && digest !== u.sha256) {
+      // Every part may have matched its own digest (a swapped part), so which bytes are wrong is unknown: start over.
+      await q('DELETE FROM artifacts.uploads WHERE id = $1', [id])
+      await S3.deleteObject(u.object_key)
+      throw new HttpError(422, 'integrity', 'The assembled file does not match the declared sha256; start a new upload')
+    }
     const video = isVideo(u.content_type)
     await tx(async (c) => {
-      await q('INSERT INTO artifacts.blobs(key, size, stored_bytes, content_type, video_status) VALUES ($1, $2, $2, $3, $4) ON CONFLICT (key) DO NOTHING',
-        [u.object_key, u.size, u.content_type, video ? 'pending' : null], c)
+      await q('INSERT INTO artifacts.blobs(key, sha256, size, stored_bytes, content_type, video_status) VALUES ($1, $2, $3, $3, $4, $5) ON CONFLICT (key) DO NOTHING',
+        [u.object_key, digest, u.size, u.content_type, video ? 'pending' : null], c)
       await q('UPDATE artifacts.uploads SET completed_at = now() WHERE id = $1', [id], c)
     })
     if (video) await enqueueEncode(u.object_key)
@@ -260,14 +283,17 @@ export async function consumeUploads(a: Artifact, ids: unknown) {
   if (!Array.isArray(ids)) throw bad('uploads must be an array of upload ids')
   const files: NewFile[] = []
   for (const id of ids) {
-    const u = await one('SELECT path, object_key FROM artifacts.uploads WHERE id = $1 AND artifact_id = $2 AND completed_at IS NOT NULL', [String(id), a.id])
+    const u = await one('SELECT path, object_key FROM artifacts.uploads WHERE id = $1 AND artifact_id = $2 AND completed_at IS NOT NULL AND consumed_at IS NULL', [String(id), a.id])
     if (!u) throw bad(`upload ${id} is not completed for this artifact`)
     files.push({ path: u.path, key: u.object_key })
   }
   return files
 }
-export const forgetUploads = (ids: unknown) =>
-  Array.isArray(ids) && ids.length ? q('DELETE FROM artifacts.uploads WHERE id = ANY($1) AND completed_at IS NOT NULL', [ids.map(String)]) : Promise.resolve([])
+/** Marks completed uploads as placed in a version; returns the ids this call claimed (a repeated call claims none). */
+export const consumeClaim = async (ids: unknown) =>
+  Array.isArray(ids) && ids.length
+    ? (await q('UPDATE artifacts.uploads SET consumed_at = now() WHERE id = ANY($1) AND completed_at IS NOT NULL AND consumed_at IS NULL RETURNING id', [ids.map(String)])).map((r) => r.id as string)
+    : []
 
 export async function abortUpload(id: string) {
   const u = await one('DELETE FROM artifacts.uploads WHERE id = $1 RETURNING *', [id])

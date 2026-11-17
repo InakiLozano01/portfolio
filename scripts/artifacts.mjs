@@ -39,8 +39,8 @@ function parseArgs(argv) {
   return { pos, flags }
 }
 
-function readToken() {
-  const file = process.env.ARTIFACTS_TOKEN_FILE || path.join(os.homedir(), '.config/artifacts/token')
+const TOKEN_FILE = process.env.ARTIFACTS_TOKEN_FILE || path.join(os.homedir(), '.config/artifacts/token')
+function readToken(file = TOKEN_FILE) {
   let st
   try { st = fs.statSync(file) } catch { die(`No token file at ${file}. Create one in the admin console (Artifacts → API tokens) and save it there with mode 600.`) }
   if ((st.mode & 0o077) !== 0) die(`${file} must have mode 600 (chmod 600 ${file})`)
@@ -74,7 +74,11 @@ const enc = encodeURIComponent
 const out = (v) => process.stdout.write(`${typeof v === 'string' ? v : JSON.stringify(v, null, 2)}\n`)
 /** Every artifact command answers with the artifact's URL. */
 const withUrl = (ref, v) => (Array.isArray(v) ? { url: `${BASE}/${ref}`, items: v } : typeof v === 'string' || v.url ? v : { url: `${BASE}/${ref}`, ...v })
-const sha256File = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')
+const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex')
+const sha256File = (file) => new Promise((resolve, reject) => {
+  const h = crypto.createHash('sha256')
+  fs.createReadStream(file).on('error', reject).on('data', (d) => h.update(d)).on('end', () => resolve(h.digest('hex')))
+})
 
 function walk(dir, base = dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -84,11 +88,11 @@ function walk(dir, base = dir) {
   })
 }
 
-/** Resumable upload: the fingerprint lets a rerun find the unfinished upload and send only the missing parts. */
+/** Resumable upload: the fingerprint lets a rerun find the unfinished (or staged) upload and send only the missing parts. */
 async function upload(ref, file, rel, { stage }) {
   const st = fs.statSync(file)
   const fingerprint = `${st.size}:${st.mtimeMs}:${rel}`
-  const u = await call('POST', `artifacts/${enc(ref)}/uploads`, { json: { path: rel, size: st.size, fingerprint } })
+  const u = await call('POST', `artifacts/${enc(ref)}/uploads`, { json: { path: rel, size: st.size, fingerprint, sha256: await sha256File(file) } })
   const have = new Set(u.received)
   const fd = fs.openSync(file, 'r')
   try {
@@ -98,7 +102,7 @@ async function upload(ref, file, rel, { stage }) {
       const buf = Buffer.alloc(len)
       fs.readSync(fd, buf, 0, len, (n - 1) * u.partSize)
       for (let attempt = 1; ; attempt++) {
-        try { await call('PUT', `uploads/${u.id}/parts/${n}`, { body: buf }); break } catch (e) {
+        try { await call('PUT', `uploads/${u.id}/parts/${n}`, { body: buf, headers: { 'x-content-sha256': sha256(buf) } }); break } catch (e) {
           if (attempt >= 4 || (e.status && e.status < 500)) throw e
           await new Promise((r) => setTimeout(r, 1000 * attempt))
         }
@@ -117,28 +121,36 @@ async function publish(target, flags) {
   const isFile = fs.statSync(target).isFile()
   const files = isFile ? [{ full: target, rel: 'index.html' }] : walk(target)
   if (!files.some((f) => f.rel === 'index.html')) die('The folder needs an index.html')
+  // A run that dies after creating the artifact leaves its slug here, so the rerun fills that artifact instead of making another.
+  const pending = path.join(path.dirname(TOKEN_FILE), 'pending', `${sha256(path.resolve(target))}.json`)
+  let slug = flags.slug
+  if (!slug) try { slug = JSON.parse(fs.readFileSync(pending, 'utf8')).slug } catch {}
   let current = null
-  if (flags.slug) current = await call('GET', `artifacts/${enc(flags.slug)}`).catch((e) => (e.status === 404 ? null : Promise.reject(e)))
+  if (slug) current = await call('GET', `artifacts/${enc(slug)}`).catch((e) => (e.status === 404 ? null : Promise.reject(e)))
   const known = new Map((current?.files || []).map((f) => [f.path, f.sha256]))
   const inline = []
   const big = []
   let batch = 0
   for (const f of files) {
     const size = fs.statSync(f.full).size
-    if (current && known.get(f.rel) && known.get(f.rel) === sha256File(f.full)) continue // unchanged
+    if (current && known.get(f.rel) && known.get(f.rel) === (await sha256File(f.full))) continue // unchanged
     if (f.rel !== 'index.html' && (size > INLINE_MAX || typeOf(f.rel) || batch + size > INLINE_BATCH)) big.push(f)
     else { inline.push({ path: f.rel, base64: fs.readFileSync(f.full).toString('base64') }); batch += size }
   }
   const removeFiles = current ? [...known.keys()].filter((p) => !files.some((f) => f.rel === p)) : []
   if (!current) {
     const title = flags.title || (/<title>([^<]*)<\/title>/i.exec(fs.readFileSync(files.find((f) => f.rel === 'index.html').full, 'utf8'))?.[1].trim()) || path.basename(path.resolve(target))
-    current = await call('POST', 'artifacts', { json: { title, slug: flags.slug, note: flags.note || 'initial', files: inline } })
-    if (!big.length) return current
-    inline.length = 0
+    if (!big.length) return call('POST', 'artifacts', { json: { title, slug: flags.slug, note: flags.note || 'initial', files: inline } })
+    // Created empty, so version 1 appears only once it holds the large files too.
+    current = await call('POST', 'artifacts', { json: { title, slug: flags.slug } })
+    fs.mkdirSync(path.dirname(pending), { recursive: true, mode: 0o700 })
+    fs.writeFileSync(pending, JSON.stringify({ slug: current.slug }))
   }
   const uploads = []
   for (const f of big) uploads.push((await upload(current.slug, f.full, f.rel, { stage: true })).id)
-  return call('POST', `artifacts/${enc(current.slug)}/versions`, { json: { files: inline, uploads, removeFiles, note: flags.note ?? null } })
+  const done = await call('POST', `artifacts/${enc(current.slug)}/versions`, { json: { files: inline, uploads, removeFiles, note: flags.note ?? (current.version ? null : 'initial') } })
+  fs.rmSync(pending, { force: true })
+  return done
 }
 
 const readJsonArg = (pos, flags) => JSON.parse(flags.json ?? fs.readFileSync(pos ?? die('give a JSON file or --json'), 'utf8'))
