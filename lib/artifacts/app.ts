@@ -18,17 +18,19 @@ function htmlResponse(html: string, nonce: string, status = 200, extra: Record<s
     status,
     headers: {
       'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': ROBOTS, 'X-Content-Type-Options': 'nosniff',
-      'Content-Security-Policy': `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; img-src 'self' data:; connect-src 'self'; frame-src ${CFG.contentOrigin()}; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`,
+      'Content-Security-Policy': `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; img-src 'self' data:; connect-src 'self'; frame-src ${CFG.contentOrigin()} 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`,
       'Referrer-Policy': 'no-referrer', 'X-Frame-Options': 'DENY', ...extra,
     },
   })
 }
 
-function page(title: string, body: string, status = 200, extra: Record<string, string> = {}) {
+// The form pages: with no-referrer a browser sends `Origin: null` on form posts, which checkWrite rejects.
+// strict-origin sends the origin but never the path, so invite and reset tokens in the URL still do not leak.
+function page(title: string, body: string, status = 200) {
   const nonce = randomToken(16)
   return htmlResponse(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="${ROBOTS}"><meta name="referrer" content="no-referrer"><title>${escapeHtml(title)}</title><style nonce="${nonce}">${SHELL_CSS}</style></head>
-<body><main>${body}</main></body></html>`, nonce, status, extra)
+<meta name="robots" content="${ROBOTS}"><meta name="referrer" content="strict-origin"><title>${escapeHtml(title)}</title><style nonce="${nonce}">${SHELL_CSS}</style></head>
+<body><main>${body}</main></body></html>`, nonce, status, { 'Referrer-Policy': 'strict-origin' })
 }
 
 async function bootFor(req: Request, a: S.Artifact | null, v: A.Visitor) {

@@ -65,6 +65,11 @@ catch(x){uerr.textContent=x.status===429?"Demasiados intentos. Probá de nuevo e
 $("toLogin").addEventListener("click",()=>openLogin().catch(()=>{}));udlg.addEventListener("cancel",e=>e.preventDefault())}
 async function logout(){await api("DELETE","/api/session").catch(()=>{});location.reload();return info()}
 if(pill)pill.addEventListener("click",()=>B.user?logout():openLogin().catch(()=>{}));
+const share=$("share");if(share){const bar=share.parentElement;
+share.addEventListener("click",e=>{e.preventDefault();if($("share-frame"))return;const s=document.createElement("iframe");
+s.id="share-frame";s.title="Compartir";s.src=share.getAttribute("href");s.onload=()=>s.focus();f.inert=bar.inert=true;document.body.appendChild(s)});
+addEventListener("message",e=>{const s=$("share-frame");if(!s||e.source!==s.contentWindow||e.origin!==location.origin||!e.data||e.data.shareClosed!==true)return;
+s.remove();f.inert=bar.inert=false;share.focus()})}
 const need=async r=>{if(can(r))return;if(!B.user&&B.role!=="owner")await openLogin();if(!can(r))throw fail("forbidden","Tu acceso no lo permite",{status:403})};
 const ops={info:async()=>info(),
 getState:a=>api("GET",A("/state"+(a&&a.rev?"?rev="+Number(a.rev):""))),
@@ -83,7 +88,7 @@ e.source.postMessage(m,"*")});
 if(f)sync();else if(udlg)udlg.showModal();else dlg.showModal();})();`
 
 export const SHELL_CSS = `*{box-sizing:border-box}html,body{margin:0;height:100%;background:#fff;font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111}
-#f{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
+#f,#share-frame{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}#share-frame{z-index:3;background:transparent}
 .bar{position:fixed;right:10px;bottom:10px;z-index:2;display:flex;gap:6px}
 .bar a,.bar button{font:12px/1 system-ui,sans-serif;padding:7px 10px;border-radius:999px;border:1px solid #0002;background:#ffffffe6;color:#222;cursor:pointer;box-shadow:0 1px 4px #0002;text-decoration:none}
 .bar a:hover,.bar button:hover{background:#fff}:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
