@@ -91,7 +91,8 @@ export default function ArtifactShareDialog({ artifact, apiBase, onClose }: { ar
         </div>
         <div className="flex items-center gap-1">
           {detail && <Button size="sm" variant="ghost" icon={Copy} onClick={() => copyWithToast(detail.url, 'Link copied')}>Copy link</Button>}
-          <IconButton label="Close" icon={X} onClick={onClose} />
+          {/* Closing the native dialog (not unmounting it) lets the browser return focus to the button that opened it. */}
+          <IconButton label="Close" icon={X} onClick={() => dialogRef.current?.close()} />
         </div>
       </div>
 

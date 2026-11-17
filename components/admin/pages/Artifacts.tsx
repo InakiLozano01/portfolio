@@ -261,6 +261,7 @@ function AccountsPanel() {
   const { data, reload } = useResource<Account[]>(`${API}/accounts`)
   const confirm = useConfirm()
   const [revealed, setRevealed] = useState<string | null>(null)
+  const [editing, setEditing] = useState<{ id: number; alias: string } | null>(null)
   const act = async (fn: () => Promise<any>, ok: string) => {
     try {
       const r = await fn()
@@ -279,16 +280,24 @@ function AccountsPanel() {
         <Empty icon={Users} title="Nobody yet">Share an artifact to create an account.</Empty>
       ) : (
         <ul className="max-h-[360px] divide-y divide-line/[0.07] overflow-y-auto">
-          {data.map((acct) => (
+          {data.map((acct) => editing?.id === acct.id ? (
+            <li key={acct.id} className="px-6 py-2.5 text-[13px]">
+              <form className="flex items-center gap-2" onSubmit={(e) => {
+                e.preventDefault()
+                act(() => api(`${API}/accounts/${acct.id}`, { method: 'PATCH', body: { alias: editing.alias } }), 'Name saved').then(() => setEditing(null))
+              }} onKeyDown={(e) => { if (e.key === 'Escape') setEditing(null) }}>
+                <Input aria-label={`Name to show for ${acct.email}`} className="!h-8 min-w-0 flex-1" autoFocus maxLength={80} value={editing.alias} onChange={(e) => setEditing({ ...editing, alias: e.target.value })} />
+                <Button size="sm" type="submit" variant="primary" aria-label="Save name">Save</Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+              </form>
+            </li>
+          ) : (
             <li key={acct.id} className="flex items-center gap-2 px-6 py-2.5 text-[13px]">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-fg">{acct.alias ? `${acct.alias} · ` : ''}{acct.email}</p>
                 <p className="truncate text-[12px] text-fg-dim">{acct.shares.map((s) => `${s.title} (${s.role})`).join(', ') || 'No shares'}</p>
               </div>
-              <IconButton size="sm" label={`Rename ${acct.email}`} icon={Users} onClick={() => {
-                const alias = window.prompt(`Name to show for ${acct.email}`, acct.alias || '')
-                if (alias !== null) act(() => api(`${API}/accounts/${acct.id}`, { method: 'PATCH', body: { alias } }), 'Name saved')
-              }} />
+              <IconButton size="sm" label={`Rename ${acct.email}`} icon={Users} onClick={() => setEditing({ id: acct.id, alias: acct.alias || '' })} />
               <IconButton size="sm" label={`Reset password for ${acct.email}`} icon={KeyRound} onClick={async () => {
                 if (await confirm({ title: `Reset ${acct.email}'s password?`, body: 'Their sessions end now and they get an email to choose a new password.', confirmLabel: 'Reset', tone: 'primary' }))
                   act(() => api(`${API}/accounts/${acct.id}/reset`, { method: 'POST', body: { notify: true } }), 'Reset email sent')

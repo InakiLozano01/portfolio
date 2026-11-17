@@ -22,13 +22,14 @@ async function main() {
     out.probes = JSON.parse(await frame.locator('body').getAttribute('data-done'))
     out.contentUrl = await page.locator('#f').getAttribute('src')
 
-    // The Share button opens the console's share dialog on the artifacts origin.
+    // The Share button opens the console's share dialog over the artifact, on the artifacts origin.
     await page.getByRole('link', { name: 'Compartir' }).click()
-    await page.getByRole('heading', { name: 'Share' }).waitFor()
-    out.sharePageTitle = await page.locator('#share-title + p').textContent()
-    await page.getByRole('button', { name: 'Close' }).click()
-    await page.waitForURL(`${APP}/${SLUG}`)
-    out.backOnArtifact = true
+    const share = page.frameLocator('#share-frame')
+    await share.getByRole('heading', { name: 'Share' }).waitFor()
+    out.sharePageTitle = await share.locator('#share-title + p').textContent()
+    await share.getByRole('button', { name: 'Close' }).click()
+    await page.locator('#share-frame').waitFor({ state: 'detached' })
+    out.backOnArtifact = page.url() === `${APP}/${SLUG}`
 
     // 2. The admin console on the main origin.
     const admin = await (await browser.newContext({ acceptDownloads: true })).newPage()
