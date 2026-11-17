@@ -5,7 +5,7 @@ description: "Publish, version, share and manage HTML artifacts on artifacts.ina
 
 # artifacts-publish
 
-Output: the artifact's URL `https://artifacts.inakilozano.com/<slug>`, which every command returns, and whatever the owner must hand over by hand (a generated password is shown once: give it to Iñaki, never to anyone else).
+Output: the artifact's URL `https://artifacts.inakilozano.com/<slug>`, which every artifact-scoped command returns, and whatever the owner must hand over by hand (a generated password is shown once: give it to Iñaki, never to anyone else). Collection commands such as `accounts` and `storage` return their collection or usage payload.
 
 Reference: `artifacts/README.md` in the portfolio repo (InakiLozano01/portfolio). Vocabulary: general access, shared password, share, account, role (viewer, responder, editor), state, response, answer key.
 

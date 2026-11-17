@@ -72,7 +72,7 @@ Limits: 40 MB request body, 15 MB per inline file, 1 GB per uploaded file, 20 GB
 
 ## CLI and MCP
 
-`scripts/artifacts.mjs` (no dependencies, Node 22+) covers every operation and uploads large files in resumable parts. Token in `~/.config/artifacts/token` with mode 600 (or `ARTIFACTS_TOKEN_FILE`); server from `ARTIFACTS_URL`. Run it without arguments for usage. Every command prints JSON with the artifact's `url` (`responses export --csv` prints it on stderr). Uploads send whole-file and per-part SHA-256. A publish with large files creates one version; an interrupted publish rerun sends only what is missing and reuses the artifact it created (its slug is kept in `pending/` next to the token file until the publish finishes).
+`scripts/artifacts.mjs` (no dependencies, Node 22+) covers every operation and uploads large files in resumable parts. Token in `~/.config/artifacts/token` with mode 600 (or `ARTIFACTS_TOKEN_FILE`); server from `ARTIFACTS_URL`. Run it without arguments for usage. Every artifact-scoped command prints JSON with the artifact's `url` (`responses export --csv` prints it on stderr); collection commands such as `accounts` and `storage` return their collection or usage payload. Uploads send whole-file and per-part SHA-256. A publish with large files creates one version; an interrupted publish rerun sends only what is missing and reuses the artifact it created (its slug is kept in `pending/` next to the token file until the publish finishes).
 
 ```sh
 node scripts/artifacts.mjs publish ./deck --slug kickoff-acme --title "Kickoff Acme"   # creates or publishes a new version matching the folder

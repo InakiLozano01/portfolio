@@ -10,7 +10,7 @@ const BASE = (process.env.ARTIFACTS_URL || 'https://artifacts.inakilozano.com').
 const INLINE_MAX = 4 << 20 // larger files go through an upload
 const INLINE_BATCH = 24 << 20 // keeps one JSON request well under the 40 MB body limit
 
-const USAGE = `usage: artifacts <command> [args] [--flags]   (every command prints JSON with the artifact's url)
+const USAGE = `usage: artifacts <command> [args] [--flags]   (artifact-scoped commands print JSON with the artifact's url)
   publish <dir|file.html> [--slug s] [--title t] [--note n]   create, or publish a new version that matches the folder
   list | get <ref> | delete <ref> --yes
   rename <ref> [--title t] [--slug s]

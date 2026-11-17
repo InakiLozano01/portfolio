@@ -186,7 +186,7 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
       for (const u of await q('SELECT id FROM artifacts.uploads WHERE artifact_id = $1', [a.id])) await S.abortUpload(u.id)
       await q('DELETE FROM artifacts.artifacts WHERE id = $1', [a.id])
       await S.gcBlobs()
-      return json({ deleted: true, slug: a.slug })
+      return json({ deleted: true, slug: a.slug, url: S.artifactUrl(a) })
     }
   }
   if (sub === 'versions' && M === 'POST' && !rest.length) {

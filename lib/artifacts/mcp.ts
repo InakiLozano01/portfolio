@@ -16,7 +16,7 @@ const TOOLS: Tool[] = [
   { name: 'list_artifacts', description: 'List every artifact with its URL, general access, share and response counts and storage.', method: 'GET', path: () => 'artifacts', props: {} },
   { name: 'get_artifact', description: 'One artifact: versions, files (with video status), shares, state revision, storage.', method: 'GET', path: (a) => `artifacts/${enc(a.ref)}`, props: ref, required: ['ref'] },
   {
-    name: 'create_artifact', description: 'Publish a new artifact from HTML and small inline files (under 1 MB in total). For videos, large files or whole folders use the CLI: node scripts/artifacts.mjs publish <dir>. Returns its URL. New artifacts are restricted until general access is set.',
+    name: 'create_artifact', description: 'Publish a new artifact from HTML and inline files (up to 15 MB per file and 40 MB per request). For videos, larger files or whole folders use the CLI: node scripts/artifacts.mjs publish <dir>. Returns its URL. New artifacts are restricted until general access is set.',
     method: 'POST', path: () => 'artifacts', body: (a) => pick(a, ['title', 'slug', 'html', 'files', 'note', 'access']),
     props: { title: str('Title'), slug: str('Optional slug'), html: str('index.html content'), files: { type: 'array', description: '[{path, content | base64, contentType?}]', items: { type: 'object' } }, note: str('Version note'), access: obj('Optional general access {kind, role, password?, generatePassword?}') },
     required: ['title', 'html'],
@@ -35,7 +35,7 @@ const TOOLS: Tool[] = [
   {
     name: 'set_general_access', description: 'General access: restricted, link or password, with the role it grants. generatePassword returns a new shared password once.',
     method: 'PUT', path: (a) => `artifacts/${enc(a.ref)}/access`, body: (a) => pick(a, ['kind', 'role', 'password', 'generatePassword']),
-    props: { ...ref, kind: { type: 'string', enum: ['restricted', 'link', 'password'] }, role: { type: 'string', enum: ['viewer', 'responder', 'editor'] }, password: str('Shared password (8+ chars)'), generatePassword: { type: 'boolean' } }, required: ['ref'],
+    props: { ...ref, kind: { type: 'string', enum: ['restricted', 'link', 'password'] }, role: { type: 'string', enum: ['viewer', 'responder', 'editor'] }, password: str('Shared password (8+ chars)'), generatePassword: { type: 'boolean' } }, required: ['ref', 'kind'],
   },
   { name: 'list_shares', description: 'Accounts an artifact is shared with and their roles.', method: 'GET', path: (a) => `artifacts/${enc(a.ref)}/shares`, props: ref, required: ['ref'] },
   {
@@ -58,13 +58,14 @@ const TOOLS: Tool[] = [
     body: (a) => pick(a, ['state', 'baseRev']), props: { ...ref, state: { description: 'Any JSON' }, baseRev: { type: 'integer' } }, required: ['ref', 'state'],
   },
   { name: 'state_history', description: 'State revisions: who saved and when.', method: 'GET', path: (a) => `artifacts/${enc(a.ref)}/state/history`, props: ref, required: ['ref'] },
-  { name: 'export_responses', description: 'All responses with who sent each, when, and the score.', method: 'GET', path: (a) => `artifacts/${enc(a.ref)}/responses`, props: ref, required: ['ref'] },
+  { name: 'export_responses', description: 'All responses with who sent each, when, and the score. Use format csv for spreadsheet export.', method: 'GET', path: (a) => `artifacts/${enc(a.ref)}/responses${a.format === 'csv' ? '?format=csv' : ''}`, props: { ...ref, format: { type: 'string', enum: ['json', 'csv'], description: 'Response format' } }, required: ['ref'] },
   { name: 'delete_response', description: 'Delete one response.', method: 'DELETE', path: (a) => `artifacts/${enc(a.ref)}/responses/${enc(a.id)}`, props: { ...ref, id: { type: 'integer' } }, required: ['ref', 'id'] },
   {
     name: 'set_answer_key', description: 'Publish the answer key {questionId: {answer, points?}} and regrade stored responses. Never served to visitors.',
     method: 'PUT', path: (a) => `artifacts/${enc(a.ref)}/answer-key`, body: (a) => ({ key: a.key }), props: { ...ref, key: obj('Answer key') }, required: ['ref', 'key'],
   },
   { name: 'get_answer_key', description: 'Read the answer key.', method: 'GET', path: (a) => `artifacts/${enc(a.ref)}/answer-key`, props: ref, required: ['ref'] },
+  { name: 'delete_answer_key', description: 'Delete the answer key and remove grading from stored responses.', method: 'DELETE', path: (a) => `artifacts/${enc(a.ref)}/answer-key`, props: ref, required: ['ref'] },
   { name: 'storage', description: 'Storage used against the cap, per artifact.', method: 'GET', path: () => 'storage', props: {} },
 ]
 
