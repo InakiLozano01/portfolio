@@ -25,14 +25,17 @@ export async function POST(request: NextRequest) {
                 revalidatePath('/', 'layout')
                 revalidatePath('/en')
                 revalidatePath('/es')
-                revalidatePath('/projects')
-                revalidatePath('/blog')
+                revalidatePath('/en/projects')
+                revalidatePath('/es/projects')
+                revalidatePath('/en/blog')
+                revalidatePath('/es/blog')
                 break
 
             case 'projects':
                 await invalidateCache('projects')
                 await invalidateCache('projects:summary')
-                revalidatePath('/projects')
+                revalidatePath('/en/projects')
+                revalidatePath('/es/projects')
                 revalidateTag('projects', 'max')
                 break
 
@@ -51,7 +54,8 @@ export async function POST(request: NextRequest) {
 
             case 'blogs':
                 await invalidateCache('blogs')
-                revalidatePath('/blog')
+                revalidatePath('/en/blog')
+                revalidatePath('/es/blog')
                 revalidateTag('blogs', 'max')
                 break
 

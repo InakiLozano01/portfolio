@@ -101,11 +101,28 @@ test('validateNginxPatch checks origins, upload limits, encoder-facing API timeo
 })
 
 test('validateMigrationFiles requires idempotent base-before-artifacts migration evidence', () => {
-  const schema = 'CREATE SCHEMA IF NOT EXISTS artifacts; CREATE TABLE IF NOT EXISTS artifacts.settings (key text); CREATE TABLE IF NOT EXISTS artifacts.artifacts (id bigint);'
+  const schema = `
+    CREATE SCHEMA IF NOT EXISTS artifacts;
+    CREATE TABLE IF NOT EXISTS artifacts.settings (key text);
+    CREATE TABLE IF NOT EXISTS artifacts.artifacts (id bigint);
+    ALTER TABLE artifacts.api_tokens ADD COLUMN IF NOT EXISTS limited boolean;
+    ALTER TABLE artifacts.artifacts ADD COLUMN IF NOT EXISTS created_by_token bigint;
+    ALTER TABLE artifacts.uploads ADD COLUMN IF NOT EXISTS sha256 text;
+    ALTER TABLE artifacts.uploads ADD COLUMN IF NOT EXISTS consumed_at timestamptz;
+    ALTER TABLE artifacts.uploads ADD COLUMN IF NOT EXISTS upload_scope text;
+  `
   const script = "const { pool } = require('../lib/postgres-store'); const sql = fs.readFileSync(path.join(__dirname, '../lib/artifacts/schema.sql'), 'utf8'); pool().query(sql)"
   const result = validateMigrationFiles({ schema, script, releaseChecklist: 'npm run db:migrate\nnpm run db:migrate:artifacts\nnpm run check:artifacts:deployment' })
   assert.deepEqual(result, [])
   assert.match(validateMigrationFiles({ schema, script, releaseChecklist: 'npm run db:migrate:artifacts' })[0], /order/i)
+})
+
+test('validateMigrationFiles rejects an artifacts schema that only creates new tables', () => {
+  const schema = 'CREATE SCHEMA IF NOT EXISTS artifacts; CREATE TABLE IF NOT EXISTS artifacts.settings (key text); CREATE TABLE IF NOT EXISTS artifacts.artifacts (id bigint);'
+  const script = "const sql = fs.readFileSync('lib/artifacts/schema.sql', 'utf8'); pool().query(sql)"
+  const issues = validateMigrationFiles({ schema, script, releaseChecklist: 'npm run db:migrate\nnpm run db:migrate:artifacts\nnpm run check:artifacts:deployment' })
+  assert.equal(issues.length, 5)
+  assert.match(issues.join(' '), /forward migration/)
 })
 
 test('checkArtifactsDatabase verifies both schemas and required artifact tables', async () => {

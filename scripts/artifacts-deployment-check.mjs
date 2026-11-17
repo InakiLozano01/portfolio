@@ -114,6 +114,14 @@ export function validateMigrationFiles({ schema, script, releaseChecklist }) {
   if (!/CREATE SCHEMA IF NOT EXISTS artifacts/i.test(schema) || !/CREATE TABLE IF NOT EXISTS artifacts\.settings/i.test(schema) || !/CREATE TABLE IF NOT EXISTS artifacts\.artifacts/i.test(schema)) {
     issues.push('artifacts schema must create its schema and core tables idempotently')
   }
+  const forwardColumns = [
+    [/ALTER TABLE artifacts\.api_tokens[\s\S]*ADD COLUMN IF NOT EXISTS limited/i, 'api token limited column must have a forward migration'],
+    [/ALTER TABLE artifacts\.artifacts[\s\S]*ADD COLUMN IF NOT EXISTS created_by_token/i, 'artifact creator token column must have a forward migration'],
+    [/ALTER TABLE artifacts\.uploads[\s\S]*ADD COLUMN IF NOT EXISTS sha256/i, 'upload sha256 column must have a forward migration'],
+    [/ALTER TABLE artifacts\.uploads[\s\S]*ADD COLUMN IF NOT EXISTS consumed_at/i, 'upload consumed_at column must have a forward migration'],
+    [/ALTER TABLE artifacts\.uploads[\s\S]*ADD COLUMN IF NOT EXISTS upload_scope/i, 'upload scope column must have a forward migration'],
+  ]
+  for (const [pattern, message] of forwardColumns) if (!pattern.test(schema)) issues.push(message)
   if (!/schema\.sql/.test(script) || !/pool\(\)\.query/.test(script)) issues.push('artifact migration must execute the checked-in schema through the PostgreSQL pool')
   const checklist = String(releaseChecklist)
   const commandIndex = (command) => checklist.search(new RegExp(`^\\s*${command.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'm'))

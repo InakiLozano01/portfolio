@@ -91,5 +91,26 @@ CREATE TABLE IF NOT EXISTS artifacts.uploads (
   -- Set once the file is placed in a version; the row stays until expiry so a repeated complete is answered, not 404.
   consumed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL);
-ALTER TABLE artifacts.uploads ADD COLUMN IF NOT EXISTS upload_scope text NOT NULL DEFAULT 'owner';
+-- Forward-only migrations for databases created before the current table definitions.
+-- CREATE TABLE IF NOT EXISTS does not add columns to an existing table.
+-- Defaults fill legacy rows without changing any existing non-null values.
+ALTER TABLE artifacts.api_tokens ADD COLUMN IF NOT EXISTS limited boolean DEFAULT false;
+UPDATE artifacts.api_tokens SET limited = false WHERE limited IS NULL;
+ALTER TABLE artifacts.api_tokens ALTER COLUMN limited SET DEFAULT false;
+ALTER TABLE artifacts.api_tokens ALTER COLUMN limited SET NOT NULL;
+
+ALTER TABLE artifacts.artifacts
+  ADD COLUMN IF NOT EXISTS created_by_token bigint REFERENCES artifacts.api_tokens(id);
+ALTER TABLE artifacts.artifacts
+  ALTER COLUMN feedback SET DEFAULT 'score';
+
+ALTER TABLE artifacts.uploads ADD COLUMN IF NOT EXISTS sha256 text;
+ALTER TABLE artifacts.uploads ADD COLUMN IF NOT EXISTS consumed_at timestamptz;
+ALTER TABLE artifacts.uploads ADD COLUMN IF NOT EXISTS upload_scope text DEFAULT 'owner';
+UPDATE artifacts.uploads SET upload_scope = 'owner' WHERE upload_scope IS NULL;
+ALTER TABLE artifacts.uploads ALTER COLUMN upload_scope SET DEFAULT 'owner';
+ALTER TABLE artifacts.uploads ALTER COLUMN upload_scope SET NOT NULL;
+
+CREATE INDEX IF NOT EXISTS artifacts_created_by_token_idx
+  ON artifacts.artifacts (created_by_token) WHERE created_by_token IS NOT NULL;
 CREATE INDEX IF NOT EXISTS uploads_scope_open ON artifacts.uploads (upload_scope, expires_at) WHERE completed_at IS NULL;

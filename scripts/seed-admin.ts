@@ -8,9 +8,12 @@ config();
 // Set MongoDB URI for Docker environment if not set
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required')
 
+const adminPassword = process.env.ADMIN_PASSWORD
+if (!adminPassword) throw new Error('ADMIN_PASSWORD is required')
+
 const adminData = {
   email: process.env.ADMIN_EMAIL || 'admin@example.com',
-  password: process.env.ADMIN_PASSWORD || 'admin123',
+  password: adminPassword,
   name: 'Admin'
 };
 
@@ -37,4 +40,4 @@ async function seedAdmin() {
   }
 }
 
-seedAdmin(); 
+seedAdmin();

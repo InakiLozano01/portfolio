@@ -11,6 +11,7 @@ export async function GET(request: Request) {
         await connectToDatabase();
         const messages = await Contact.find({})
             .sort({ createdAt: -1 })
+            .limit(100)
             .lean();
         return NextResponse.json(messages, { headers: { 'Cache-Control': 'private, no-store' } });
     } catch (error) {
