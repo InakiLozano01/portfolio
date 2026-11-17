@@ -2,7 +2,7 @@
 
 Date: 2026-11-17
 Branch: `feat/artifacts-integration`
-Tip: `f7fe8b7`
+Tip: `5b47f2e`
 
 This is the result of the full-send review requested against the portfolio and
 artifacts code. High-confidence fixes were integrated. Changes that require a
@@ -33,6 +33,13 @@ review queue rather than being hidden behind compensating code.
 - Existing artifact databases now receive additive forward migrations for
   token limits, token ownership, upload integrity, upload consumption, and
   upload scope; the migration guard tests these requirements.
+- The admin console and owner share dialog now support framed, keyboard-safe
+  sharing, account management, token lifecycle, invitations, resets, and
+  deletion confirmation with browser coverage.
+- Automatic artifact slugs now use the unique index as the concurrency
+  authority, retry bounded suffixes, and return a stable exhaustion error.
+- The schema migration can optionally grant the least-privilege app role via
+  `ARTIFACTS_APP_ROLE`; nginx now has a standalone no-write/real-IP check.
 
 ## Validation
 
@@ -41,9 +48,11 @@ Passing checks:
 - `npm run -s typecheck`
 - `npm run -s lint` (10 pre-existing warnings, 0 errors)
 - `npm run -s test:artifacts:deployment` — 9/9
-- `ARTIFACTS_TEST_PORT=56090 npm run -s test:artifacts` — 14/14
+- `ARTIFACTS_TEST_PORT=56990 npm run -s test:artifacts` — 15/15
 - `ARTIFACTS_TEST_PORT=56190 npm run -s test:artifacts:uploads` — 10/10
 - `ARTIFACTS_TEST_PORT=56290 npm run -s test:artifacts:browser` — 1/1
+- `ARTIFACTS_TEST_PORT=56890 npm run -s test:artifacts:console` — 3/3
+- `npm run -s check:artifacts:nginx` — PASS
 - `ARTIFACTS_MIGRATION_TEST_DATABASE_URL=<disposable PostgreSQL> npm run -s test:artifacts:migration` — 1/1
 - `npm test -- --runInBand` — 24 suites, 77 tests
 - `npm run -s test:security` — 7 security tests plus dependency checks
@@ -124,18 +133,6 @@ as a searchable projection.
 **After:** choose one canonical runtime representation and derive projections
 through generated columns or a transactional projection worker. Until then,
 add a checksum/version invariant and a health check.
-
-### P2 — atomic slug allocation
-
-`lib/artifacts/store.ts:37-42` performs an unbounded read-per-candidate loop
-before the unique insert in `lib/artifacts/api.ts:154-163`.
-
-**Before:** check-then-insert races and potentially unbounded work.
-**After:** let the unique constraint be authoritative inside a transaction,
-bound candidate attempts, and translate only the expected unique conflict into
-a stable `slug_taken`/retryable response. A dedicated worker was stopped after
-it failed to produce a bounded, reviewed patch; no speculative slug change was
-integrated.
 
 ### P2 — rate-limit reservation API
 
@@ -226,3 +223,8 @@ memo dependency warning, and three missing PDF image alt-text warnings.
 The build passes but emits expected local-environment Redis DNS messages while
 collecting pages and Next.js expands generated `tsconfig` includes; generated
 files were restored after the build.
+
+The active `dp-minio` container was not stopped or deleted. Its Compose file was
+moved out of the disposable worktree to `/home/ubuntu/vps/artifacts-runtime/`
+so the Git checkout can converge to one worktree without orphaning its runtime
+configuration or persistent volume.
