@@ -23,6 +23,7 @@
     "test:postgres": "node --test scripts/test-postgres.cjs",
     "postinstall": "patch-package --error-on-fail",
     "test:artifacts": "node --test --test-concurrency=1 tests/artifacts/http.test.mjs",
+    "test:artifacts:uploads": "node --test --test-concurrency=1 tests/artifacts/uploads.test.mjs",
     "test:artifacts:encoder": "node --test tests/artifacts/encoder.test.mjs",
     "test:artifacts:browser": "node --test tests/artifacts/browser.test.mjs",
     "test:security": "node --test scripts/test-dependency-security.cjs && node scripts/check-security-dependencies.cjs",

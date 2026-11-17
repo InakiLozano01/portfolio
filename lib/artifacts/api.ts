@@ -140,8 +140,14 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
       const u = await S.completeUpload(ref)
       const a = await S.findArtifact(u.artifact_id)
       if (body.stage) return json({ id: ref, path: u.path, staged: true, url: S.artifactUrl(a) })
-      await S.writeVersion(a, { fromVersionId: (await S.versionRow(a))?.id, files: [{ path: u.path, key: u.key }], note: body.note ?? `upload ${u.path}`, by })
-      await S.forgetUploads([ref])
+      // Claimed before the version is written, so a repeated or concurrent complete answers without a second version.
+      if (!(await S.consumeClaim([ref])).length) return json(await detail(a.id))
+      try {
+        await S.writeVersion(a, { fromVersionId: (await S.versionRow(a))?.id, files: [{ path: u.path, key: u.key }], note: body.note ?? `upload ${u.path}`, by })
+      } catch (e) {
+        await q('UPDATE artifacts.uploads SET consumed_at = NULL WHERE id = $1', [ref])
+        throw e
+      }
       return json(await detail(a.id), 201)
     }
   }
@@ -161,7 +167,8 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
       const { id } = await one('INSERT INTO artifacts.artifacts(slug, title, created_by_token) VALUES ($1, $2, $3) RETURNING id::int', [slug, title, tokenId])
       const a = await S.findArtifact(id)
       try {
-        await S.writeVersion(a, { files, note: body.note ?? 'initial', by })
+        // With no files the artifact starts empty (version 0), so a first publish with uploads becomes one complete v1.
+        if (files.length) await S.writeVersion(a, { files, note: body.note ?? 'initial', by })
         if (body.access) await A.setAccess(a, body.access)
       } catch (e) {
         await q('DELETE FROM artifacts.artifacts WHERE id = $1', [id])
@@ -192,7 +199,7 @@ export async function agentApi(req: Request, parts: string[], url: URL, by: stri
     const files = [...(await inlineFiles(body)), ...(await S.consumeUploads(a, body.uploads))]
     const from = body.replace ? null : (await S.versionRow(a))?.id
     await S.writeVersion(a, { fromVersionId: from, files, remove: checkRemove(body.removeFiles), note: body.note ?? null, by })
-    await S.forgetUploads(body.uploads)
+    await S.consumeClaim(body.uploads)
     await S.gcBlobs()
     return json(await detail(a.id), 201)
   }
