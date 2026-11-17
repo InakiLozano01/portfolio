@@ -109,7 +109,7 @@ export default function Header({
   }
 
   return (
-    <header className="sticky top-0 h-14 lg:h-[72px] bg-navy text-cream z-50 shadow-sm">
+    <header className="sticky top-0 h-14 lg:h-[72px] bg-navy text-cream z-50 shadow-xs">
       {/* Skip to content link */}
       <a
         href="#content"

@@ -32,7 +32,7 @@ function ProjectPanel({ project, lang, t }: { project: ProjectCard; lang: Lang; 
 
     return (
         <motion.article
-            className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line/[0.12] bg-surface transition-[border-color,transform] duration-300 [transform-style:preserve-3d] hover:border-bordeaux"
+            className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line/12 bg-surface transition-[border-color,transform] duration-300 transform-3d hover:border-bordeaux"
             style={reduce ? undefined : { rotateX: srx, rotateY: sry, transformPerspective: 1200 }}
             onPointerMove={(event) => {
                 const rect = event.currentTarget.getBoundingClientRect()
@@ -48,7 +48,7 @@ function ProjectPanel({ project, lang, t }: { project: ProjectCard; lang: Lang; 
                 ry.set(0)
             }}
         >
-            <div className="relative aspect-[16/9] overflow-hidden border-b border-line/[0.08] bg-fg/[0.04]">
+            <div className="relative aspect-video overflow-hidden border-b border-line/8 bg-fg/4">
                 {thumb && (
                     <Image
                         src={thumb}
@@ -64,10 +64,10 @@ function ProjectPanel({ project, lang, t }: { project: ProjectCard; lang: Lang; 
                 )}
             </div>
             <div className="flex flex-1 flex-col p-6 sm:p-7">
-                <h3 className="text-2xl font-semibold tracking-[-0.025em] text-fg">
+                <h3 className="text-2xl font-semibold tracking-tight text-fg">
                     <Link
                         href={`/${lang}/projects/${slug}`}
-                        className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-2xl focus-visible:after:ring-2 focus-visible:after:ring-coral"
+                        className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-hidden focus-visible:after:rounded-2xl focus-visible:after:ring-2 focus-visible:after:ring-coral"
                     >
                         {title}
                     </Link>
@@ -76,7 +76,7 @@ function ProjectPanel({ project, lang, t }: { project: ProjectCard; lang: Lang; 
                 {project.technologies && project.technologies.length > 0 && (
                     <ul className="mt-6 flex flex-wrap gap-1.5">
                         {project.technologies.slice(0, 6).map((tech) => (
-                            <li key={tech._id} className="inline-flex h-7 items-center gap-1.5 rounded-full bg-fg/[0.06] px-2.5 text-xs font-medium text-fg-soft">
+                            <li key={tech._id} className="inline-flex h-7 items-center gap-1.5 rounded-full bg-fg/6 px-2.5 text-xs font-medium text-fg-soft">
                                 <SkillIcon name={tech.name} icon={tech.icon || ''} size={12} className="h-3 w-3" />
                                 {tech.name}
                             </li>
@@ -183,7 +183,7 @@ export default function ProjectsSection({ lang = 'en', initialProjects = [], dic
 
     return (
         <div ref={outerRef} style={{ height: `calc(100dvh + ${distance}px)` }} className="relative">
-            <div className="sticky top-0 flex h-[100dvh] flex-col justify-center gap-10 overflow-hidden pt-16">
+            <div className="sticky top-0 flex h-dvh flex-col justify-center gap-10 overflow-hidden pt-16">
                 {header}
                 <motion.div ref={trackRef} style={{ x: smoothX }} className="flex w-max gap-6 pl-[max(2rem,calc((100vw-1400px)/2+2rem))] pr-[10vw]">
                     {projects.map((project) => (

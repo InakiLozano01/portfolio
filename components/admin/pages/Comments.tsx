@@ -181,7 +181,7 @@ export default function Comments() {
                 const parent = comment.parent ? byId.get(comment.parent) : null
                 const last = comment.overrides?.[comment.overrides.length - 1]
                 return (
-                  <li key={comment._id} className={cx('flex gap-3 px-5 py-5 sm:px-6', selected.has(comment._id) && 'bg-fg/[0.03]')}>
+                  <li key={comment._id} className={cx('flex gap-3 px-5 py-5 sm:px-6', selected.has(comment._id) && 'bg-fg/3')}>
                     <input type="checkbox" aria-label={`Select comment by ${comment.alias}`} checked={selected.has(comment._id)} onChange={() => toggle(comment._id)} className="mt-1 h-4 w-4 shrink-0 accent-[#1a2433]" />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -199,7 +199,7 @@ export default function Comments() {
                           <CornerDownRight size={12} strokeWidth={1.75} aria-hidden="true" /> replying to {parent.alias}: “{parent.content.slice(0, 80)}”
                         </p>
                       )}
-                      <p className="mt-2 max-w-[72ch] whitespace-pre-wrap break-words text-[14px] leading-relaxed text-fg">{comment.content}</p>
+                      <p className="mt-2 max-w-[72ch] whitespace-pre-wrap wrap-break-word text-[14px] leading-relaxed text-fg">{comment.content}</p>
 
                       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
                         <Status tone={comment.status === 'pending' ? 'attention' : comment.status === 'approved' ? 'live' : 'muted'}>{statusLabel[comment.status]}</Status>
@@ -208,7 +208,7 @@ export default function Comments() {
                             <summary className="cursor-pointer list-none rounded-md hover:text-fg-soft">
                               {comment.moderation.source === 'jev' ? 'Model' : 'Fallback'}: {comment.moderation.decision} · <span className="font-mono tabular">{Math.round((comment.moderation.confidence || 0) * 100)}%</span>
                             </summary>
-                            <div className="mt-2 space-y-1 rounded-xl bg-fg/[0.04] px-3 py-2">
+                            <div className="mt-2 space-y-1 rounded-xl bg-fg/4 px-3 py-2">
                               {!!comment.moderation.reasons?.length && <p>{comment.moderation.reasons.join(', ').replaceAll('_', ' ')}</p>}
                               {comment.moderation.categories && (
                                 <p className="font-mono">
@@ -226,7 +226,7 @@ export default function Comments() {
                         {comment.status !== 'rejected' && <Button size="sm" icon={X} disabled={busy} onClick={() => setStatus([comment._id], 'rejected')}>Reject</Button>}
                         {comment.status !== 'pending' && <Button size="sm" variant="ghost" icon={RotateCcw} disabled={busy} onClick={() => setStatus([comment._id], 'pending')}>Back to review</Button>}
                         {comment.blog && !comment.isOfficial && <Button size="sm" variant="ghost" icon={Reply} onClick={() => { setReplying(replying === comment._id ? null : comment._id); setReply('') }}>Reply</Button>}
-                        <Button size="sm" variant="ghost" icon={Trash2} onClick={() => remove(comment)} className="hover:!text-signal-text">Delete</Button>
+                        <Button size="sm" variant="ghost" icon={Trash2} onClick={() => remove(comment)} className="hover:text-signal-text!">Delete</Button>
                       </div>
 
                       {replying === comment._id && (

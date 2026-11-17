@@ -86,7 +86,7 @@ function EntryList({ items, onChange, blank, title, render }: { items: Content[]
             <p className="min-w-0 flex-1 truncate text-[14px] font-medium text-fg">{title(item) || 'New entry'}</p>
             <IconButton size="sm" label="Move up" icon={ArrowUp} disabled={index === 0} onClick={() => move(index, index - 1)} />
             <IconButton size="sm" label="Move down" icon={ArrowDown} disabled={index === items.length - 1} onClick={() => move(index, index + 1)} />
-            <IconButton size="sm" label="Remove entry" icon={Trash2} onClick={() => onChange(items.filter((_, i) => i !== index))} className="hover:!text-signal-text" />
+            <IconButton size="sm" label="Remove entry" icon={Trash2} onClick={() => onChange(items.filter((_, i) => i !== index))} className="hover:text-signal-text!" />
           </div>
           <div className="space-y-4 p-4">{render(item, (next) => onChange(items.map((it, i) => (i === index ? next : it))))}</div>
         </div>
@@ -300,9 +300,9 @@ export default function Site() {
                         <span className={cx('truncate', !section.visible && 'line-through decoration-1')}>{section.title}</span>
                       </button>
                       <div className={cx('flex items-center', active ? 'text-cream' : '')}>
-                        <IconButton size="sm" label={`Move ${section.title} up`} icon={ArrowUp} disabled={index === 0} onClick={() => move(index, index - 1)} className={cx('hidden sm:grid', active ? '!text-cream/70 hover:!bg-cream/10' : 'sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100')} />
-                        <IconButton size="sm" label={`Move ${section.title} down`} icon={ArrowDown} disabled={index === sections.length - 1} onClick={() => move(index, index + 1)} className={cx('hidden sm:grid', active ? '!text-cream/70 hover:!bg-cream/10' : 'sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100')} />
-                        <IconButton size="sm" label={section.visible ? `Hide ${section.title}` : `Show ${section.title}`} icon={section.visible ? Eye : EyeOff} onClick={() => toggle(section)} className={active ? '!text-cream/70 hover:!bg-cream/10' : ''} />
+                        <IconButton size="sm" label={`Move ${section.title} up`} icon={ArrowUp} disabled={index === 0} onClick={() => move(index, index - 1)} className={cx('hidden sm:grid', active ? 'text-cream/70! hover:bg-cream/10!' : 'sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100')} />
+                        <IconButton size="sm" label={`Move ${section.title} down`} icon={ArrowDown} disabled={index === sections.length - 1} onClick={() => move(index, index + 1)} className={cx('hidden sm:grid', active ? 'text-cream/70! hover:bg-cream/10!' : 'sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100')} />
+                        <IconButton size="sm" label={section.visible ? `Hide ${section.title}` : `Show ${section.title}`} icon={section.visible ? Eye : EyeOff} onClick={() => toggle(section)} className={active ? 'text-cream/70! hover:bg-cream/10!' : ''} />
                       </div>
                     </li>
                   )

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { FilterQuery } from 'mongoose'
+import type { QueryFilter } from 'mongoose'
 import { connectToDatabase } from '@/lib/mongodb'
 import Comment, { IComment } from '@/models/Comment'
 import { requireAdmin } from '@/lib/admin-auth'
@@ -14,9 +14,10 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const blog = searchParams.get('blog')
 
-    const filter: FilterQuery<IComment> = {}
-    if (status && (ALLOWED_COMMENT_STATUS as readonly string[]).includes(status)) {
-      filter.status = status
+    const filter: QueryFilter<IComment> = {}
+    const validatedStatus = ALLOWED_COMMENT_STATUS.find(value => value === status)
+    if (validatedStatus) {
+      filter.status = validatedStatus
     }
     if (blog && isValidObjectId(blog)) {
       filter.blog = blog

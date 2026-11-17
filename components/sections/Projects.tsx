@@ -152,7 +152,7 @@ export default function Projects({ lang = 'en', initialProjects, dictionary = {}
                     href="https://ethos.ar"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium text-primary underline decoration-[#FD4345] decoration-2 underline-offset-4 transition-colors hover:text-[#FD4345] focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2"
+                    className="font-medium text-primary underline decoration-[#FD4345] decoration-2 underline-offset-4 transition-colors hover:text-[#FD4345] focus-visible:rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2"
                 >
                     {t.visitEthos}
                 </a>
@@ -195,7 +195,7 @@ export default function Projects({ lang = 'en', initialProjects, dictionary = {}
                                     href={projectHref}
                                     prefetch={false}
                                     aria-label={`${t.viewProject} ${title}`}
-                                    className="absolute inset-0 z-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
+                                    className="absolute inset-0 z-10 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
                                 />
                                 <span className="absolute left-0 top-0 z-20 h-1 w-16 bg-[#FD4345]" aria-hidden="true" />
                                 <div className="relative aspect-video w-full">
@@ -211,7 +211,7 @@ export default function Projects({ lang = 'en', initialProjects, dictionary = {}
                                         blurDataURL={project.thumbnailBlur || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNjQwJyBoZWlnaHQ9JzM2MCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCBmaWxsPSIjZWVlIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+PC9zdmc+"}
                                     />
                                 </div>
-                                <CardHeader className="flex-grow">
+                                <CardHeader className="grow">
                                     <CardTitle className="line-clamp-1">
                                         {title}
                                     </CardTitle>

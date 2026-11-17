@@ -77,14 +77,14 @@ export default function Experience({ lang = 'en', dictionary = {} }: ExperienceP
               >
                 <div className="flex items-start gap-4">
                   <div
-                    className="mt-1 p-2 bg-primary/10 rounded-lg flex-shrink-0"
+                    className="mt-1 p-2 bg-primary/10 rounded-lg shrink-0"
                     aria-hidden="true"
                   >
                     <FaBriefcase className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-col md:flex-row md:items-center gap-2 md:justify-between mb-3">
-                      <h3 className="text-xl font-semibold text-gray-900 break-words md:truncate pr-4">
+                      <h3 className="text-xl font-semibold text-gray-900 wrap-break-word md:truncate pr-4">
                         {jobTitle}
                       </h3>
                       <span className="text-sm text-gray-500 whitespace-nowrap">
@@ -107,7 +107,7 @@ export default function Experience({ lang = 'en', dictionary = {} }: ExperienceP
                               className="flex items-start gap-2"
                             >
                               <span
-                                className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0"
+                                className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0"
                                 aria-hidden="true"
                               />
                               <span>{responsibility}</span>

@@ -45,7 +45,7 @@ export default function WritingSection({ lang = 'en', initialContent = null, ini
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
                         placeholder={t.searchPlaceholder || 'Search blogs...'}
-                        className="h-12 w-full rounded-full border border-line/15 bg-surface pl-12 pr-5 text-[15px] text-fg placeholder:text-fg-dim focus:border-signal/70 focus:outline-none"
+                        className="h-12 w-full rounded-full border border-line/15 bg-surface pl-12 pr-5 text-[15px] text-fg placeholder:text-fg-dim focus:border-signal/70 focus:outline-hidden"
                     />
                 </label>
             )}
@@ -58,7 +58,7 @@ export default function WritingSection({ lang = 'en', initialContent = null, ini
             ) : blogs.length === 0 ? (
                 <p className="mt-14 text-fg-soft">{t.noResults || 'No blogs found matching your search.'}</p>
             ) : (
-                <ol className="mt-14 border-t border-line/[0.08]">
+                <ol className="mt-14 border-t border-line/8">
                     {blogs.map((blog, i) => {
                         const title = clean(pick(lang, blog, 'title'))
                         const subtitle = clean(pick(lang, blog, 'subtitle'))
@@ -70,14 +70,14 @@ export default function WritingSection({ lang = 'en', initialContent = null, ini
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true, amount: 0.4 }}
                                 transition={{ duration: 0.8, delay: Math.min(i, 4) * 0.05, ease: EASE_OUT }}
-                                className="border-b border-line/[0.08]"
+                                className="border-b border-line/8"
                             >
                                 <Link
                                     href={`/${lang}/blog/${blogSlug(blog)}`}
                                     prefetch={false}
                                     className="group relative grid gap-4 py-9 md:grid-cols-[8rem_minmax(0,1fr)_auto] md:items-baseline md:gap-10 md:py-12"
                                 >
-                                    <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 -left-5 -right-5 rounded-2xl bg-fg/[0.04] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                                    <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 -left-5 -right-5 rounded-2xl bg-fg/4 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                                     <span className="relative font-mono text-[13px] text-fg-dim">{created}</span>
                                     <span className="relative">
                                         <span className="block text-[clamp(1.6rem,3.2vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-fg transition-transform duration-500 ease-out group-hover:translate-x-2">

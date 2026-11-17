@@ -5,11 +5,15 @@ import { collection } from './postgres-store'
 mongoose.set('autoCreate', false)
 mongoose.set('autoIndex', false)
 
-export function postgresModel<T extends mongoose.Model<any>>(model: T): T {
+type PostgresModelDefinition = {
+  collection: { name: string }
+  schema: { set(option: 'optimisticConcurrency', enabled: boolean): unknown }
+}
+
+export function postgresModel<T extends PostgresModelDefinition>(model: T): T {
   Object.assign(model.collection, collection(model.collection.name))
-  for (const method of ['aggregate', 'bulkWrite', 'watch', 'distinct', 'replaceOne', 'findOneAndReplace', 'estimatedDocumentCount', 'createIndex', 'createIndexes', 'dropIndex', 'dropIndexes']) {
-    ;(model.collection as any)[method] = () => { throw new Error(`Unsupported PostgreSQL collection operation: ${method}`) }
-  }
+  const unsupported = ['aggregate', 'bulkWrite', 'watch', 'distinct', 'replaceOne', 'findOneAndReplace', 'estimatedDocumentCount', 'createIndex', 'createIndexes', 'dropIndex', 'dropIndexes']
+  Object.assign(model.collection, Object.fromEntries(unsupported.map(method => [method, () => { throw new Error(`Unsupported PostgreSQL collection operation: ${method}`) }])))
   model.schema.set('optimisticConcurrency', true)
   return model
 }

@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const localizedString = (label: string) =>
   z
-    .string({ required_error: `${label} is required` })
+    .string({ error: `${label} is required` })
     .trim()
     .min(1, `${label} is required`);
 

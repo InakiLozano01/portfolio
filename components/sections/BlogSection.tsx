@@ -219,7 +219,7 @@ export default function BlogSection({ lang = 'en', initialContent, initialBlogs,
                         className="h-12 border-slate-300 bg-white pl-11 text-black placeholder:text-slate-500 focus-visible:ring-[#FD4345]"
                     />
                 </label>
-                <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
                     <NewsletterSignup className="bg-white" lang={lang} dict={dictionary?.newsletter} />
                 </div>
             </div>
@@ -247,7 +247,7 @@ export default function BlogSection({ lang = 'en', initialContent, initialBlogs,
                                     <CardHeader className="relative space-y-3 pb-4">
                                         <span className="h-1 w-12 bg-[#FD4345]" aria-hidden="true" />
                                         <CardTitle className="text-xl leading-snug text-primary">
-                                            <Link href={href} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2">
+                                            <Link href={href} className="rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2">
                                                 {highlight(title)}
                                             </Link>
                                         </CardTitle>
@@ -290,7 +290,7 @@ export default function BlogSection({ lang = 'en', initialContent, initialBlogs,
                                         ) : null}
                                         <span className="ml-auto uppercase text-xs tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full">{t.languages}</span>
                                     </div>
-                                        <Link href={href} className="mt-4 inline-flex w-fit items-center gap-1 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2">
+                                        <Link href={href} className="mt-4 inline-flex w-fit items-center gap-1 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2">
                                             {t.readArticle}<ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                                         </Link>
                                     </CardContent>

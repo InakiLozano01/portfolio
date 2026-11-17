@@ -218,7 +218,7 @@ export default function Skills({
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col">
-      <div className="sticky top-0 bg-white backdrop-blur-sm py-6 md:static md:bg-transparent z-20 -mx-4 px-4 md:mx-0 md:px-0 md:py-0 shadow-sm md:shadow-none">
+      <div className="sticky top-0 bg-white backdrop-blur-xs py-6 md:static md:bg-transparent z-20 -mx-4 px-4 md:mx-0 md:px-0 md:py-0 shadow-xs md:shadow-none">
         <h2 className="text-3xl md:text-4xl font-bold tracking-display mb-2 text-primary">{heading}</h2>
 
         {displayDescription && (
@@ -262,7 +262,7 @@ export default function Skills({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t.searchPlaceholder}
-              className="h-9 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
+              className="h-9 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm text-gray-900 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-blue-500"
             />
             <button
               onClick={() => setSortDir(prev => (prev === 'desc' ? 'asc' : 'desc'))}
@@ -302,7 +302,7 @@ export default function Skills({
               initial={reduceMotion ? false : { opacity: 0, y: 20 }}
               animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
               transition={reduceMotion ? { duration: 0 } : { duration: 0.3, delay: index * 0.1 }}
-              className="bg-white px-3 py-2.5 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 min-h-20"
+              className="bg-white px-3 py-2.5 rounded-lg shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 min-h-20"
             >
               <div className="flex items-center gap-2">
                 {isCustomIconPath(skill.icon) ? (

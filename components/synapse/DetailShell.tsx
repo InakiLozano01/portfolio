@@ -26,7 +26,7 @@ export default function DetailShell({ lang, dictionary, contact = null, children
                 lang={lang}
                 linkOnly
             />
-            <main id="content" tabIndex={-1} className="field-cream relative focus:outline-none">
+            <main id="content" tabIndex={-1} className="field-cream relative focus:outline-hidden">
                 {children}
             </main>
             <SiteFooter dictionary={dictionary?.footer} initialContact={contact} lang={lang} />

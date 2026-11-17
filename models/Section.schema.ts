@@ -54,7 +54,7 @@ export const SectionSchema = z.object({
     title: z.string(),
     order: z.number(),
     visible: z.boolean(),
-    content: z.record(z.any()).default({})
+    content: z.record(z.string(), z.any()).default({})
 });
 
 // Types

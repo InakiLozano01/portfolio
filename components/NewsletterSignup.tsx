@@ -57,7 +57,7 @@ export default function NewsletterSignup({ compact = false, className = '', lang
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder={dict?.emailPlaceholder || 'you@example.com'}
-            className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-500 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/50"
           />
         </div>
         <div>
@@ -66,7 +66,7 @@ export default function NewsletterSignup({ compact = false, className = '', lang
             id={langId}
             value={selectedLang}
             onChange={e => setSelectedLang(e.target.value as any)}
-            className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/50"
           >
             <option value="en">{dict?.langEnglish || 'English'}</option>
             <option value="es">{dict?.langSpanish || 'Español'}</option>

@@ -274,7 +274,7 @@ export default function ProjectEditor({ id }: { id?: string }) {
                 disabled={uploading}
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={(event) => { event.preventDefault(); upload(event.dataTransfer.files?.[0]) }}
-                className={cx('group relative block aspect-video w-full overflow-hidden bg-fg/[0.04] text-left', uploading && 'animate-pulse')}
+                className={cx('group relative block aspect-video w-full overflow-hidden bg-fg/4 text-left', uploading && 'animate-pulse')}
                 aria-label={project.thumbnail ? 'Replace cover image' : 'Upload cover image'}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -315,7 +315,7 @@ export default function ProjectEditor({ id }: { id?: string }) {
                 {(props) => (
                   <div className="flex items-center rounded-xl border border-line/15 bg-surface focus-within:border-signal/70">
                     <span className="pl-3.5 font-mono text-[12px] text-fg-dim">/projects/</span>
-                    <input {...props} value={project.slug} onChange={(event) => { setSlugTouched(true); set('slug', slugify(event.target.value)) }} className="h-10 min-w-0 flex-1 bg-transparent pr-3 font-mono text-[13px] text-fg focus:outline-none" />
+                    <input {...props} value={project.slug} onChange={(event) => { setSlugTouched(true); set('slug', slugify(event.target.value)) }} className="h-10 min-w-0 flex-1 bg-transparent pr-3 font-mono text-[13px] text-fg focus:outline-hidden" />
                   </div>
                 )}
               </Field>
@@ -357,7 +357,7 @@ export default function ProjectEditor({ id }: { id?: string }) {
             </Panel>
 
             {id && (
-              <Button variant="ghost" icon={Trash2} onClick={remove} className="w-full hover:!text-signal-text">
+              <Button variant="ghost" icon={Trash2} onClick={remove} className="w-full hover:text-signal-text!">
                 Delete project
               </Button>
             )}

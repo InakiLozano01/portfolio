@@ -1,6 +1,7 @@
+import { FaGithub as Github } from 'react-icons/fa6'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Github, ArrowLeft, ExternalLink } from 'lucide-react'
+import { ArrowLeft, ExternalLink } from 'lucide-react'
 import SkillIcon from '@/components/SkillIcon'
 import DOMPurify from 'isomorphic-dompurify'
 import { getProjectBySlug } from '@/lib/projects'
@@ -318,7 +319,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                     ))}
                 </ul>
 
-                <div className="mt-14 border-t border-line/[0.08] pt-14">
+                <div className="mt-14 border-t border-line/8 pt-14">
                     <div
                         className="synapse-prose max-w-[72ch]"
                         dangerouslySetInnerHTML={{

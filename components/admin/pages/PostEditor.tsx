@@ -340,7 +340,7 @@ export default function PostEditor({ id }: { id?: string }) {
                 {(props) => (
                   <div className="flex items-center rounded-xl border border-line/15 bg-surface focus-within:border-signal/70">
                     <span className="pl-3.5 font-mono text-[12px] text-fg-dim">/blog/</span>
-                    <input {...props} value={post.slug} onChange={(event) => { setSlugTouched(true); set('slug', slugify(event.target.value)) }} className="h-10 min-w-0 flex-1 bg-transparent pr-3 font-mono text-[13px] text-fg focus:outline-none" />
+                    <input {...props} value={post.slug} onChange={(event) => { setSlugTouched(true); set('slug', slugify(event.target.value)) }} className="h-10 min-w-0 flex-1 bg-transparent pr-3 font-mono text-[13px] text-fg focus:outline-hidden" />
                   </div>
                 )}
               </Field>
@@ -387,7 +387,7 @@ export default function PostEditor({ id }: { id?: string }) {
             </Panel>
 
             {id && (
-              <Button variant="ghost" icon={Trash2} onClick={remove} className="w-full hover:!text-signal-text">
+              <Button variant="ghost" icon={Trash2} onClick={remove} className="w-full hover:text-signal-text!">
                 Delete post
               </Button>
             )}

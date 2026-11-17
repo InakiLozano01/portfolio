@@ -88,7 +88,8 @@ export async function POST(request: Request) {
     await connectToDatabase();
 
     // Create new skill
-    const skill = await Skill.create(normalizeSkillPayload(body));
+    const skill = new Skill(normalizeSkillPayload(body));
+    await skill.save();
     console.log('[Skills API] Created new skill:', skill.name);
 
     return NextResponse.json(skill);

@@ -119,6 +119,10 @@ export function InvoiceDocument({ snapshot, proof = false, signature }: { snapsh
       {rows[0]}
       </View>
       {rows.slice(1)}
+      {v.notes && chunks(v.notes).map((part, index) => <View key={`notes-${index}`} style={[s.border, { width: 507, borderTopWidth: 0, padding: 6 }]} wrap={false}>
+        <Text style={s.bold}>{index === 0 ? 'OBSERVATIONS' : 'OBSERVATIONS (continued)'}</Text>
+        <Text>{breakWords(part, 40)}</Text>
+      </View>)}
       <View wrap={false}>
         <View style={[s.item, { minHeight: 90 }]}>
           <View style={{ width: 311, alignItems: 'center', justifyContent: 'center', padding: 6 }}>

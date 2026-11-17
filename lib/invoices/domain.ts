@@ -20,6 +20,7 @@ export const invoiceInput = z.object({
   customerCompany: text(180),
   customerAddress: text(350),
   currency: z.literal('USD'),
+  notes: z.string().trim().max(3000).refine(v => !/[\u0000-\u0008\u000b-\u001f\u007f]/.test(v) && (v.match(/\n/g) || []).length <= 40, 'Invalid observations').optional(),
   items: z.array(z.object({
     title: text(160), description: text(3000, true), unitPrice: money,
   }).strict()).min(1).max(40),

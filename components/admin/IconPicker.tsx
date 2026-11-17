@@ -97,7 +97,7 @@ export default function IconPicker({ value, onChange, placeholder = 'Select icon
                                         value={custom}
                                         onChange={(e) => setCustom(e.target.value)}
                                         placeholder="images/skills/logo.png"
-                                        className="h-8 flex-1 rounded-lg border border-[#1a2433]/15 bg-white px-3 py-1 text-xs text-[#1a2433] focus:border-[#fd4345]/70 focus:outline-none"
+                                        className="h-8 flex-1 rounded-lg border border-[#1a2433]/15 bg-white px-3 py-1 text-xs text-[#1a2433] focus:border-[#fd4345]/70 focus:outline-hidden"
                                     />
                                     <button type="button" onClick={submitCustom} className="h-8 rounded-full bg-[#1a2433] px-3 text-xs font-medium text-[#faf8f5] hover:bg-[#800020]">
                                         Use

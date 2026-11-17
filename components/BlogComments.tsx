@@ -105,7 +105,7 @@ export default function BlogComments({ blogId, lang = 'en', dict = {} }: { blogI
     return (
       <div
         key={n._id}
-        className={`rounded-2xl border p-4 ${n.isOfficial ? 'border-bordeaux/40 bg-bordeaux/[0.06]' : 'border-line/[0.08] bg-surface'}`}
+        className={`rounded-2xl border p-4 ${n.isOfficial ? 'border-bordeaux/40 bg-bordeaux/6' : 'border-line/8 bg-surface'}`}
         style={{ marginLeft: depth * 16 }}
       >
         <p className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg-dim">
@@ -134,14 +134,14 @@ export default function BlogComments({ blogId, lang = 'en', dict = {} }: { blogI
               aria-label={dict?.aliasPlaceholder || 'Your alias'}
               value={alias}
               onChange={e => setAlias(e.target.value)}
-              className="w-full h-11 rounded-xl border border-line/15 bg-surface px-4 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-none"
+              className="w-full h-11 rounded-xl border border-line/15 bg-surface px-4 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-hidden"
             />
             <textarea
               placeholder={dict?.replyPlaceholder || 'Your reply'}
               aria-label={dict?.replyPlaceholder || 'Your reply'}
               value={content}
               onChange={e => setContent(e.target.value)}
-              className="w-full min-h-[110px] rounded-xl border border-line/15 bg-surface px-4 py-3 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-none"
+              className="w-full min-h-[110px] rounded-xl border border-line/15 bg-surface px-4 py-3 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-hidden"
             />
             <div className="flex gap-2">
               <button onClick={submit} disabled={!isValid || isSubmitting} className="h-10 rounded-full bg-action px-5 text-sm font-medium text-action-fg transition-colors hover:bg-navy disabled:opacity-50">{isSubmitting ? (dict?.posting || 'Posting...') : (dict?.reply || 'Reply')}</button>
@@ -172,14 +172,14 @@ export default function BlogComments({ blogId, lang = 'en', dict = {} }: { blogI
               aria-label={dict?.aliasPlaceholder || 'Your alias'}
           value={alias}
           onChange={e => setAlias(e.target.value)}
-          className="w-full h-11 rounded-xl border border-line/15 bg-surface px-4 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-none"
+          className="w-full h-11 rounded-xl border border-line/15 bg-surface px-4 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-hidden"
         />
         <textarea
           placeholder={dict?.commentPlaceholder || 'Your comment'}
           aria-label={dict?.commentPlaceholder || 'Your comment'}
           value={content}
           onChange={e => setContent(e.target.value)}
-          className="w-full min-h-[110px] rounded-xl border border-line/15 bg-surface px-4 py-3 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-none"
+          className="w-full min-h-[110px] rounded-xl border border-line/15 bg-surface px-4 py-3 text-sm text-fg placeholder:text-fg-dim focus:border-bordeaux focus:outline-hidden"
         />
         <div role="alert" aria-live="assertive">{error && <p className="text-sm text-signal-text">{error}</p>}</div>
         <p className="sr-only" role="status" aria-live="polite">{posted}</p>

@@ -1,6 +1,6 @@
 # artifacts.inakilozano.com (app/API) + artifacts-content.inakilozano.com (sandboxed content), one process.
 # Deploy: docker compose -f artifacts/compose.yml up -d --build   (from the repo root)
-# Data lives in ARTIFACTS_DATA_DIR (bind mount) so it survives rebuilds; see artifacts/backup.sh.
+# Data lives in ARTIFACTS_DATA_DIR (bind mount) so it survives rebuilds.
 services:
   artifacts:
     labels:

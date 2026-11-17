@@ -73,7 +73,7 @@ export default function NewsletterDialog({ postId, onClose }: { postId: string; 
       className="field-cream m-auto h-[min(760px,calc(100dvh-32px))] w-[min(1080px,calc(100vw-24px))] max-w-none rounded-3xl border border-line/10 p-0 text-fg backdrop:bg-navy/50"
     >
       <div className="flex h-full flex-col">
-        <div className="flex items-center justify-between gap-4 border-b border-line/[0.08] px-6 py-4">
+        <div className="flex items-center justify-between gap-4 border-b border-line/8 px-6 py-4">
           <div className="min-w-0">
             <h2 id="newsletter-title" className="text-lg font-semibold tracking-[-0.02em]">Email this post</h2>
             {post && <p className="truncate text-[13px] text-fg-dim">{post.title_en || post.title}</p>}
@@ -85,7 +85,7 @@ export default function NewsletterDialog({ postId, onClose }: { postId: string; 
           <div className="p-6"><ErrorNote message={error} /></div>
         ) : (
           <div className="grid min-h-0 flex-1 md:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
-            <div className="flex min-h-0 flex-col border-b border-line/[0.08] md:border-b-0 md:border-r">
+            <div className="flex min-h-0 flex-col border-b border-line/8 md:border-b-0 md:border-r">
               <div className="space-y-3 p-4">
                 <SearchField value={query} onChange={setQuery} placeholder="Filter recipients" />
                 <div className="flex items-center justify-between text-[12px] text-fg-dim">
@@ -104,7 +104,7 @@ export default function NewsletterDialog({ postId, onClose }: { postId: string; 
                 ) : (
                   shown.map((s) => (
                     <li key={s._id}>
-                      <label className={cx('flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-[13px] hover:bg-fg/[0.04]', selected.has(s._id) ? 'text-fg' : 'text-fg-dim')}>
+                      <label className={cx('flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-[13px] hover:bg-fg/4', selected.has(s._id) ? 'text-fg' : 'text-fg-dim')}>
                         <input type="checkbox" checked={selected.has(s._id)} onChange={() => toggle(s._id)} className="h-4 w-4 accent-[#1a2433]" />
                         <span className="min-w-0 flex-1 truncate">{s.email}</span>
                         <span className="font-mono text-[10px] uppercase">{s.language || 'en'}</span>
@@ -122,12 +122,12 @@ export default function NewsletterDialog({ postId, onClose }: { postId: string; 
                 <LangSwitch value={previewLang} onChange={setPreviewLang} />
               </div>
               {/* The email renders in a sandboxed frame: no scripts, and its styles stay inside. */}
-              <iframe title="Email preview" sandbox="" srcDoc={preview?.html || ''} className="min-h-[280px] w-full flex-1 border-t border-line/[0.08] bg-white" />
+              <iframe title="Email preview" sandbox="" srcDoc={preview?.html || ''} className="min-h-[280px] w-full flex-1 border-t border-line/8 bg-white" />
             </div>
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line/[0.08] px-6 py-4">
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line/8 px-6 py-4">
           <p className="mr-auto text-[12px] text-fg-dim">Each reader gets it in their language, with a one-click unsubscribe.</p>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button variant="primary" icon={Send} loading={sending} disabled={!selected.size || !post} onClick={send}>

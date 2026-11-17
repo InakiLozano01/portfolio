@@ -259,7 +259,7 @@ export default async function BlogPage({ params, searchParams }: BlogPageProps) 
 
                 <BlogArticle blog={blog as any} initialLang={initialLang} dict={dict.blog?.view} />
 
-                <div className="my-16 rounded-3xl border border-line/[0.08] bg-surface p-6 sm:p-8">
+                <div className="my-16 rounded-3xl border border-line/8 bg-surface p-6 sm:p-8">
                     <NewsletterInline lang={initialLang} dict={dict.newsletter} />
                 </div>
 

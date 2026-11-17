@@ -122,13 +122,13 @@ export default function Inbox() {
                           type="button"
                           onClick={() => select(message._id)}
                           aria-current={active ? 'true' : undefined}
-                          className={cx('flex w-full gap-3 px-5 py-3.5 text-left transition-colors', active ? 'bg-navy text-cream' : 'hover:bg-fg/[0.03]')}
+                          className={cx('flex w-full gap-3 px-5 py-3.5 text-left transition-colors', active ? 'bg-navy text-cream' : 'hover:bg-fg/3')}
                         >
                           <span aria-hidden="true" className={cx('mt-2 h-2 w-2 shrink-0 rounded-full', message.read ? (active ? 'border border-cream/40' : 'border border-fg/30') : 'bg-signal')} />
                           <span className="min-w-0 flex-1">
                             <span className="flex items-baseline justify-between gap-3">
                               <span className={cx('truncate text-[14px]', !message.read && 'font-semibold', active ? 'text-cream' : message.read ? 'text-fg-soft' : 'text-fg')}>{message.name}</span>
-                              <TimeAgo value={message.createdAt} className={active ? '!text-cream/60' : ''} />
+                              <TimeAgo value={message.createdAt} className={active ? 'text-cream/60!' : ''} />
                             </span>
                             <span className={cx('mt-0.5 block truncate text-[13px]', active ? 'text-cream/70' : 'text-fg-dim')}>{message.message}</span>
                           </span>
@@ -151,7 +151,7 @@ export default function Inbox() {
                   <div className="ml-auto flex items-center gap-1">
                     <IconButton label={open.read ? 'Mark as unread' : 'Mark as read'} icon={open.read ? Mail : MailOpen} onClick={() => setRead(open, !open.read)} />
                     <IconButton label={copied ? 'Copied' : 'Copy email address'} icon={Copy} onClick={() => copy(open.email)} />
-                    <IconButton label="Delete message" icon={Trash2} onClick={() => remove(open)} className="hover:!text-signal-text" />
+                    <IconButton label="Delete message" icon={Trash2} onClick={() => remove(open)} className="hover:text-signal-text!" />
                   </div>
                 </div>
                 <article className="px-5 py-6 sm:px-8 sm:py-8">
@@ -166,7 +166,7 @@ export default function Inbox() {
                       {formatDateTime(open.createdAt)}
                     </time>
                   </header>
-                  <p className="mt-6 max-w-[68ch] whitespace-pre-wrap break-words text-[15px] leading-[1.75] text-fg">{open.message}</p>
+                  <p className="mt-6 max-w-[68ch] whitespace-pre-wrap wrap-break-word text-[15px] leading-[1.75] text-fg">{open.message}</p>
                   <div className="mt-8 flex flex-wrap items-center gap-3">
                     <a
                       href={`mailto:${open.email}?subject=${encodeURIComponent('Re: your message')}&body=${encodeURIComponent(`\n\n> ${open.message.split('\n').join('\n> ')}`)}`}

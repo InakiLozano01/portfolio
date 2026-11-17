@@ -76,7 +76,6 @@ Pages are never indexed: `robots.txt` disallows everything, every response carri
 docker compose -f artifacts/compose.yml up -d --build                           # deploy (port 127.0.0.1:3480)
 docker compose -f artifacts/compose.yml exec -T artifacts node server.mjs token create <name>   # prints once; pipe it into a secret store
 docker compose -f artifacts/compose.yml exec artifacts node server.mjs token list | token revoke <id>
-artifacts/backup.sh                                                             # snapshot + blobs -> ~/backups/artifacts (cron 02:50, keeps 14)
 node --test artifacts/selftest.mjs                                              # end-to-end test against a throwaway server
 ```
 

@@ -67,7 +67,7 @@ function LoginForm() {
 
   return (
     <form onSubmit={submit} className="field-cream mt-8 rounded-3xl p-6 sm:p-8" noValidate aria-describedby={error ? 'login-error' : undefined}>
-      <h1 className="text-2xl font-semibold tracking-[-0.025em] text-fg">Sign in</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-fg">Sign in</h1>
       <p className="mt-1 text-sm text-fg-soft">To edit the site, answer messages and send invoices.</p>
       <div className="mt-7 space-y-4">
         <label className="block">

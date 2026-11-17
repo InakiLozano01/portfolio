@@ -128,14 +128,13 @@ const ProjectSchema = new mongoose.Schema({
 });
 
 // Pre-save hook to generate slug from title
-ProjectSchema.pre('validate', function (next) {
+ProjectSchema.pre('validate', function () {
   if (!this.slug && this.title) {
     this.slug = slugify(this.title, { lower: true, strict: true });
   }
   if (this.isModified()) {
     this.updatedAt = new Date();
   }
-  next();
 });
 
 // Reuse existing model if it exists to avoid recompilation issues

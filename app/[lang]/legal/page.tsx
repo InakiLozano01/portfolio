@@ -86,14 +86,14 @@ export default async function LegalPage({ params }: LegalPageProps) {
                 <div className="mx-auto flex min-h-16 max-w-5xl items-center justify-between px-5 sm:px-8">
                     <Link
                         href={`/${resolved}`}
-                        className="font-semibold tracking-tight transition-colors hover:text-signal-text focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
+                        className="font-semibold tracking-tight transition-colors hover:text-signal-text focus-visible:rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
                     >
                         Iñaki Fernando Lozano
                     </Link>
                     <Link
                         href={`/${alternateLang}/legal`}
                         hrefLang={alternateLang}
-                        className="text-sm font-medium text-fg-dim transition-colors hover:text-fg focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
+                        className="text-sm font-medium text-fg-dim transition-colors hover:text-fg focus-visible:rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
                     >
                         {copy.switchLanguage}
                     </Link>
@@ -117,24 +117,24 @@ export default async function LegalPage({ params }: LegalPageProps) {
                     {copy.ethos}{' '}
                     <a
                         href="https://ethos.ar"
-                        className="font-medium text-fg underline decoration-[#FD4345] decoration-2 underline-offset-4 transition-colors hover:text-signal-text focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
+                        className="font-medium text-fg underline decoration-[#FD4345] decoration-2 underline-offset-4 transition-colors hover:text-signal-text focus-visible:rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
                     >
                         {copy.ethosLink}
                     </a>
                 </p>
 
-                <dl className="mt-12 divide-y divide-line/[0.1] border-y border-line/[0.08]">
+                <dl className="mt-12 divide-y divide-line/10 border-y border-line/8">
                     {details.map(([label, value]) => (
                         <div key={label} className="grid gap-1 py-5 sm:grid-cols-[10rem_1fr] sm:gap-6">
                             <dt className="text-sm font-medium text-fg-dim">{label}</dt>
-                            <dd className="break-words font-medium">{value}</dd>
+                            <dd className="wrap-break-word font-medium">{value}</dd>
                         </div>
                     ))}
                 </dl>
 
                 <Link
                     href={`/${resolved}`}
-                    className="mt-10 inline-flex min-h-11 items-center font-semibold underline decoration-signal decoration-2 underline-offset-8 transition-colors hover:text-signal-text focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
+                    className="mt-10 inline-flex min-h-11 items-center font-semibold underline decoration-signal decoration-2 underline-offset-8 transition-colors hover:text-signal-text focus-visible:rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-4 focus-visible:ring-offset-field"
                 >
                     ← {copy.back}
                 </Link>

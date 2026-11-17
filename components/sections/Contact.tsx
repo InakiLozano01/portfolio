@@ -161,7 +161,7 @@ export default function ContactSection({ lang = 'en', initialContent, dictionary
             aria-hidden="true"
           >
             <motion.div
-              className="pointer-events-auto flex flex-col items-center gap-3 rounded-2xl bg-white/95 px-8 py-7 shadow-lg ring-1 ring-black/5 backdrop-blur-sm"
+              className="pointer-events-auto flex flex-col items-center gap-3 rounded-2xl bg-white/95 px-8 py-7 shadow-lg ring-1 ring-black/5 backdrop-blur-xs"
               initial={reduceMotion ? false : { opacity: 0, scale: 0.88, y: 12 }}
               animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: 8 }}
@@ -172,7 +172,7 @@ export default function ContactSection({ lang = 'en', initialContent, dictionary
               }
             >
               <motion.span
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xs"
                 initial={reduceMotion ? false : { scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={
@@ -193,7 +193,7 @@ export default function ContactSection({ lang = 'en', initialContent, dictionary
       <h2 className="text-3xl md:text-4xl font-bold tracking-display mb-8 text-primary">{labels.title}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <motion.div
-          className="bg-gray-50 rounded-lg p-6 shadow-sm"
+          className="bg-gray-50 rounded-lg p-6 shadow-xs"
           initial={reduceMotion ? false : { opacity: 0, x: -50 }}
           animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
           transition={reduceMotion ? { duration: 0 } : { duration: 0.5 }}
@@ -242,7 +242,7 @@ export default function ContactSection({ lang = 'en', initialContent, dictionary
         </motion.div>
 
         <motion.div
-          className="bg-gray-50 rounded-lg p-6 shadow-sm"
+          className="bg-gray-50 rounded-lg p-6 shadow-xs"
           initial={reduceMotion ? false : { opacity: 0, x: 50 }}
           animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
           transition={reduceMotion ? { duration: 0 } : { duration: 0.5, delay: 0.2 }}
@@ -264,7 +264,7 @@ export default function ContactSection({ lang = 'en', initialContent, dictionary
                 aria-required="true"
                 aria-invalid={!!formErrors.name}
                 aria-describedby={formErrors.name ? 'name-error' : undefined}
-                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${formErrors.name ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-2 border rounded-md focus:outline-hidden focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${formErrors.name ? 'border-red-500' : 'border-gray-300'
                   }`}
               />
               <div className="mt-1 text-xs text-gray-500" aria-hidden="true">{counters.name}/80</div>
@@ -289,7 +289,7 @@ export default function ContactSection({ lang = 'en', initialContent, dictionary
                 aria-required="true"
                 aria-invalid={!!formErrors.email}
                 aria-describedby={formErrors.email ? 'email-error' : undefined}
-                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${formErrors.email ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-2 border rounded-md focus:outline-hidden focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${formErrors.email ? 'border-red-500' : 'border-gray-300'
                   }`}
               />
               <div className="mt-1 text-xs text-gray-500" aria-hidden="true">{counters.email}/120</div>
@@ -314,7 +314,7 @@ export default function ContactSection({ lang = 'en', initialContent, dictionary
                 aria-invalid={!!formErrors.message}
                 aria-describedby={formErrors.message ? 'message-error' : undefined}
                 rows={4}
-                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${formErrors.message ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-2 border rounded-md focus:outline-hidden focus:ring-2 focus:ring-[#FD4345] focus:border-transparent bg-white text-gray-900 ${formErrors.message ? 'border-red-500' : 'border-gray-300'
                   }`}
               />
               <div className="mt-1 text-xs text-gray-500" aria-hidden="true">{counters.message}/1000</div>

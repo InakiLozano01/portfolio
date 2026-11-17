@@ -4,7 +4,7 @@ const assert = require('node:assert/strict')
 const { PGlite } = require('@electric-sql/pglite')
 const { ObjectId, Long, Binary, Decimal128 } = require('bson')
 const store = require('../lib/postgres-store')
-require('ts-node').register({ transpileOnly: true, compilerOptions: { module: 'CommonJS', moduleResolution: 'node' } })
+require('ts-node').register({ transpileOnly: true, compilerOptions: { module: 'Node16', moduleResolution: 'node16', rootDir: process.cwd() } })
 
 test('PostgreSQL persistence and existing model behavior', async t => {
   const db = new PGlite()

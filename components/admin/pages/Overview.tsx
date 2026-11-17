@@ -62,8 +62,8 @@ export default function Overview({ name }: { name: string }) {
           <ul className="divide-y divide-line/[0.07]">
             {tasks.map((task) => (
               <li key={task.href}>
-                <Link href={task.href} className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-fg/[0.03] sm:px-6">
-                  <span className={cx('grid h-9 w-9 shrink-0 place-items-center rounded-full', task.quiet ? 'bg-fg/[0.06] text-fg-soft' : 'bg-signal/[0.12] text-signal-text')}>
+                <Link href={task.href} className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-fg/3 sm:px-6">
+                  <span className={cx('grid h-9 w-9 shrink-0 place-items-center rounded-full', task.quiet ? 'bg-fg/6 text-fg-soft' : 'bg-signal/12 text-signal-text')}>
                     <task.icon size={16} strokeWidth={1.75} aria-hidden="true" />
                   </span>
                   <p className="flex-1 text-[15px] text-fg">
@@ -88,7 +88,7 @@ export default function Overview({ name }: { name: string }) {
             <ul className="divide-y divide-line/[0.07]">
               {recentMessages.map((message) => (
                 <li key={message._id}>
-                  <Link href={`/admin/inbox?m=${message._id}`} className="flex gap-3 px-5 py-3.5 transition-colors hover:bg-fg/[0.03] sm:px-6">
+                  <Link href={`/admin/inbox?m=${message._id}`} className="flex gap-3 px-5 py-3.5 transition-colors hover:bg-fg/3 sm:px-6">
                     <span aria-hidden="true" className={cx('mt-2 h-2 w-2 shrink-0 rounded-full', message.read ? 'border border-fg/30' : 'bg-signal')} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-3">
@@ -114,7 +114,7 @@ export default function Overview({ name }: { name: string }) {
             <ul className="divide-y divide-line/[0.07]">
               {recentPosts.map((post) => (
                 <li key={post._id}>
-                  <Link href={`/admin/posts/${post._id}`} className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-fg/[0.03] sm:px-6">
+                  <Link href={`/admin/posts/${post._id}`} className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-fg/3 sm:px-6">
                     <p className="min-w-0 flex-1 truncate text-[14px] font-medium text-fg">{post.title_en || post.title || 'Untitled'}</p>
                     <Status tone={post.published ? 'live' : 'idle'}>{post.published ? 'Published' : 'Draft'}</Status>
                   </Link>
@@ -142,7 +142,7 @@ export default function Overview({ name }: { name: string }) {
             { label: 'Subscribers', value: stats?.subscribers, href: '/admin/subscribers' },
             { label: 'Messages', value: stats?.messages, href: '/admin/inbox' },
           ].map((item) => (
-            <Link key={item.label} href={item.href} className="group px-5 py-5 transition-colors hover:bg-fg/[0.03] sm:px-6">
+            <Link key={item.label} href={item.href} className="group px-5 py-5 transition-colors hover:bg-fg/3 sm:px-6">
               <dt className="text-[13px] text-fg-dim group-hover:text-fg-soft">{item.label}</dt>
               <dd className="mt-1 font-mono text-xl font-medium tabular text-fg">{item.value ?? '–'}</dd>
             </Link>

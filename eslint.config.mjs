@@ -1,11 +1,9 @@
 import nextVitals from 'eslint-config-next/core-web-vitals'
 import nextTypescript from 'eslint-config-next/typescript'
-import importPlugin from 'eslint-plugin-import'
-import reactPlugin from 'eslint-plugin-react'
-import reactHooksPlugin from 'eslint-plugin-react-hooks'
-import tseslint from 'typescript-eslint'
 
 const asArray = (config) => Array.isArray(config) ? config : [config]
+const upstreamConfigs = [...asArray(nextVitals), ...asArray(nextTypescript)]
+const plugins = Object.assign({}, ...upstreamConfigs.map(config => config.plugins ?? {}))
 
 const config = [
   {
@@ -17,15 +15,9 @@ const config = [
       'next-env.d.ts',
     ],
   },
-  ...asArray(nextVitals),
-  ...asArray(nextTypescript),
+  ...upstreamConfigs,
   {
-    plugins: {
-      '@typescript-eslint': tseslint.plugin,
-      import: importPlugin,
-      react: reactPlugin,
-      'react-hooks': reactHooksPlugin,
-    },
+    plugins,
     rules: {
       '@typescript-eslint/ban-ts-comment': 'off',
       '@typescript-eslint/no-empty-object-type': 'off',

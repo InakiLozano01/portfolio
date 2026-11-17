@@ -31,7 +31,7 @@ function NavLink({ item, pathname, stats, onNavigate }: { item: NavItem; pathnam
       aria-current={active ? 'page' : undefined}
       className={cx(
         'group flex h-9 items-center gap-3 rounded-xl px-3 text-[14px] font-medium transition-colors duration-150',
-        active ? 'bg-surface text-fg' : 'text-fg-soft hover:bg-fg/[0.06] hover:text-fg',
+        active ? 'bg-surface text-fg' : 'text-fg-soft hover:bg-fg/6 hover:text-fg',
       )}
     >
       <Icon size={16} strokeWidth={1.75} aria-hidden="true" className={active ? 'text-coral' : 'text-fg-dim group-hover:text-fg-soft'} />
@@ -76,13 +76,13 @@ function Rail({ pathname, stats, user, onSearch, onNavigate }: { pathname: strin
           </div>
         ))}
       </nav>
-      <div className="shrink-0 space-y-0.5 border-t border-line/[0.08] px-3 py-3">
+      <div className="shrink-0 space-y-0.5 border-t border-line/8 px-3 py-3">
         <NavLink item={SETTINGS} pathname={pathname} stats={stats} onNavigate={onNavigate} />
         <a
           href="/en"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex h-9 items-center gap-3 rounded-xl px-3 text-[14px] font-medium text-fg-soft transition-colors hover:bg-fg/[0.06] hover:text-fg"
+          className="flex h-9 items-center gap-3 rounded-xl px-3 text-[14px] font-medium text-fg-soft transition-colors hover:bg-fg/6 hover:text-fg"
         >
           <ArrowUpRight size={16} strokeWidth={1.75} aria-hidden="true" className="text-fg-dim" />
           View site
@@ -105,7 +105,7 @@ function Rail({ pathname, stats, user, onSearch, onNavigate }: { pathname: strin
             onClick={() => signOut({ callbackUrl: '/admin/login' })}
             aria-label="Sign out"
             title="Sign out"
-            className="grid h-8 w-8 place-items-center rounded-full text-fg-dim transition-colors hover:bg-fg/[0.08] hover:text-fg"
+            className="grid h-8 w-8 place-items-center rounded-full text-fg-dim transition-colors hover:bg-fg/8 hover:text-fg"
           >
             <LogOut size={15} strokeWidth={1.75} aria-hidden="true" />
           </button>
@@ -202,7 +202,7 @@ export default function Console({ user, children }: { user: { name: string; emai
     <StatsContext.Provider value={{ stats, refresh }}>
       <ConfirmProvider>
         <div className="synapse admin-ui field-cream min-h-dvh lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
-          <a href="#admin-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-[60] focus:rounded-full focus:bg-cream focus:px-4 focus:py-2 focus:text-sm focus:text-navy">
+          <a href="#admin-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-60 focus:rounded-full focus:bg-cream focus:px-4 focus:py-2 focus:text-sm focus:text-navy">
             Skip to content
           </a>
 
@@ -214,12 +214,12 @@ export default function Console({ user, children }: { user: { name: string; emai
 
           {/* Phones and tablets: a slim bar with search and a drawer holding the same rail. */}
           <div className="field-navy sticky top-0 z-40 flex h-14 items-center gap-2 px-3 lg:hidden">
-            <button type="button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation" className="grid h-10 w-10 place-items-center rounded-full text-fg hover:bg-fg/[0.08]">
+            <button type="button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation" className="grid h-10 w-10 place-items-center rounded-full text-fg hover:bg-fg/8">
               <Menu size={18} strokeWidth={1.75} aria-hidden="true" />
             </button>
             <Image src="/il-logo-mark.png" alt="" width={20} height={20} />
             <p className="flex-1 truncate text-[14px] font-semibold text-fg">{current?.label || 'Console'}</p>
-            <button type="button" onClick={() => setPaletteOpen(true)} aria-label="Search" className="grid h-10 w-10 place-items-center rounded-full text-fg hover:bg-fg/[0.08]">
+            <button type="button" onClick={() => setPaletteOpen(true)} aria-label="Search" className="grid h-10 w-10 place-items-center rounded-full text-fg hover:bg-fg/8">
               <Search size={17} strokeWidth={1.75} aria-hidden="true" />
             </button>
           </div>
@@ -230,13 +230,13 @@ export default function Console({ user, children }: { user: { name: string; emai
             aria-label="Navigation"
             className="field-navy fixed inset-y-0 left-0 right-auto m-0 h-dvh max-h-dvh w-[min(300px,86vw)] p-0 backdrop:bg-navy/60 lg:hidden"
           >
-            <button type="button" onClick={() => setDrawerOpen(false)} aria-label="Close navigation" className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full text-fg hover:bg-fg/[0.08]">
+            <button type="button" onClick={() => setDrawerOpen(false)} aria-label="Close navigation" className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full text-fg hover:bg-fg/8">
               <X size={18} strokeWidth={1.75} aria-hidden="true" />
             </button>
             <Rail pathname={pathname} stats={stats} user={user} onSearch={() => { setDrawerOpen(false); setPaletteOpen(true) }} onNavigate={() => setDrawerOpen(false)} />
           </dialog>
 
-          <main id="admin-main" tabIndex={-1} className="min-w-0 px-5 pb-16 pt-8 focus:outline-none sm:px-8 lg:pt-10">
+          <main id="admin-main" tabIndex={-1} className="min-w-0 px-5 pb-16 pt-8 focus:outline-hidden sm:px-8 lg:pt-10">
             {expired && (
               <div role="alert" className="mx-auto mb-6 flex max-w-[1200px] flex-wrap items-center justify-between gap-3 rounded-2xl bg-navy px-5 py-3.5 text-[14px] text-cream">
                 <p>Your session ended. Sign in again in a new tab; nothing on this page is lost.</p>

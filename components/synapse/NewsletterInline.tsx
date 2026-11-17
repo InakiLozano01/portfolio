@@ -55,7 +55,7 @@ export default function NewsletterInline({ lang = 'en', dict = {} }: { lang?: La
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
                         placeholder={dict.emailPlaceholder || 'you@example.com'}
-                        className="h-12 w-full rounded-full border border-line/15 bg-surface px-5 text-[15px] text-fg placeholder:text-fg-dim transition-[border-color,box-shadow] focus:border-signal/70 focus:outline-none"
+                        className="h-12 w-full rounded-full border border-line/15 bg-surface px-5 text-[15px] text-fg placeholder:text-fg-dim transition-[border-color,box-shadow] focus:border-signal/70 focus:outline-hidden"
                     />
                 </div>
                 <div>
@@ -64,7 +64,7 @@ export default function NewsletterInline({ lang = 'en', dict = {} }: { lang?: La
                         id={`${id}-lang`}
                         value={language}
                         onChange={(event) => setLanguage(event.target.value as Lang)}
-                        className="h-12 w-full rounded-full border border-line/15 bg-surface px-5 text-[15px] text-fg focus:border-signal/70 focus:outline-none sm:w-auto"
+                        className="h-12 w-full rounded-full border border-line/15 bg-surface px-5 text-[15px] text-fg focus:border-signal/70 focus:outline-hidden sm:w-auto"
                     >
                         <option value="en">{dict.langEnglish || 'English'}</option>
                         <option value="es">{dict.langSpanish || 'Español'}</option>
@@ -73,7 +73,7 @@ export default function NewsletterInline({ lang = 'en', dict = {} }: { lang?: La
                 <button
                     type="submit"
                     disabled={!email || status === 'loading'}
-                    className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-action px-6 text-[15px] font-medium text-action-fg transition-[background-color,opacity] hover:bg-signal hover:text-navy disabled:cursor-not-allowed disabled:bg-fg/[0.1] disabled:text-fg-dim"
+                    className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-action px-6 text-[15px] font-medium text-action-fg transition-[background-color,opacity] hover:bg-signal hover:text-navy disabled:cursor-not-allowed disabled:bg-fg/10 disabled:text-fg-dim"
                 >
                     {status === 'loading' ? dict.submitting || 'Submitting...' : dict.subscribe || 'Subscribe'}
                     <ArrowRight size={16} strokeWidth={1.75} className="transition-transform group-hover:translate-x-0.5" />

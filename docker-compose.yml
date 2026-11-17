@@ -33,7 +33,7 @@ services:
   redis:
     labels:
       - "autoheal=true"   # see /home/ubuntu/vps/server-admin/autoheal/
-    image: redis:alpine
+    image: fleet-security/ca-portfolio-redis-1:20261021
     restart: unless-stopped
     ports:
       - "127.0.0.1:6379:6379"

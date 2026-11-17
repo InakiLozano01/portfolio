@@ -198,7 +198,7 @@ export default function ClientPage({ lang, dictionary, initialSections, initialP
                     languageSwitcherDict={dictionary.languageSwitcher}
                     lang={lang}
                 />
-                <main id="content" tabIndex={-1} className="focus:outline-none">
+                <main id="content" tabIndex={-1} className="focus:outline-hidden">
                     {sections.map(({ id, component: Component, content }, index) => (
                         <section
                             key={id}

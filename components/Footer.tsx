@@ -1,8 +1,9 @@
 'use client'
 
+import { FaGithub as Github, FaLinkedinIn as Linkedin } from 'react-icons/fa6'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Github, Linkedin, Mail } from 'lucide-react'
+import { Mail } from 'lucide-react'
 import type { ContactContent } from '@/models/Section'
 
 interface FooterProps {
@@ -99,7 +100,7 @@ export default function Footer({ dictionary = {}, initialContact = null, current
                 </div>
                 <Link
                     href={`/${lang}/legal`}
-                    className="rounded-sm text-sm text-cream/80 transition-colors hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2433]"
+                    className="rounded-sm text-sm text-cream/80 transition-colors hover:text-cream focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#FD4345] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2433]"
                     aria-label={dictionary.legalNotice || copyrightText}
                 >
                     {copyrightText}

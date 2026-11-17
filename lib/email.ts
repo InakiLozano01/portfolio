@@ -93,8 +93,7 @@ class EmailService {
                     pass: process.env.SMTP_PASSWORD,
                 },
                 tls: {
-                    // allow self-signed when debugging; for production you can set to true
-                    rejectUnauthorized: false,
+                    rejectUnauthorized: true,
                 },
             })
         } catch (error) {

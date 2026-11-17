@@ -56,8 +56,8 @@ export default function Projects() {
                 const title = project.title_en || project.title || 'Untitled'
                 const cover = project.thumbnailSmall || project.thumbnail
                 return (
-                  <li key={project._id} className="group relative flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-fg/[0.03] sm:px-5">
-                    <div className="relative aspect-[16/10] w-24 shrink-0 overflow-hidden rounded-lg bg-fg/[0.05] sm:w-32">
+                  <li key={project._id} className="group relative flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-fg/3 sm:px-5">
+                    <div className="relative aspect-16/10 w-24 shrink-0 overflow-hidden rounded-lg bg-fg/5 sm:w-32">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       {cover && <img src={cover} alt="" loading="lazy" className="h-full w-full object-cover" />}
                     </div>

@@ -122,7 +122,7 @@ export default function SiteHeader({
     }
 
     return (
-        <header className="field-navy fixed inset-x-0 top-0 z-50 !bg-transparent">
+        <header className="field-navy fixed inset-x-0 top-0 z-50 bg-transparent!">
             <a
                 href="#content"
                 className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-full focus:bg-cream focus:px-4 focus:py-2 focus:text-sm focus:text-navy"
@@ -130,7 +130,7 @@ export default function SiteHeader({
                 {dictionary.skipToContent || 'Skip to content'}
             </a>
             <div
-                className={`transition-[background-color,border-color,backdrop-filter] duration-500 ${linkOnly ? 'border-b border-line/[0.08] bg-navy' : scrolled || open ? 'border-b border-line/[0.08] bg-navy/90 backdrop-blur-md' : 'border-b border-transparent bg-transparent'}`}
+                className={`transition-[background-color,border-color,backdrop-filter] duration-500 ${linkOnly ? 'border-b border-line/8 bg-navy' : scrolled || open ? 'border-b border-line/8 bg-navy/90 backdrop-blur-md' : 'border-b border-transparent bg-transparent'}`}
             >
                 <nav
                     className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-6 px-5 sm:px-8"
@@ -142,7 +142,7 @@ export default function SiteHeader({
                         className="group flex items-center gap-3 rounded-md text-[15px] font-medium tracking-tight text-fg"
                         aria-label={`Iñaki F. Lozano ${dictionary.home || 'Home'}`}
                     >
-                        <Image src="/il-logo-mark.png" alt="" width={26} height={26} priority className="transition-transform duration-500 group-hover:rotate-[-6deg]" />
+                        <Image src="/il-logo-mark.png" alt="" width={26} height={26} priority className="transition-transform duration-500 group-hover:-rotate-6" />
                         <span>Iñaki F. Lozano</span>
                     </a>
 

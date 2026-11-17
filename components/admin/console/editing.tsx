@@ -9,7 +9,7 @@ import { Button, cx, ago } from './kit'
 /** The rich-text editor loads only on pages that need it. */
 export const RichText = dynamic(() => import('@/components/ui/tinymce').then((m) => m.TinyMCE), {
   ssr: false,
-  loading: () => <div aria-hidden="true" className="h-[560px] animate-pulse rounded-2xl border border-line/10 bg-fg/[0.03]" />,
+  loading: () => <div aria-hidden="true" className="h-[560px] animate-pulse rounded-2xl border border-line/10 bg-fg/3" />,
 })
 export type { TinyMCEHandle }
 
@@ -50,7 +50,7 @@ export function TagInput({ value, onChange, id, placeholder = 'Add a tag' }: { v
   return (
     <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-xl border border-line/15 bg-surface px-2 py-1.5 focus-within:border-signal/70">
       {value.map((tag) => (
-        <span key={tag} className="inline-flex h-7 items-center gap-1 rounded-full bg-fg/[0.06] pl-2.5 pr-1 text-[12px] font-medium text-fg-soft">
+        <span key={tag} className="inline-flex h-7 items-center gap-1 rounded-full bg-fg/6 pl-2.5 pr-1 text-[12px] font-medium text-fg-soft">
           {tag}
           <button type="button" aria-label={`Remove tag ${tag}`} onClick={() => onChange(value.filter((t) => t !== tag))} className="grid h-5 w-5 place-items-center rounded-full hover:bg-fg/10 hover:text-fg">
             <X size={12} strokeWidth={2} aria-hidden="true" />
@@ -73,7 +73,7 @@ export function TagInput({ value, onChange, id, placeholder = 'Add a tag' }: { v
         }}
         onBlur={() => pending.trim() && commit(pending)}
         placeholder={value.length ? '' : placeholder}
-        className="h-7 min-w-[120px] flex-1 bg-transparent px-1.5 text-[14px] text-fg placeholder:text-fg-dim/80 focus:outline-none"
+        className="h-7 min-w-[120px] flex-1 bg-transparent px-1.5 text-[14px] text-fg placeholder:text-fg-dim/80 focus:outline-hidden"
       />
     </div>
   )

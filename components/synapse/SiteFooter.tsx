@@ -1,9 +1,10 @@
 'use client'
 
+import { FaGithub as Github, FaLinkedinIn as Linkedin } from 'react-icons/fa6'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Github, Linkedin, Mail } from 'lucide-react'
+import { Mail } from 'lucide-react'
 import { EASE_OUT } from './content'
 
 interface SiteFooterProps {
@@ -42,7 +43,7 @@ export default function SiteFooter({ dictionary = {}, initialContact = null, cur
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.5 }}
                     transition={{ duration: 1.2, ease: EASE_OUT }}
-                    className="select-none whitespace-nowrap text-[clamp(3rem,11vw,10rem)] font-semibold leading-none tracking-[-0.05em] text-fg"
+                    className="select-none whitespace-nowrap text-[clamp(3rem,11vw,10rem)] font-semibold leading-none tracking-tighter text-fg"
                 >
                     Iñaki F. Lozano
                 </motion.p>

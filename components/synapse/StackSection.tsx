@@ -111,7 +111,7 @@ function Constellation({ group, index, usage }: { group: Group; index: number; u
 function Branch({ group, usage }: { group: Group; usage: Map<string, ProjectCard[]> }) {
     return (
         <Reveal className="relative pl-6">
-            <span aria-hidden="true" className="absolute bottom-3 left-[4.5px] top-3 w-px bg-fg/[0.12]" />
+            <span aria-hidden="true" className="absolute bottom-3 left-[4.5px] top-3 w-px bg-fg/12" />
             <h3 className="relative flex items-baseline gap-2 text-[15px] font-medium text-fg">
                 <span aria-hidden="true" className="absolute -left-6 top-1.5 h-2.5 w-2.5 rounded-full border border-line/50 bg-field" />
                 {group.label}

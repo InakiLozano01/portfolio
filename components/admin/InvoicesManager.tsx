@@ -14,7 +14,7 @@ function blank(): InvoiceInput {
     issueDate: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
     placeOfIssue: 'Argentina', supplier: 'Iñaki Fernando Lozano', representative: 'Iñaki Fernando Lozano',
     email: 'ilozano@inakilozano.com', phone: '+54 9 381 472-3363',
-    customerCompany: '', customerAddress: '', currency: 'USD', items: [{ title: '', description: '', unitPrice: '0.00' }],
+    customerCompany: '', customerAddress: '', currency: 'USD', notes: '', items: [{ title: '', description: '', unitPrice: '0.00' }],
   }
 }
 async function api<T>(url: string, method = 'GET', body?: unknown): Promise<T> {
@@ -118,7 +118,7 @@ export default function InvoicesManager() {
           <ul className="divide-y divide-line/[0.07]">{invoices.map(record => {
             const active = selected?.id === record.id
             return <li key={record.id}>
-              <button type="button" disabled={busy} className={cx('flex w-full flex-col gap-1 px-5 py-3.5 text-left transition-colors disabled:opacity-60', active ? 'bg-navy text-cream' : 'hover:bg-fg/[0.03]')} onClick={() => {
+              <button type="button" disabled={busy} className={cx('flex w-full flex-col gap-1 px-5 py-3.5 text-left transition-colors disabled:opacity-60', active ? 'bg-navy text-cream' : 'hover:bg-fg/3')} onClick={() => {
                 if (canDiscard()) void run(async () => replace(await api<Detail>(`/${record.id}`)))
               }}>
                 <span className="flex items-baseline justify-between gap-3">
@@ -128,7 +128,7 @@ export default function InvoicesManager() {
                 <span className={cx('block truncate text-[14px]', active ? 'text-cream' : 'text-fg')}>{record.invoice.customerCompany}</span>
                 <span className="flex items-center justify-between gap-3">
                   <span className={cx('font-mono text-[11px]', active ? 'text-cream/60' : 'text-fg-dim')}>{displayDate(record.invoice.issueDate)}</span>
-                  <Status tone={payment[record.paymentStatus].tone} className={active ? '!text-cream' : ''}>{payment[record.paymentStatus].label}</Status>
+                  <Status tone={payment[record.paymentStatus].tone} className={active ? 'text-cream!' : ''}>{payment[record.paymentStatus].label}</Status>
                 </span>
               </button>
             </li>
@@ -180,11 +180,18 @@ export default function InvoicesManager() {
                   <label className="relative"><span className="sr-only">Unit price / line total (USD)</span><Input required inputMode="decimal" pattern="(0|[1-9][0-9]{0,7})(\.[0-9]{1,2})?" value={item.unitPrice} onChange={e => edit({ ...form, items: form.items.map((v, i) => i === index ? { ...v, unitPrice: e.target.value } : v) })} className="pl-12 text-right font-mono tabular" /><span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 font-mono text-[12px] text-fg-dim">USD</span></label>
                   <label className="sm:col-span-2"><span className="sr-only">Description</span><Textarea required maxLength={3000} rows={3} placeholder="What was delivered" value={item.description} onChange={e => edit({ ...form, items: form.items.map((v, i) => i === index ? { ...v, description: e.target.value } : v) })} /></label>
                 </div>
-                <IconButton size="sm" label={`Remove item ${index + 1}`} icon={Trash2} disabled={busy || form.items.length === 1} onClick={() => edit({ ...form, items: form.items.filter((_, i) => i !== index) })} className="hover:!text-signal-text" />
+                <IconButton size="sm" label={`Remove item ${index + 1}`} icon={Trash2} disabled={busy || form.items.length === 1} onClick={() => edit({ ...form, items: form.items.filter((_, i) => i !== index) })} className="hover:text-signal-text!" />
               </div>
             </div>)}</div>
             <Button className="mt-3" icon={Plus} disabled={busy || form.items.length >= 40} onClick={() => edit({ ...form, items: [...form.items, { title: '', description: '', unitPrice: '0.00' }] })}>Add item</Button>
           </fieldset>
+
+          <div className="border-t border-line/[0.07] px-5 py-5 sm:px-6">
+            <label>
+              <span className={label}>Observations</span>
+              <Textarea maxLength={3000} rows={3} value={form.notes ?? ''} placeholder="Optional notes for the whole invoice" onChange={event => edit({ ...form, notes: event.target.value })} />
+            </label>
+          </div>
 
           <details className="border-t border-line/[0.07]">
             <summary className="cursor-pointer list-none px-5 py-3.5 text-[13px] font-medium text-fg-dim hover:text-fg-soft sm:px-6">Issuer details <span className="font-normal">· {form.supplier}, {displayDate(form.issueDate)}</span></summary>

@@ -16,7 +16,7 @@ export default function Trace({ children, joinTop = false, joinBottom = false }:
     const reach = `${joinTop ? '-top-20 md:-top-28' : 'top-3'} ${joinBottom ? '-bottom-20 md:-bottom-28' : 'bottom-3'}`
     return (
         <div ref={ref} className="relative">
-            <span aria-hidden="true" className={`absolute left-[4.5px] w-px bg-fg/[0.09] ${reach}`} />
+            <span aria-hidden="true" className={`absolute left-[4.5px] w-px bg-fg/9 ${reach}`} />
             <motion.span
                 aria-hidden="true"
                 className={`absolute left-[4.5px] w-px origin-top bg-signal ${reach}`}

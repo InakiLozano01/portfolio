@@ -1,31 +1,49 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-html {
-  scroll-behavior: smooth;
-  overflow-x: hidden;
-  scroll-padding-top: 48px;
-}
+@config "../tailwind.config.ts";
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  overflow-x: hidden;
-}
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
 
-@media (min-width: 768px) {
-  html {
-    scroll-padding-top: 56px;
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
   }
 }
 
-.pb-safe-area {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+@utility text-balance {
+  text-wrap: balance;
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    scroll-padding-top: 48px;
+  }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    overflow-x: hidden;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      scroll-padding-top: 56px;
+    }
+  }
+
+  .pb-safe-area {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
@@ -163,7 +181,7 @@ body {
 }
 
 .blog-content img {
-  @apply mx-auto my-6 max-w-full rounded-lg shadow-sm;
+  @apply mx-auto my-6 max-w-full rounded-lg shadow-xs;
 }
 
 .blog-content h1,
@@ -229,7 +247,7 @@ body {
 }
 
 .blog-content iframe {
-  @apply w-full rounded-lg shadow-sm my-6;
+  @apply w-full rounded-lg shadow-xs my-6;
   min-height: 320px;
 }
 

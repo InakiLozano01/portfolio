@@ -1,3 +1,5 @@
+import { RiOpenaiFill as SiOpenai } from 'react-icons/ri'
+import { DiHeroku as SiHeroku } from 'react-icons/di'
 
 
 import { type ComponentType } from 'react'
@@ -9,12 +11,12 @@ import {
 } from 'react-icons/fa'
 import {
     SiTypescript, SiSpring, SiCodeigniter, SiFlask, SiMysql, SiPostgresql, SiIntellijidea,
-    SiGooglecloud, SiGithubcopilot, SiOpenai, SiMeta, SiMongodb, SiTensorflow, SiNextdotjs,
+    SiGooglecloud, SiGithubcopilot, SiMeta, SiMongodb, SiTensorflow, SiNextdotjs,
     SiTailwindcss, SiPrisma, SiSupabase, SiVercel, SiFirebase, SiRedis, SiVite, SiAstro,
     SiDjango, SiLaravel, SiExpress, SiNestjs, SiGraphql, SiPostman, SiJest, SiCypress,
     SiSelenium, SiWebpack, SiRollupdotjs, SiSwagger, SiKubernetes, SiNginx, SiApache,
     SiWebstorm, SiPycharm, SiPhpstorm, SiSvelte, SiGo, SiKotlin, SiSwift,
-    SiDotnet, SiDigitalocean, SiHeroku, SiRabbitmq, SiApachekafka,
+    SiDotnet, SiDigitalocean, SiRabbitmq, SiApachekafka,
     SiJenkins, SiStorybook, SiStyledcomponents, SiRedux, SiReact, SiGraphql as SiGraphQLIcon
 } from 'react-icons/si'
 import Image from 'next/image'

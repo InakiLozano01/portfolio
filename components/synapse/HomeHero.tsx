@@ -96,14 +96,14 @@ export default function HomeHero({ lang = 'en', initialContent = null, initialPr
 
     return (
         <div>
-            <div ref={heroRef} className="field-navy relative isolate min-h-[100dvh] overflow-hidden">
+            <div ref={heroRef} className="field-navy relative isolate min-h-dvh overflow-hidden">
                 <motion.div className="absolute inset-0 -z-10" style={{ scale: swarmScale, opacity: swarmOpacity }}>
                     <NeuralSwarm targets={targets} className="h-full w-full" />
                 </motion.div>
 
                 <motion.div
                     style={reduce ? undefined : { y: copyY }}
-                    className="pointer-events-none mx-auto flex min-h-[100dvh] max-w-[1400px] flex-col justify-start px-5 pb-16 pt-28 sm:px-8 lg:justify-center lg:pt-16"
+                    className="pointer-events-none mx-auto flex min-h-dvh max-w-[1400px] flex-col justify-start px-5 pb-16 pt-28 sm:px-8 lg:justify-center lg:pt-16"
                 >
                     <div className="pointer-events-auto max-w-[620px]">
                         <div className="inline-block max-w-full">

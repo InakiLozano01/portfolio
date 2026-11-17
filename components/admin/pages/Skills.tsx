@@ -149,7 +149,7 @@ export default function Skills() {
           </Empty>
         </Panel>
       ) : (
-        <div className="gap-4 lg:columns-2 [&>*]:mb-4">
+        <div className="gap-4 lg:columns-2 *:mb-4">
           {groups.map(([category, list]) => (
             <Panel key={category} className="break-inside-avoid overflow-hidden">
               <div className="flex items-center justify-between gap-3 border-b border-line/[0.07] px-5 py-3">
@@ -171,12 +171,12 @@ export default function Skills() {
               <ul className="divide-y divide-line/[0.07]">
                 {list.map((skill) =>
                   editing === skill._id ? (
-                    <li key={skill._id} className="bg-fg/[0.02]">
+                    <li key={skill._id} className="bg-fg/2">
                       <SkillForm value={{ _id: skill._id, name: skill.name, category: skill.category, icon: skill.icon || '' }} categories={categories} saving={saving} onCancel={() => setEditing(null)} onSave={save} />
                     </li>
                   ) : (
                     <li key={skill._id} className="group flex items-center gap-3 px-5 py-2.5">
-                      <span className="grid h-8 w-8 place-items-center rounded-lg bg-fg/[0.05] text-fg-soft">
+                      <span className="grid h-8 w-8 place-items-center rounded-lg bg-fg/5 text-fg-soft">
                         <SkillIcon name={skill.name} icon={skill.icon || ''} size={16} />
                       </span>
                       <span className="flex-1 truncate text-[14px] font-medium text-fg">{skill.name}</span>
@@ -185,7 +185,7 @@ export default function Skills() {
                       </span>
                       <div className="flex opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
                         <IconButton size="sm" label={`Edit ${skill.name}`} icon={Pencil} onClick={() => { setEditing(skill._id); setAdding(false) }} />
-                        <IconButton size="sm" label={`Delete ${skill.name}`} icon={Trash2} onClick={() => remove(skill)} className="hover:!text-signal-text" />
+                        <IconButton size="sm" label={`Delete ${skill.name}`} icon={Trash2} onClick={() => remove(skill)} className="hover:text-signal-text!" />
                       </div>
                     </li>
                   ),

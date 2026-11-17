@@ -9,6 +9,7 @@ const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^bson$': '<rootDir>/node_modules/bson/lib/bson.cjs',
+    '^isomorphic-dompurify$': '<rootDir>/node_modules/isomorphic-dompurify/dist/browser.js',
   },
   modulePathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/public/tinymce/'],
   testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/public/tinymce/', '<rootDir>/node_modules/'],

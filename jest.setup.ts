@@ -1,7 +1,9 @@
 import '@testing-library/jest-dom'
+import { Blob, File } from 'node:buffer'
 import { ReadableStream, TransformStream, WritableStream } from 'node:stream/web'
 import { clearImmediate, setImmediate } from 'node:timers'
 import { TextDecoder, TextEncoder } from 'node:util'
+import { MessagePort } from 'node:worker_threads'
 
 const installGlobal = (name: string, value: unknown) => {
   Object.defineProperty(globalThis, name, {
@@ -18,8 +20,11 @@ installGlobal('setImmediate', setImmediate)
 installGlobal('clearImmediate', clearImmediate)
 installGlobal('TransformStream', TransformStream)
 installGlobal('WritableStream', WritableStream)
+installGlobal('Blob', Blob)
+installGlobal('File', File)
+installGlobal('MessagePort', MessagePort)
 
-const { fetch, File, FormData, Headers, Request, Response } = require('undici')
+const { fetch, FormData, Headers, Request, Response } = require('undici')
 
 if (typeof Response.json !== 'function') {
   Object.defineProperty(Response, 'json', {

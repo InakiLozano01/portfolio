@@ -1,7 +1,8 @@
 'use client'
 
+import { FaXTwitter as Twitter, FaLinkedinIn as Linkedin } from 'react-icons/fa6'
 import { useCallback, useState } from 'react'
-import { Twitter, Linkedin, Link as LinkIcon } from 'lucide-react'
+import { Link as LinkIcon } from 'lucide-react'
 
 interface ShareActionsProps {
     url: string

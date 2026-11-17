@@ -71,7 +71,7 @@ export default function AboutSection({ lang = 'en', initialContent = null, dicti
                                     whileInView={{ opacity: 1, scale: 1 }}
                                     viewport={{ once: true }}
                                     transition={{ duration: 0.5, delay: 0.06 * i, ease: EASE_OUT }}
-                                    className="rounded-full bg-fg/[0.06] px-4 py-2 text-sm text-fg"
+                                    className="rounded-full bg-fg/6 px-4 py-2 text-sm text-fg"
                                 >
                                     {item}
                                 </motion.li>

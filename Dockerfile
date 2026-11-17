@@ -1,16 +1,17 @@
-FROM node:22-alpine AS base
+FROM node:26.12.1-alpine@sha256:9bd229b644e391df00fb989efa732335aefc6170a05d8c163c5c8ca9870da401 AS base
+RUN apk upgrade --no-cache
 
 # ---------- deps ----------
-FROM node:22-alpine AS deps
+FROM base AS deps
 RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
 COPY package*.json ./
 COPY patches ./patches
-RUN npm ci --include=dev --omit=peer
+RUN npm ci --include=dev --omit=peer --ignore-scripts && node node_modules/patch-package/index.js --error-on-fail
 
 # ---------- builder ----------
-FROM node:22-alpine AS builder
+FROM base AS builder
 WORKDIR /app
 
 # Build-time toggles (true during build)
@@ -35,7 +36,9 @@ RUN npm run build
 RUN ls -la public/ || true
 
 # ---------- runner ----------
-FROM node:22-alpine AS runner
+FROM base AS runner
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /usr/local/lib/node_modules/pnpm /usr/local/lib/node_modules/yarn /root/.cache/node/corepack /opt/yarn-* \
+ && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/pnpm /usr/local/bin/pnpx /usr/local/bin/yarn /usr/local/bin/yarnpkg
 WORKDIR /app
 
 ENV NODE_ENV=production

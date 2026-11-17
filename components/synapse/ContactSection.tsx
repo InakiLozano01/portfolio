@@ -1,8 +1,9 @@
 'use client'
 
+import { FaGithub as Github, FaLinkedinIn as Linkedin } from 'react-icons/fa6'
 import { useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { ArrowUpRight, Check, Github, Linkedin, Mail, MapPin } from 'lucide-react'
+import { ArrowUpRight, Check, Mail, MapPin } from 'lucide-react'
 import Reveal from './Reveal'
 import SectionHeading from './SectionHeading'
 import { EASE_OUT, pick, type Lang } from './content'
@@ -74,7 +75,7 @@ export default function ContactSection({ lang = 'en', initialContent = null, dic
     }
 
     const fieldClass = (name: Field) =>
-        `w-full rounded-2xl border bg-surface px-5 text-[15px] text-fg placeholder:text-fg-dim transition-[border-color,box-shadow] focus:outline-none ${errors[name] ? 'border-signal' : 'border-line/15 focus:border-signal/70'}`
+        `w-full rounded-2xl border bg-surface px-5 text-[15px] text-fg placeholder:text-fg-dim transition-[border-color,box-shadow] focus:outline-hidden ${errors[name] ? 'border-signal' : 'border-line/15 focus:border-signal/70'}`
 
     const renderField = (name: Field, label: string, type: 'text' | 'email' | 'textarea', autoComplete?: string) => (
         <div>
@@ -133,7 +134,7 @@ export default function ContactSection({ lang = 'en', initialContent = null, dic
                                 aria-label={t.sendEmailAria || 'Send email'}
                                 className="group mt-3 inline-flex max-w-full items-center gap-3 break-all text-[clamp(1.25rem,2.6vw,2rem)] font-medium tracking-[-0.02em] text-fg"
                             >
-                                <span className="bg-[linear-gradient(currentColor,currentColor)] bg-[length:0%_1px] bg-left-bottom bg-no-repeat pb-1 transition-[background-size] duration-500 group-hover:bg-[length:100%_1px]">
+                                <span className="bg-[linear-gradient(currentColor,currentColor)] bg-size-[0%_1px] bg-bottom-left bg-no-repeat pb-1 transition-[background-size] duration-500 group-hover:bg-size-[100%_1px]">
                                     {email}
                                 </span>
                                 <ArrowUpRight size={22} strokeWidth={1.5} className="shrink-0 text-signal transition-transform duration-300 group-hover:-translate-y-1 group-hover:translate-x-1" />
@@ -142,12 +143,12 @@ export default function ContactSection({ lang = 'en', initialContent = null, dic
                     )}
                     <Reveal className="mt-12 flex flex-wrap items-center gap-3">
                         {social.github && (
-                            <a href={social.github} target="_blank" rel="noopener noreferrer" aria-label={t.githubAria || 'Visit GitHub profile'} className="inline-flex h-12 items-center gap-2 rounded-full border border-line/15 px-5 text-sm text-fg transition-colors hover:border-signal/70 hover:bg-signal/[0.06]">
+                            <a href={social.github} target="_blank" rel="noopener noreferrer" aria-label={t.githubAria || 'Visit GitHub profile'} className="inline-flex h-12 items-center gap-2 rounded-full border border-line/15 px-5 text-sm text-fg transition-colors hover:border-signal/70 hover:bg-signal/6">
                                 <Github size={16} strokeWidth={1.75} /> GitHub
                             </a>
                         )}
                         {social.linkedin && (
-                            <a href={social.linkedin} target="_blank" rel="noopener noreferrer" aria-label={t.linkedinAria || 'Visit LinkedIn profile'} className="inline-flex h-12 items-center gap-2 rounded-full border border-line/15 px-5 text-sm text-fg transition-colors hover:border-signal/70 hover:bg-signal/[0.06]">
+                            <a href={social.linkedin} target="_blank" rel="noopener noreferrer" aria-label={t.linkedinAria || 'Visit LinkedIn profile'} className="inline-flex h-12 items-center gap-2 rounded-full border border-line/15 px-5 text-sm text-fg transition-colors hover:border-signal/70 hover:bg-signal/6">
                                 <Linkedin size={16} strokeWidth={1.75} /> LinkedIn
                             </a>
                         )}

@@ -76,7 +76,7 @@ export default function Posts() {
               {shown.map((post) => {
                 const title = post.title_en || post.title || 'Untitled'
                 return (
-                  <li key={post._id} className="group relative flex items-center gap-4 px-5 py-4 transition-colors hover:bg-fg/[0.03] sm:px-6">
+                  <li key={post._id} className="group relative flex items-center gap-4 px-5 py-4 transition-colors hover:bg-fg/3 sm:px-6">
                     <div className="min-w-0 flex-1">
                       <Link href={`/admin/posts/${post._id}`} className="block truncate text-[15px] font-semibold tracking-[-0.01em] text-fg after:absolute after:inset-0">
                         {title}
@@ -87,7 +87,7 @@ export default function Posts() {
                       {!!post.tags?.length && (
                         <div className="mt-2 hidden flex-wrap gap-1.5 sm:flex">
                           {post.tags.slice(0, 4).map((tag) => (
-                            <span key={tag} className="rounded-full bg-fg/[0.05] px-2 py-0.5 text-[11px] text-fg-soft">{tag}</span>
+                            <span key={tag} className="rounded-full bg-fg/5 px-2 py-0.5 text-[11px] text-fg-soft">{tag}</span>
                           ))}
                         </div>
                       )}

@@ -56,19 +56,19 @@ export default function CommandPalette({ open, onOpenChange }: { open: boolean; 
       className="field-cream mx-auto mt-[12vh] w-[min(620px,calc(100vw-24px))] rounded-3xl border border-line/10 p-0 text-fg backdrop:bg-navy/50 backdrop:backdrop-blur-[2px]"
     >
       <Command label="Command palette" loop className="flex max-h-[min(560px,70vh)] flex-col">
-        <div className="flex items-center gap-3 border-b border-line/[0.08] px-5">
+        <div className="flex items-center gap-3 border-b border-line/8 px-5">
           <Search size={17} strokeWidth={1.75} className="text-fg-dim" aria-hidden="true" />
           <Command.Input
             autoFocus
             value={query}
             onValueChange={setQuery}
             placeholder="Search pages, posts, projects, or type an action"
-            className="h-14 flex-1 bg-transparent text-[15px] text-fg placeholder:text-fg-dim focus:outline-none"
+            className="h-14 flex-1 bg-transparent text-[15px] text-fg placeholder:text-fg-dim focus:outline-hidden"
           />
         </div>
         <Command.List className="overflow-y-auto p-2">
           <Command.Empty className="px-3 py-10 text-center text-sm text-fg-dim">Nothing matches “{query}”.</Command.Empty>
-          <Command.Group heading="Create" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-fg-dim">
+          <Command.Group heading="Create" className="**:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:pb-1 **:[[cmdk-group-heading]]:pt-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.08em] **:[[cmdk-group-heading]]:text-fg-dim">
             {[
               { label: 'New post', href: '/admin/posts/new' },
               { label: 'New project', href: '/admin/projects/new' },
@@ -81,7 +81,7 @@ export default function CommandPalette({ open, onOpenChange }: { open: boolean; 
               </Command.Item>
             ))}
           </Command.Group>
-          <Command.Group heading="Go to" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-fg-dim">
+          <Command.Group heading="Go to" className="**:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:pb-1 **:[[cmdk-group-heading]]:pt-3 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.08em] **:[[cmdk-group-heading]]:text-fg-dim">
             {ALL_NAV.map((item) => (
               <Command.Item key={item.href} value={`${item.label} ${item.keywords || ''}`} onSelect={() => go(item.href)} className={itemClass}>
                 <item.icon size={16} strokeWidth={1.75} aria-hidden="true" />
@@ -95,7 +95,7 @@ export default function CommandPalette({ open, onOpenChange }: { open: boolean; 
           </Command.Group>
           {query.length > 0 && (
             <>
-              <Command.Group heading="Posts" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-fg-dim">
+              <Command.Group heading="Posts" className="**:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:pb-1 **:[[cmdk-group-heading]]:pt-3 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.08em] **:[[cmdk-group-heading]]:text-fg-dim">
                 {posts.map((post) => (
                   <Command.Item key={post._id} value={`post ${title(post)} ${post.title_es || ''} ${post._id}`} onSelect={() => go(`/admin/posts/${post._id}`)} className={itemClass}>
                     <FileText size={16} strokeWidth={1.75} aria-hidden="true" />
@@ -103,7 +103,7 @@ export default function CommandPalette({ open, onOpenChange }: { open: boolean; 
                   </Command.Item>
                 ))}
               </Command.Group>
-              <Command.Group heading="Projects" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.08em] [&_[cmdk-group-heading]]:text-fg-dim">
+              <Command.Group heading="Projects" className="**:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:pb-1 **:[[cmdk-group-heading]]:pt-3 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-[0.08em] **:[[cmdk-group-heading]]:text-fg-dim">
                 {projects.map((project) => (
                   <Command.Item key={project._id} value={`project ${title(project)} ${project.title_es || ''} ${project._id}`} onSelect={() => go(`/admin/projects/${project._id}`)} className={itemClass}>
                     <FolderKanban size={16} strokeWidth={1.75} aria-hidden="true" />
@@ -118,7 +118,7 @@ export default function CommandPalette({ open, onOpenChange }: { open: boolean; 
             <span className="flex-1">Sign out</span>
           </Command.Item>
         </Command.List>
-        <div className="flex items-center gap-4 border-t border-line/[0.08] px-5 py-2.5 font-mono text-[11px] text-fg-dim">
+        <div className="flex items-center gap-4 border-t border-line/8 px-5 py-2.5 font-mono text-[11px] text-fg-dim">
           <span>↑↓ move</span>
           <span>↵ open</span>
           <span>esc close</span>

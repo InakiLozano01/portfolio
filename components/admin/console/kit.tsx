@@ -16,9 +16,9 @@ type Size = 'sm' | 'md'
 const base =
   'inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-[background-color,border-color,color,transform] duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-50'
 const variants: Record<Variant, string> = {
-  primary: 'bg-action text-action-fg hover:bg-navy disabled:bg-fg/[0.08] disabled:text-fg-dim disabled:opacity-100',
+  primary: 'bg-action text-action-fg hover:bg-navy disabled:bg-fg/8 disabled:text-fg-dim disabled:opacity-100',
   secondary: 'border border-line/15 bg-surface text-fg hover:border-line/40',
-  ghost: 'text-fg-soft hover:bg-fg/[0.06] hover:text-fg',
+  ghost: 'text-fg-soft hover:bg-fg/6 hover:text-fg',
   danger: 'border border-signal-text/25 bg-surface text-signal-text hover:border-signal-text hover:bg-signal-text hover:text-cream',
 }
 const sizes: Record<Size, string> = { sm: 'h-8 px-3 text-[13px]', md: 'h-10 px-4 text-sm' }
@@ -79,7 +79,7 @@ export function PageHeader({ title, description, actions, back }: { title: React
             {back.label}
           </Link>
         )}
-        <h1 className="text-2xl font-semibold tracking-[-0.025em] text-fg [text-wrap:balance]">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-fg text-balance">{title}</h1>
         {description && <p className="mt-1.5 max-w-[68ch] text-sm leading-relaxed text-fg-soft">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -147,19 +147,19 @@ export function Field({ label, hint, error, aside, children, className }: FieldP
 }
 
 const control =
-  'w-full rounded-xl border bg-surface px-3.5 text-[14px] text-fg placeholder:text-fg-dim/80 transition-[border-color] duration-150 focus:border-signal/70 focus:outline-none disabled:cursor-not-allowed disabled:bg-fg/[0.04] disabled:text-fg-dim aria-[invalid=true]:border-signal'
+  'w-full rounded-xl border bg-surface px-3.5 text-[14px] text-fg placeholder:text-fg-dim/80 transition-[border-color] duration-150 focus:border-signal/70 focus:outline-hidden disabled:cursor-not-allowed disabled:bg-fg/4 disabled:text-fg-dim aria-invalid:border-signal'
 
 export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {
   return <input ref={ref} className={cx(control, 'h-10 border-line/15', className)} {...props} />
 })
 
 export const Textarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea({ className, ...props }, ref) {
-  return <textarea ref={ref} className={cx(control, 'min-h-[96px] max-h-[70vh] resize-y border-line/15 py-2.5 leading-relaxed [field-sizing:content]', className)} {...props} />
+  return <textarea ref={ref} className={cx(control, 'min-h-[96px] max-h-[70vh] resize-y border-line/15 py-2.5 leading-relaxed field-sizing-content', className)} {...props} />
 })
 
 export const Select = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(function Select({ className, children, ...props }, ref) {
   return (
-    <select ref={ref} className={cx(control, 'h-10 appearance-none border-line/15 bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-9', className)} style={{ backgroundImage: CHEVRON }} {...props}>
+    <select ref={ref} className={cx(control, 'h-10 appearance-none border-line/15 bg-size-[16px] bg-position-[right_12px_center] bg-no-repeat pr-9', className)} style={{ backgroundImage: CHEVRON }} {...props}>
       {children}
     </select>
   )
@@ -228,7 +228,7 @@ export function SearchField({ value, onChange, placeholder = 'Search', label, cl
         className={cx(control, 'h-10 rounded-full border-line/15 pl-10 pr-9 [&::-webkit-search-cancel-button]:hidden')}
       />
       {value && (
-        <button type="button" aria-label="Clear search" onClick={() => onChange('')} className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-fg-dim hover:bg-fg/[0.06] hover:text-fg">
+        <button type="button" aria-label="Clear search" onClick={() => onChange('')} className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-fg-dim hover:bg-fg/6 hover:text-fg">
           <X size={14} strokeWidth={1.75} aria-hidden="true" />
         </button>
       )}
@@ -272,10 +272,10 @@ export function SkeletonRows({ rows = 5, className }: { rows?: number; className
         <div key={i} className="flex items-center gap-4 px-5 py-4 sm:px-6">
           <div className="h-2.5 w-2.5 rounded-full bg-fg/10" />
           <div className="flex-1 space-y-2">
-            <div className="h-3 rounded-full bg-fg/[0.08]" style={{ width: `${46 + ((i * 17) % 34)}%` }} />
-            <div className="h-2.5 rounded-full bg-fg/[0.05]" style={{ width: `${28 + ((i * 23) % 30)}%` }} />
+            <div className="h-3 rounded-full bg-fg/8" style={{ width: `${46 + ((i * 17) % 34)}%` }} />
+            <div className="h-2.5 rounded-full bg-fg/5" style={{ width: `${28 + ((i * 23) % 30)}%` }} />
           </div>
-          <div className="h-2.5 w-14 rounded-full bg-fg/[0.06]" />
+          <div className="h-2.5 w-14 rounded-full bg-fg/6" />
         </div>
       ))}
       <span className="sr-only">Loading</span>
@@ -308,7 +308,7 @@ export function Count({ n, tone = 'idle', label }: { n: number; tone?: 'idle' | 
 }
 
 export function Lang({ code }: { code: 'en' | 'es' }) {
-  return <span className="rounded-md bg-fg/[0.06] px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wide text-fg-dim">{code}</span>
+  return <span className="rounded-md bg-fg/6 px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wide text-fg-dim">{code}</span>
 }
 
 export function Kbd({ children }: { children: React.ReactNode }) {
@@ -399,7 +399,7 @@ export function useSaveShortcut(onSave: () => void, enabled = true) {
 /** A sticky bar at the foot of an editor: what changed, and the save action, always in reach. */
 export function SaveBar({ dirty, saving, onSave, onDiscard, saveLabel = 'Save changes', note, children }: { dirty: boolean; saving?: boolean; onSave: () => void; onDiscard?: () => void; saveLabel?: string; note?: React.ReactNode; children?: React.ReactNode }) {
   return (
-    <div className={cx('sticky bottom-0 z-20 -mx-5 mt-10 border-t border-line/10 bg-field/95 px-5 py-3 backdrop-blur-sm sm:-mx-8 sm:px-8', !dirty && !saving && 'hidden sm:block')}>
+    <div className={cx('sticky bottom-0 z-20 -mx-5 mt-10 border-t border-line/10 bg-field/95 px-5 py-3 backdrop-blur-xs sm:-mx-8 sm:px-8', !dirty && !saving && 'hidden sm:block')}>
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3">
         <p className="flex items-center gap-2 text-[13px] text-fg-dim" aria-live="polite">
           {dirty ? <Status tone="attention">Unsaved changes</Status> : note || <Status tone="idle">All changes saved</Status>}
