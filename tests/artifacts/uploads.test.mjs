@@ -228,6 +228,38 @@ test('concurrent complete and version publish consume one upload once', async ()
   assert.equal((await api('GET', 'artifacts/concurrent')).body.versions.length, 3)
 })
 
+test('open upload limits and resume lookup are scoped to the bearer token', async () => {
+  const slug = `upload-scope-${crypto.randomUUID()}`
+  await api('POST', 'artifacts', { title: 'Upload scope', slug, html: html('Upload scope') })
+  const tokenA = await mintToken('upload-scope-a')
+  const tokenB = await mintToken('upload-scope-b')
+  const a = agent(tokenA)
+  const b = agent(tokenB)
+  const digest = sha(Buffer.alloc(100))
+  const body = { path: 'same.bin', size: 100, fingerprint: 'same-upload', sha256: digest }
+  const first = await a('POST', `artifacts/${slug}/uploads`, body)
+  assert.equal(first.status, 201, first.text)
+  const crossTokenResume = await b('POST', `artifacts/${slug}/uploads`, body)
+  assert.equal(crossTokenResume.status, 201, crossTokenResume.text)
+  assert.equal(crossTokenResume.body.resumed, false)
+  assert.notEqual(crossTokenResume.body.id, first.body.id)
+
+  const tokenAUploads = [first.body.id]
+  for (let i = 1; i < 8; i++) {
+    const started = await a('POST', `artifacts/${slug}/uploads`, { ...body, path: `a-${i}.bin`, fingerprint: `a-${i}` })
+    assert.equal(started.status, 201, started.text)
+    tokenAUploads.push(started.body.id)
+  }
+  const blockedA = await a('POST', `artifacts/${slug}/uploads`, { ...body, path: 'a-blocked.bin', fingerprint: 'a-blocked' })
+  assert.equal(blockedA.status, 429, blockedA.text)
+  const allowedB = await b('POST', `artifacts/${slug}/uploads`, { ...body, path: 'b-allowed.bin', fingerprint: 'b-allowed' })
+  assert.equal(allowedB.status, 201, allowedB.text)
+
+  for (const id of [...tokenAUploads, crossTokenResume.body.id, allowedB.body.id]) {
+    assert.equal((await api('DELETE', `uploads/${id}`)).status, 200)
+  }
+})
+
 test('open uploads are limited, and expired ones release their slot and their reservation', async () => {
   await api('POST', 'artifacts', { title: 'Open limit', slug: 'open-limit', html: html('Open limit') })
   const used = (await api('GET', 'storage')).body.usedBytes
